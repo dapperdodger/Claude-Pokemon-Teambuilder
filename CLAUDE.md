@@ -22,7 +22,9 @@ treat those as current — this repo is the source of truth going forward.
 3. **Before any team or moveset suggestion, verify current data via live web
    search** (Pikalytics, Smogon VGC, Victory Road, or similar). Do not rely
    on training data, and do not trust this repo's own files past their
-   "Last verified" date — check `reference/vgc_current_regulation.md` first.
+   "Last verified" date where one is stamped (only
+   `reference/vgc_current_regulation.md` currently carries one — check it
+   first; other files fall back to their `## Changelog` dates).
 
 4. **No cookie-cutter squads.** Any team-building help must show real
    reasoning: speed tiers/speed control, damage rolls vs. relevant threats,
@@ -32,9 +34,11 @@ treat those as current — this repo is the source of truth going forward.
 
 5. **Check the current regulation every session**, even if it was already
    checked earlier in the same conversation — regulations have hard end
-   dates. See `reference/vgc_current_regulation.md`. As of that file's last
-   verification, Mega Evolution is the only active mechanic; do not suggest
-   Tera/Dynamax/Z-Move strategy unless that file says otherwise.
+   dates. `reference/vgc_current_regulation.md` is the sole authority on
+   which mechanics are active (as of its last verification: Mega Evolution
+   only, no Tera/Dynamax/Z-Move) — read it fresh each session rather than
+   assuming that stays true; it's the one fact in this repo most likely to
+   flip.
 
 6. **Roster availability and regulation legality are two separate checks.**
    A Pokémon can be unrestricted by the rules but not yet available in
