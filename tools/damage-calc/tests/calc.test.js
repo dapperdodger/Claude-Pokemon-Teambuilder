@@ -123,3 +123,44 @@ test('runDamageCalc: itemChampionsLegal correctly flags a confirmed-unavailable 
   assert.equal(result.matchedRecords.attacker.itemChampionsLegal, false);
   assert.equal(result.matchedRecords.defender.itemChampionsLegal, true);
 });
+
+test('runDamageCalc: Parental Bond (Mega Kangaskhan) produces a real finite min/max, not NaN', () => {
+  // Regression test for a bug where any Parental Bond attack made
+  // runDamageCalc return NaN/NaN silently. Parental Bond makes the
+  // vendored engine's GET_DAMAGE_SV return a NESTED damage array (one flat
+  // 16-roll array per hit) instead of the ordinary flat 16-roll array —
+  // see calc.js's runDamageCalc for the full explanation. Spreading a
+  // nested array into Math.min/Math.max coerces each sub-array to NaN via
+  // ToNumber, which is exactly what happened before the fix.
+  //
+  // Real, verified data (via getVendor().POKEDEX_CHAMPIONS['Mega Kangaskhan']):
+  // base Attack 125, ability "Parental Bond" (its sole, fixed ability, an
+  // isAlternateForme entry off base Kangaskhan). Double-Edge is an
+  // ordinary single-hit physical move (no hitRange in MOVES_CHAMPIONS),
+  // so this exercises Parental Bond turning an otherwise-single-hit move
+  // into the nested-array case, not a move that's independently multi-hit
+  // for its own reasons.
+  const result = runDamageCalc({
+    attacker: {
+      species: 'Mega Kangaskhan',
+      ability: 'Parental Bond',
+      item: '',
+      nature: 'Adamant',
+      sp: { hp: 0, at: 32, df: 0, sa: 0, sd: 0, sp: 0 },
+    },
+    defender: {
+      species: 'Garchomp',
+      ability: 'Rough Skin',
+      item: '',
+      nature: 'Serious',
+      sp: { hp: 0, at: 0, df: 0, sa: 0, sd: 0, sp: 0 },
+    },
+    move: { name: 'Double-Edge' },
+    field: {},
+  });
+
+  assert.ok(Number.isFinite(result.min), `min should be a finite number, got ${result.min}`);
+  assert.ok(Number.isFinite(result.max), `max should be a finite number, got ${result.max}`);
+  assert.ok(result.min > 0, 'min damage should be positive');
+  assert.ok(result.max >= result.min, 'max should be >= min');
+});

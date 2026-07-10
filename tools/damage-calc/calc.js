@@ -178,11 +178,50 @@ function buildPokemon(rawInput, natures) {
 
 function buildMove(input) {
   const move = lookupMove(input.name);
+  // FIX (post-Task-4 code review): `hits` was previously hardcoded to 1 for
+  // every move. That's wrong for genuinely multi-hit moves — their real
+  // vendored data (MOVES_CHAMPIONS, see vendor/move_data.js) carries a
+  // `hitRange` field: either a fixed number for a fixed-count multi-hit
+  // move (e.g. 'Double Hit': hitRange: 2, 'Dual Wingbeat': hitRange: 2), or
+  // a [min, max] array for a variable/probabilistic one (e.g.
+  // 'Bullet Seed'/'Icicle Spear': hitRange: [2, 5], 'Triple Axel':
+  // hitRange: [1, 3] with isTripleHit: true). Hardcoding hits: 1 silently
+  // suppressed all of that real hit-count behavior.
+  //
+  // Derive hits from hitRange instead:
+  //  - no hitRange -> 1 (ordinary single-hit move, e.g. Make It Rain,
+  //    Earthquake, Double-Edge — all confirmed via `getVendor()` to have no
+  //    `hitRange` key, so this branch still yields hits: 1 for them,
+  //    unchanged from before).
+  //  - hitRange is a plain number -> that fixed hit count.
+  //  - hitRange is a [min, max] array -> the max, matching the vendored
+  //    engine's own convention of computing against the highest realistic
+  //    hit count in a multi-hit chain (see additionalDamageCalcs setting
+  //    move.hits = 2 for Parental Bond's fixed 2-hit case, and
+  //    checkAddCalcQualifications's addQualList['triple'] branch using
+  //    move.hits directly as the number of Triple Axel hits to simulate —
+  //    both in vendor/damage_MASTER.js).
+  //
+  // This also matters for correctness of the Parental Bond gate itself:
+  // checkAddCalcQualifications's `parentalBond` flag
+  // (damage_MASTER.js ~line 2457) is
+  // `attacker.ability === "Parental Bond" && move.hits === 1 && !move.hitRange`
+  // — with hits previously forced to 1 for every move, a real multi-hit
+  // move (which DOES carry `hitRange`) still correctly failed that gate
+  // only because of the `!move.hitRange` half of the check, not because of
+  // an honest hits value. Deriving hits properly here doesn't change that
+  // outcome, but removes the "right answer for an accidental reason" state.
+  let hits = 1;
+  if (typeof move.hitRange === 'number') {
+    hits = move.hitRange;
+  } else if (Array.isArray(move.hitRange)) {
+    hits = move.hitRange[move.hitRange.length - 1];
+  }
   return Object.assign({}, move, {
     isCrit: false,
     isZ: false,
     isSignatureZ: false,
-    hits: 1,
+    hits,
     isPlusMove: false,
   });
 }
@@ -242,8 +281,52 @@ function runDamageCalc(input) {
   // at in the brief. `damage` is already sorted ascending in every sample
   // observed, but Math.min/Math.max is used rather than trusting that
   // ordering, since nothing in the vendored code documents it as guaranteed.
-  const min = Math.min(...rawResult.damage);
-  const max = Math.max(...rawResult.damage);
+  //
+  // FIX (post-Task-4 code review): the above is only true when the attack
+  // is a single hit. `rawResult.damage` can also come back NESTED — one
+  // flat 16-roll array PER HIT — for any attack that goes through
+  // calcGeneralMods's "additional damage" path (vendor/damage_MASTER.js).
+  // Concretely: calcGeneralMods (~line 2290-2312) builds `allDamage` as
+  // `allDamage[0] = damage` (the first hit's own 16-roll array) then
+  // `allDamage[i + 1] = additionalDamage[i]` for each further hit, where
+  // `additionalDamage` comes from `additionalDamageCalcs` (~line 2487-2631)
+  // recursively calling `GET_DAMAGE_HANDLER(...).damage` once per extra hit
+  // (each such recursive call sets `nextMove.isNextMove = true`, which
+  // forces that inner call down calcGeneralMods's `else allDamage = damage`
+  // branch, so each per-hit entry is guaranteed flat — nesting is always
+  // exactly one level deep, never deeper). This path is reached whenever
+  // `checkAddCalcQualifications` (~line 2451-2478) finds a qualifying
+  // condition — the one most relevant to this project is Parental Bond
+  // (`addQualList['parentalBond']`, ~line 2457: any attacker with ability
+  // "Parental Bond" — e.g. the real, currently Champions-legal Mega
+  // Kangaskhan — hitting with an ordinarily-single-hit move), but the same
+  // shape also covers genuinely multi-hit moves like Triple Axel
+  // (`addQualList['triple']`) once `buildMove` derives a real `hits` value
+  // (see buildMove above) instead of always hardcoding 1.
+  //
+  // Correct combination logic: sum the MIN of each hit's own roll array for
+  // the overall min, and sum the MAX of each hit's own roll array for the
+  // overall max — NOT "sum same-index rolls across hits". Each hit's 85-100%
+  // damage roll is an independent random event (calcGeneralMods's own
+  // per-hit loop, ~line 2249, re-rolls 85-100% fresh for every hit/call), so
+  // the true worst-case total is every hit simultaneously landing its own
+  // worst roll, and the true best-case total is every hit simultaneously
+  // landing its own best roll. Because summation is monotonic per term,
+  // summing each hit's independent min (or max) always yields the actual
+  // extremum of the total — pairing by array index would just be an
+  // arbitrary (and generally wrong, since a index-0-with-index-0 pairing
+  // isn't a privileged combination of two independent rolls) alternative
+  // that happens to coincide with this one only in the single-hit case.
+  // Math.min/Math.max (not index [0]/[last]) is used per hit for the same
+  // "don't trust an unguaranteed sort order" reason as the single-hit case
+  // above.
+  const isMultiHit = Array.isArray(rawResult.damage[0]);
+  const min = isMultiHit
+    ? rawResult.damage.reduce((sum, hitRolls) => sum + Math.min(...hitRolls), 0)
+    : Math.min(...rawResult.damage);
+  const max = isMultiHit
+    ? rawResult.damage.reduce((sum, hitRolls) => sum + Math.max(...hitRolls), 0)
+    : Math.max(...rawResult.damage);
 
   return {
     min,
