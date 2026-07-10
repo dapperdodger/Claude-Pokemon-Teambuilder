@@ -1,0 +1,26 @@
+{
+  "name": "claude-pokemon-teambuilder",
+  "version": "1.0.0",
+  "description": "Reference workflow for high-quality VGC (Pokémon Champions, official doubles format) team-building help — built to force verification against current sources instead of letting the model coast on stale training data, and to support both ladder/tournament prep and building around user-chosen favorite Pokémon rather than copy-pasting top-usage squads.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dapperdodger/Claude-Pokemon-Teambuilder.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dapperdodger/Claude-Pokemon-Teambuilder/issues"
+  },
+  "homepage": "https://github.com/dapperdodger/Claude-Pokemon-Teambuilder#readme",
+  "devDependencies": {
+    "playwright": "^1.61.1"
+  }
+}

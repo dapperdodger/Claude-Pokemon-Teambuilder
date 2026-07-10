@@ -1,0 +1,57 @@
+{
+  "attacker": {
+    "species": "Gholdengo",
+    "ability": "Good as Gold",
+    "item": "Life Orb",
+    "nature": "Modest",
+    "sp": {
+      "hp": 0,
+      "at": 0,
+      "df": 0,
+      "sa": 32,
+      "sd": 0,
+      "sp": 0
+    }
+  },
+  "defender": {
+    "species": "Garchomp",
+    "ability": "Rough Skin",
+    "item": "",
+    "nature": "Serious",
+    "sp": {
+      "hp": 0,
+      "at": 0,
+      "df": 0,
+      "sa": 0,
+      "sd": 0,
+      "sp": 0
+    }
+  },
+  "move": "Make It Rain",
+  "field": {},
+  "expected": {
+    "min": 129,
+    "max": 152
+  },
+  "allRolls": [
+    129,
+    130,
+    130,
+    133,
+    134,
+    136,
+    136,
+    138,
+    140,
+    142,
+    144,
+    144,
+    146,
+    148,
+    149,
+    152
+  ],
+  "pageMainResult": "32+ SpA Life Orb Gholdengo Make It Rain vs. 0 HP  / 0 SpD Garchomp: 129-152 (70.4 - 83%) -- guaranteed 2HKO",
+  "capturedAt": "2026-07-10",
+  "sourceUrl": "https://nerd-of-now.github.io/NCP-VGC-Damage-Calculator/"
+}
