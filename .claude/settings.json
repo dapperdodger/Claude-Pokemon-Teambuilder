@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/check_regulation_staleness.sh 2>/dev/null || true",
+            "statusMessage": "Checking regulation staleness..."
+          }
+        ]
+      }
+    ]
+  }
+}
