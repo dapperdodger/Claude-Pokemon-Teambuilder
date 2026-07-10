@@ -9,6 +9,15 @@
             "statusMessage": "Checking regulation staleness..."
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/check_damage_calc_vendor_staleness.sh 2>/dev/null || true",
+            "statusMessage": "Checking damage calculator vendor staleness..."
+          }
+        ]
       }
     ]
   }
