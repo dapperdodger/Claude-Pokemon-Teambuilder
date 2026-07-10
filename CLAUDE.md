@@ -34,8 +34,9 @@ treat those as current — this repo is the source of truth going forward.
 4. **No cookie-cutter squads.** Any team-building help must show real
    reasoning: speed tiers/speed control (see
    `reference/vgc_ability_move_mechanics.md`'s Speed calculation section),
-   damage rolls vs. relevant threats (see `reference/vgc_damage_calc.md`
-   for the tool and formula fundamentals), current-mechanic strategy (Mega
+   damage rolls vs. relevant threats (see `reference/vgc_damage_calc.md` —
+   run tools/damage-calc/cli.js for a real calculation rather than
+   hand-computing one), current-mechanic strategy (Mega
    Evolution — see rule 5), redirection/support synergy, weather/terrain,
    how pieces cover each other's weaknesses. See
    `reference/vgc_teambuilding_methodology.md`.
