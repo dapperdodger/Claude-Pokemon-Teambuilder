@@ -643,17 +643,27 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { runDamageCalc } = require('../calc');
 
-test('Modest 32-SP-SpA Choice Specs Gholdengo Make It Rain vs neutral 0-SP Garchomp', () => {
+test('Modest 32-SP-SpA Life Orb Gholdengo Make It Rain vs neutral 0-SP Garchomp', () => {
   // Real, verified data (not defaults): Gholdengo base SpA 133, Modest nature
   // (+10% SpA), 32 Stat Points in SpA (the max). Garchomp base HP 108 / SpD 85,
   // Serious (neutral) nature, 0 SP anywhere (bare base stats). This
   // specifically exercises non-default SP allocation and a boosting nature,
   // not base-stat defaults.
+  //
+  // Item is Life Orb, not Choice Specs — Choice Specs (and Choice Band,
+  // Assault Vest, and several other historically-standard items) is
+  // confirmed NOT currently available in Pokemon Champions as of this
+  // session's live verification (Victory Road VGC community source,
+  // cross-checked against ITEMS_CHAMPIONS itself). Life Orb IS confirmed
+  // present in ITEMS_CHAMPIONS (added in the Regulation M-B item-pool
+  // expansion) and is a universal (not move-category-locked) 1.3x damage
+  // boost, so it still exercises "does an item modifier apply" without
+  // using an item this format doesn't actually have.
   const result = runDamageCalc({
     attacker: {
       species: 'Gholdengo',
       ability: 'Good as Gold',
-      item: 'Choice Specs',
+      item: 'Life Orb',
       nature: 'Modest',
       sp: { hp: 0, at: 0, df: 0, sa: 32, sd: 0, sp: 0 },
     },
@@ -670,8 +680,8 @@ test('Modest 32-SP-SpA Choice Specs Gholdengo Make It Rain vs neutral 0-SP Garch
 
   // Sanity bounds, not a bit-exact assertion yet (Task 6 cross-validates
   // exact numbers against the real NCP calculator). Steel vs Dragon/Ground
-  // is neutral (1x) per reference/vgc_type_chart_reference.md, Choice Specs
-  // is a 1.5x boost, so this should be a substantial hit but not a OHKO
+  // is neutral (1x) per reference/vgc_type_chart_reference.md, Life Orb
+  // is a 1.3x boost, so this should be a substantial hit but not a OHKO
   // against Garchomp's ~183 HP (0 SP) — assert plausible bounds only.
   assert.ok(result.min > 0, 'min damage should be positive');
   assert.ok(result.max >= result.min, 'max should be >= min');
@@ -732,6 +742,28 @@ test('runDamageCalc: explicit fields override a preset\'s defaults', () => {
   assert.equal(result.matchedRecords.attacker.nature, overriddenNature);
   assert.notEqual(result.matchedRecords.attacker.nature, preset.nature);
 });
+
+test('runDamageCalc: itemChampionsLegal correctly flags a confirmed-unavailable item as false, a confirmed-available one as true', () => {
+  // Choice Specs is confirmed NOT currently available in Pokemon Champions
+  // (verified this session via live search, cross-checked against
+  // ITEMS_CHAMPIONS) - used here deliberately as a NEGATIVE test case for
+  // the legality flag, not as an example of a usable build. Life Orb is
+  // confirmed available (added in the Regulation M-B item-pool expansion).
+  const result = runDamageCalc({
+    attacker: {
+      species: 'Gholdengo', ability: 'Good as Gold', item: 'Choice Specs', nature: 'Modest',
+      sp: { hp: 0, at: 0, df: 0, sa: 32, sd: 0, sp: 0 },
+    },
+    defender: {
+      species: 'Garchomp', ability: 'Rough Skin', item: 'Life Orb', nature: 'Serious',
+      sp: { hp: 0, at: 0, df: 0, sa: 0, sd: 0, sp: 0 },
+    },
+    move: { name: 'Make It Rain' },
+    field: {},
+  });
+  assert.equal(result.matchedRecords.attacker.itemChampionsLegal, false);
+  assert.equal(result.matchedRecords.defender.itemChampionsLegal, true);
+});
 ```
 
 - [ ] **Step 2: Run the test to confirm it fails on a missing module**
@@ -748,7 +780,7 @@ This is the well-grounded starting point from design research — expect Step 4'
 ```javascript
 'use strict';
 const { computeStat, computeHP } = require('./stat-formula');
-const { lookupSpecies, lookupMove, lookupPreset } = require('./lookup');
+const { lookupSpecies, lookupMove, lookupPreset, isKnownAbility, isKnownItem } = require('./lookup');
 const { getVendor } = require('./load-vendor');
 const { Side } = require('./vendor/side.js');
 
@@ -894,8 +926,20 @@ function runDamageCalc(input) {
     max: null, // TODO(discovery): extract from rawResult's actual shape, see Step 4
     description: rawResult,
     matchedRecords: {
-      attacker: { species: attacker.name, ability: attacker.ability, item: attacker.item, nature: attacker.nature, rawStats: attacker.rawStats, presetUsed: input.attacker.preset || null },
-      defender: { species: defender.name, ability: defender.ability, item: defender.item, nature: defender.nature, rawStats: defender.rawStats, presetUsed: input.defender.preset || null },
+      // itemChampionsLegal/abilityChampionsLegal: confirmed this session
+      // (live web search, cross-checked against ITEMS_CHAMPIONS/
+      // ABILITIES_CHAMPIONS) that these vendored lists reflect REAL current
+      // Champions restrictions, not incomplete vendoring - e.g. Choice Band/
+      // Choice Specs/Assault Vest are confirmed genuinely unavailable in
+      // Champions right now, not just missing from this data source. This
+      // calculator still computes a result either way (the underlying
+      // GET_DAMAGE_SV engine can process any item/ability string it
+      // recognizes, regardless of current Champions legality - useful for
+      // hypotheticals/future-patch questions), but surfaces this flag so a
+      // caller building a REAL current-format recommendation can't miss
+      // that an input isn't actually usable right now.
+      attacker: { species: attacker.name, ability: attacker.ability, item: attacker.item, nature: attacker.nature, rawStats: attacker.rawStats, presetUsed: input.attacker.preset || null, abilityChampionsLegal: isKnownAbility(attacker.ability), itemChampionsLegal: attacker.item ? isKnownItem(attacker.item) : null },
+      defender: { species: defender.name, ability: defender.ability, item: defender.item, nature: defender.nature, rawStats: defender.rawStats, presetUsed: input.defender.preset || null, abilityChampionsLegal: isKnownAbility(defender.ability), itemChampionsLegal: defender.item ? isKnownItem(defender.item) : null },
       move: { name: move.name, bp: move.bp, type: move.type, category: move.category },
     },
   };
@@ -924,7 +968,7 @@ Once it stops throwing, inspect what `GET_DAMAGE_SV` actually returned (`rawResu
 - [ ] **Step 5: Run the full test file to confirm all tests pass**
 
 Run: `node --test tools/damage-calc/tests/calc.test.js`
-Expected: 4 tests passing, 0 failing.
+Expected: 5 tests passing, 0 failing.
 
 - [ ] **Step 6: Document what was discovered**
 
@@ -963,7 +1007,7 @@ const CLI = path.join(__dirname, '..', 'cli.js');
 test('cli.js prints structured JSON for a valid matchup', () => {
   const output = execFileSync('node', [
     CLI,
-    '--attacker', 'Gholdengo', '--attacker-ability', 'Good as Gold', '--attacker-item', 'Choice Specs',
+    '--attacker', 'Gholdengo', '--attacker-ability', 'Good as Gold', '--attacker-item', 'Life Orb',
     '--attacker-nature', 'Modest', '--attacker-sp', 'sa:32',
     '--defender', 'Garchomp', '--defender-ability', 'Rough Skin', '--defender-nature', 'Serious',
     '--move', 'Make It Rain',
@@ -1154,10 +1198,14 @@ async function main() {
   // page.locator(...) with Playwright's own element inspector
   // (`npx playwright codegen https://nerd-of-now.github.io/NCP-VGC-Damage-Calculator/`)
   // to record the exact interaction sequence for setting up the
-  // Gholdengo (Modest, 32 SP SpA, Choice Specs, Good as Gold) vs Garchomp
+  // Gholdengo (Modest, 32 SP SpA, Life Orb, Good as Gold) vs Garchomp
   // (Serious, 0 SP, Rough Skin, no item) Make It Rain matchup used in
   // tools/damage-calc/tests/calc.test.js, then replace this comment block
-  // with the recorded steps.
+  // with the recorded steps. (Item is Life Orb, not Choice Specs — Choice
+  // Specs is confirmed not currently available in Champions, so it likely
+  // won't even appear as a selectable option in the real page's item
+  // dropdown when Champions mode is selected; Life Orb is confirmed
+  // available.)
 
   throw new Error('Fill in the real page-interaction steps using playwright codegen before running this script.');
 
@@ -1180,7 +1228,7 @@ main();
 
 Run: `npx playwright codegen https://nerd-of-now.github.io/NCP-VGC-Damage-Calculator/`
 
-This opens a browser window and records your interactions as Playwright code. Manually set up: generation = Champions, attacker = Gholdengo with ability Good as Gold, item Choice Specs, nature Modest, 32 Stat Points in Sp. Atk (0 elsewhere); defender = Garchomp with ability Rough Skin, no item, nature Serious, 0 Stat Points everywhere; move = Make It Rain. Read the resulting damage percentage/range shown on the page.
+This opens a browser window and records your interactions as Playwright code. Manually set up: generation = Champions, attacker = Gholdengo with ability Good as Gold, item Life Orb, nature Modest, 32 Stat Points in Sp. Atk (0 elsewhere); defender = Garchomp with ability Rough Skin, no item, nature Serious, 0 Stat Points everywhere; move = Make It Rain. Read the resulting damage percentage/range shown on the page. (Item is Life Orb, not Choice Specs — confirmed unavailable in Champions this session; if Choice Specs doesn't even appear in the page's item dropdown for Champions mode, that's expected and further confirms this.)
 
 Copy the recorded selector interactions from the codegen output into `generate-fixture.js`, replacing the `throw new Error(...)` placeholder. Convert the page's displayed damage percentage into HP numbers using Garchomp's 0-SP HP stat (183, per Task 2's verified formula: `computeHP(108, 0)` = 183) if the page shows percentages rather than raw numbers — document which one the page actually shows and keep the fixture in whichever unit `calc.js`'s `min`/`max` are already in (HP points, per `GET_DAMAGE_SV`'s typical convention — confirm against Task 4's discovery).
 
@@ -1344,7 +1392,7 @@ vendoring the real NCP-VGC-Damage-Calculator engine (see
 
 ```bash
 node tools/damage-calc/cli.js \
-  --attacker Gholdengo --attacker-ability "Good as Gold" --attacker-item "Choice Specs" \
+  --attacker Gholdengo --attacker-ability "Good as Gold" --attacker-item "Life Orb" \
   --attacker-nature Modest --attacker-sp sa:32 \
   --defender Garchomp --defender-ability "Rough Skin" --defender-nature Serious \
   --move "Make It Rain"
@@ -1373,6 +1421,16 @@ the CLI's error message says so explicitly, and separately flags whether
 it exists in the broader (non-Champions-specific) vendored dex — that
 broader data is NEVER used to compute a result, only to make the error
 more informative (see this tool's own `VENDOR_MANIFEST.md` for why).
+
+**Item/ability legality flags**: output includes `itemChampionsLegal` and
+`abilityChampionsLegal` booleans per Pokémon. These reflect real current
+Champions restrictions, not just incomplete vendored data — confirmed via
+live search that e.g. Choice Band, Choice Specs, and Assault Vest are
+genuinely unavailable in Champions right now (not merely missing from
+this tool's data). The calculator still computes a result even when one
+of these is `false` (useful for hypotheticals or testing a future-patch
+item), but a `false` flag means don't treat that build as usable in a
+real current-format recommendation without double-checking.
 
 **Web alternative**: Pikalytics' damage calculator
 (https://www.pikalytics.com/damage-calculator) remains a browser-based
