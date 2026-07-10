@@ -23,8 +23,10 @@ treat those as current — this repo is the source of truth going forward.
    that's the opposite of what this repo is for.
 
 3. **Before any team or moveset suggestion, verify current data via live web
-   search** (Pikalytics, Smogon VGC, Victory Road, or similar). Do not rely
-   on training data, and do not trust this repo's own files past their
+   search** (Pikalytics, Smogon VGC, Victory Road, or similar — see
+   `reference/vgc_teambuilding_methodology.md`'s "Live meta lookup" section
+   for the concrete Pikalytics URL pattern and its staleness trap). Do not
+   rely on training data, and do not trust this repo's own files past their
    "Last verified" date where one is stamped (only
    `reference/vgc_current_regulation.md` currently carries one — check it
    first; other files fall back to their `## Changelog` dates).
