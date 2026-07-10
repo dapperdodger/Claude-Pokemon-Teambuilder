@@ -17,6 +17,8 @@
 - No RBY/GSC/ADV/DPP/BW/XY/SM/SS/LGPE generation logic — Champions (`gen=10`) only.
 - Every reference file this plan touches (`reference/vgc_damage_calc.md`) keeps the existing `## Changelog` convention: `Date | Change | Source` table, dated 2026-07-09.
 - `tools/damage-calc/vendor/` files are vendored copies, not symlinks or git submodules — re-vendoring is a manual, explicit step (per the approved design spec's Section 6, Layer 1).
+- **No natdex fallback for missing Pokémon/moves.** If a species/move isn't in `POKEDEX_CHAMPIONS`/`MOVES_CHAMPIONS`, do NOT silently compute a result from `POKEDEX_ZA_NATDEX`/`MOVES_ZA_NATDEX` data — a Pokémon or move outside the Champions-curated set may reflect a different game's balance (different base stats, different move power/effects) that Champions-specific patches never touched, and there is no reliable way to convert an older-generation EV-denominated reference spread into the Stat Points system. The full natdex may ONLY be consulted to make the resulting "not found" error message more informative (distinguishing "doesn't exist in any vendored dex" from "exists in the broader dex but not in Champions' curated roster — could be a genuine restriction or a stale roster list, verify via live search"). Never use natdex stats/movedata to compute an actual damage number.
+- **Preset builds (`SETDEX_GEN10`) are optional and best-effort, not comprehensive.** Not every Champions-legal Pokémon has a curated preset (e.g. newer Regulation M-B additions may have no entry yet) — a missing preset is expected, not a bug, and must produce a clear "no preset for X" error distinct from "X is not Champions-legal," not a crash.
 
 ---
 
@@ -32,6 +34,7 @@
 - Create: `tools/damage-calc/vendor/stat_data.js` (copy of `script_res/stat_data.js`, kept for provenance/reference only — not required at runtime, see Task 2)
 - Create: `tools/damage-calc/vendor/damage_MASTER.js` (copy of `script_res/damage_MASTER.js`)
 - Create: `tools/damage-calc/vendor/damage_SV.js` (copy of `script_res/damage_SV.js`)
+- Create: `tools/damage-calc/vendor/setdex_ncp-g10.js` (copy of `script_res/setdex_ncp-g10.js` — Champions preset builds, `SETDEX_GEN10`, confirmed the only setdex source `gen=10` uses)
 - Create: `tools/damage-calc/vendor/side.js` (verbatim extract of the `Side` function only, from `script_res/ap_calc.js` lines 2148-2174)
 - Create: `tools/damage-calc/dom-stub.js`
 - Create: `tools/damage-calc/VENDOR_MANIFEST.md`
@@ -39,7 +42,7 @@
 
 **Interfaces:**
 - Produces: a global `$` function (jQuery-shaped stub) that `tools/damage-calc/dom-stub.js` exports as `installDomStub()`, which — when called — assigns `global.$` before any vendored file is `require`d.
-- Produces: after `require`-ing all vendor files in order, these globals exist and are usable: `POKEDEX_CHAMPIONS`, `MOVES_CHAMPIONS`, `ABILITIES_CHAMPIONS`, `ITEMS_CHAMPIONS`, `TYPE_CHART_SV`, `NATURES`, `GET_DAMAGE_SV`, `Side`.
+- Produces: after `require`-ing all vendor files in order, these globals exist and are usable: `POKEDEX_CHAMPIONS`, `POKEDEX_ZA_NATDEX`, `MOVES_CHAMPIONS`, `MOVES_ZA_NATDEX`, `ABILITIES_CHAMPIONS`, `ITEMS_CHAMPIONS`, `TYPE_CHART_SV`, `NATURES`, `SETDEX_GEN10`, `GET_DAMAGE_SV`, `Side`. (`POKEDEX_ZA_NATDEX`/`MOVES_ZA_NATDEX` — the fuller, non-Champions-curated dex — are consumed only for improving error messages in Task 3, per this plan's Global Constraints section; never for computing a real damage number.)
 - Consumes: nothing from earlier tasks (this is the first task).
 
 - [ ] **Step 1: Download the exact vendored commit's files**
@@ -50,13 +53,13 @@ Run (from the repo root):
 mkdir -p tools/damage-calc/vendor tools/damage-calc/tests
 SHA=dfbf020d4ed7df8921c6e11bbaa23410f6ca1448
 BASE="https://raw.githubusercontent.com/nerd-of-now/NCP-VGC-Damage-Calculator/$SHA/script_res"
-for f in pokedex.js move_data.js ability_data.js item_data.js type_data.js nature_data.js stat_data.js damage_MASTER.js damage_SV.js; do
+for f in pokedex.js move_data.js ability_data.js item_data.js type_data.js nature_data.js stat_data.js damage_MASTER.js damage_SV.js setdex_ncp-g10.js; do
   curl -sL "$BASE/$f" -o "tools/damage-calc/vendor/$f"
 done
 curl -sL "https://raw.githubusercontent.com/nerd-of-now/NCP-VGC-Damage-Calculator/$SHA/script_res/ap_calc.js" -o /tmp/ap_calc_reference.js
 ```
 
-Expected: nine files created under `tools/damage-calc/vendor/`, each non-empty. Verify with:
+Expected: ten files created under `tools/damage-calc/vendor/`, each non-empty. Verify with:
 
 ```bash
 wc -l tools/damage-calc/vendor/*.js
@@ -183,6 +186,7 @@ test('vendored files load without throwing and expose Champions data', () => {
   require(path.join(__dirname, '..', 'vendor', 'item_data.js'));
   require(path.join(__dirname, '..', 'vendor', 'damage_MASTER.js'));
   require(path.join(__dirname, '..', 'vendor', 'damage_SV.js'));
+  require(path.join(__dirname, '..', 'vendor', 'setdex_ncp-g10.js'));
 
   assert.ok(global.POKEDEX_CHAMPIONS, 'POKEDEX_CHAMPIONS should be defined');
   assert.ok(global.POKEDEX_CHAMPIONS.Garchomp, 'Garchomp should be in POKEDEX_CHAMPIONS');
@@ -192,10 +196,17 @@ test('vendored files load without throwing and expose Champions data', () => {
   assert.equal(global.POKEDEX_CHAMPIONS.Garchomp.t1, 'Dragon');
   assert.equal(global.POKEDEX_CHAMPIONS.Garchomp.t2, 'Ground');
 
+  assert.ok(global.POKEDEX_ZA_NATDEX, 'POKEDEX_ZA_NATDEX (fuller dex, for error messages only) should be defined');
+  assert.ok(global.POKEDEX_ZA_NATDEX.Miraidon, 'Miraidon should be in the full natdex even though not Champions-legal');
+  assert.ok(!global.POKEDEX_CHAMPIONS.Miraidon, 'Miraidon should NOT be in the Champions-curated roster (confirms the two dexes are genuinely different sizes)');
+
   assert.ok(global.MOVES_CHAMPIONS, 'MOVES_CHAMPIONS should be defined');
   assert.ok(global.MOVES_CHAMPIONS['Rock Slide'], 'Rock Slide should be in MOVES_CHAMPIONS');
   assert.equal(global.MOVES_CHAMPIONS['Rock Slide'].bp, 75);
   assert.equal(global.MOVES_CHAMPIONS['Rock Slide'].type, 'Rock');
+
+  assert.ok(global.SETDEX_GEN10, 'SETDEX_GEN10 (preset builds) should be defined');
+  assert.ok(global.SETDEX_GEN10.Garchomp, 'Garchomp should have at least one preset');
 
   assert.equal(typeof global.GET_DAMAGE_SV, 'function', 'GET_DAMAGE_SV should be a function');
 });
@@ -218,7 +229,7 @@ function loadVendorUncached() {
   global.$ = realGlobalDollar; // don't leak the stub into the real global scope
 
   const files = ['nature_data.js', 'type_data.js', 'pokedex.js', 'move_data.js',
-    'ability_data.js', 'item_data.js', 'damage_MASTER.js', 'damage_SV.js'];
+    'ability_data.js', 'item_data.js', 'damage_MASTER.js', 'damage_SV.js', 'setdex_ncp-g10.js'];
   vm.createContext(sandbox);
   for (const f of files) {
     const code = fs.readFileSync(path.join(__dirname, 'vendor', f), 'utf8');
@@ -269,6 +280,11 @@ Commit: `dfbf020d4ed7df8921c6e11bbaa23410f6ca1448` (main branch HEAD, 2026-07-09
 - `stat_data.js` <- `script_res/stat_data.js` (reference only, not required at runtime — see calc.js's own stat formula module)
 - `damage_MASTER.js` <- `script_res/damage_MASTER.js`
 - `damage_SV.js` <- `script_res/damage_SV.js`
+- `setdex_ncp-g10.js` <- `script_res/setdex_ncp-g10.js` (`SETDEX_GEN10` —
+  Champions preset builds, used only for the CLI's optional `--*-preset`
+  flag, Task 5. Best-effort community-curated coverage, not comprehensive —
+  e.g. Vileplume is Champions-legal per `POKEDEX_CHAMPIONS` but has no
+  preset entry here as of this vendoring; that's expected.)
 
 ## Vendored files (verbatim extract, not the whole source file)
 
@@ -410,8 +426,8 @@ git commit -m "Add Champions Stat Points formula module"
 - Test: `tools/damage-calc/tests/lookup.test.js`
 
 **Interfaces:**
-- Consumes: the vendor-loading mechanism from Task 1 (`loadVendor()` if the `vm` approach was used, or direct `require`s if plain `require` worked — match whichever Task 1 actually settled on).
-- Produces: `lookupSpecies(name)` -> `{name, t1, t2, bs: {hp,at,df,sa,sd,sp}, ab}` or throws `Error` with message `Unknown Pokemon: "<name>"`; `lookupMove(name)` -> `{name, bp, type, category, isSpread, ...rest}` or throws `Error` with message `Unknown move: "<name>"`; `isKnownAbility(name)` -> boolean; `isKnownItem(name)` -> boolean. Task 4 and Task 5 both import this module.
+- Consumes: the vendor-loading mechanism from Task 1 (`getVendor()` if the `vm` approach was used, or direct `require`s if plain `require` worked — match whichever Task 1 actually settled on).
+- Produces: `lookupSpecies(name)` -> `{name, t1, t2, bs: {hp,at,df,sa,sd,sp}, ab, w}` or throws `Error` with a message distinguishing "not in any vendored dex" from "exists in the broader dex but not Champions-legal" (see Step 3 for exact wording — per this plan's Global Constraints, the broader-dex lookup is for the error message only, never for returning usable data); `lookupMove(name)` -> `{name, bp, type, category, isSpread, ...rest}` or throws a similarly-distinguished `Error`; `isKnownAbility(name)` -> boolean; `isKnownItem(name)` -> boolean; `lookupPreset(species, setName)` -> `{ability, item, nature, sps: {hp,at,df,sa,sd,sp}, moves}` or throws `Error` with a message distinguishing "no presets exist for this species at all" from "this species has presets, but none named exactly that." Task 4 and Task 5 both import this module.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -419,7 +435,7 @@ git commit -m "Add Champions Stat Points formula module"
 ```javascript
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { lookupSpecies, lookupMove, isKnownAbility, isKnownItem } = require('../lookup');
+const { lookupSpecies, lookupMove, isKnownAbility, isKnownItem, lookupPreset } = require('../lookup');
 
 test('lookupSpecies: finds Garchomp with correct base stats and types', () => {
   const g = lookupSpecies('Garchomp');
@@ -437,8 +453,18 @@ test('lookupSpecies: finds Gholdengo', () => {
   assert.equal(g.bs.sa, 133);
 });
 
-test('lookupSpecies: throws a clear error for an unknown/misspelled name', () => {
-  assert.throws(() => lookupSpecies('Garchmp'), /Unknown Pokemon: "Garchmp"/);
+test('lookupSpecies: throws "not in any vendored dex" for a total misspelling', () => {
+  assert.throws(() => lookupSpecies('Garchmp'), /not found in any vendored dex/);
+});
+
+test('lookupSpecies: throws a DIFFERENT, more specific error for a real Pokemon that exists but is not Champions-legal', () => {
+  // Miraidon is a real, correctly-spelled Pokemon (confirmed present in the
+  // broader vendored natdex during design research) but is NOT in
+  // POKEDEX_CHAMPIONS as of the vendored commit. This must not throw the
+  // same generic message as a misspelling - the two failure modes are
+  // different and the caller needs to know which one happened.
+  assert.throws(() => lookupSpecies('Miraidon'), /exists in the broader dex.*not.*Champions-legal roster/);
+  assert.throws(() => lookupSpecies('Miraidon'), /verify via live search/);
 });
 
 test('lookupMove: finds Rock Slide with correct power and type', () => {
@@ -456,8 +482,8 @@ test('lookupMove: finds Make It Rain', () => {
   assert.equal(m.category, 'Special');
 });
 
-test('lookupMove: throws a clear error for an unknown move', () => {
-  assert.throws(() => lookupMove('Rock Slid'), /Unknown move: "Rock Slid"/);
+test('lookupMove: throws "not in any vendored dex" for a total misspelling', () => {
+  assert.throws(() => lookupMove('Rock Slid'), /not found in any vendored dex/);
 });
 
 test('isKnownAbility: true for a real Champions-legal ability', () => {
@@ -471,6 +497,28 @@ test('isKnownAbility: false for a made-up name', () => {
 test('isKnownItem: true for a real item, false for a made-up one', () => {
   assert.equal(isKnownItem('Choice Specs'), true);
   assert.equal(isKnownItem('Choice Speks'), false);
+});
+
+test('lookupPreset: finds a real Garchomp preset with sps/nature/ability/item/moves', () => {
+  const presets = lookupPreset('Garchomp'); // no set name -> list available set names
+  assert.ok(Array.isArray(presets) && presets.length > 0, 'Garchomp should have at least one preset name');
+  const preset = lookupPreset('Garchomp', presets[0]);
+  assert.ok(preset.sps, 'preset should include an sps allocation');
+  assert.ok(preset.nature, 'preset should include a nature');
+  assert.ok(preset.ability, 'preset should include an ability');
+  assert.ok(Array.isArray(preset.moves), 'preset should include a moves array');
+});
+
+test('lookupPreset: throws a clear "no presets at all" error for a Champions-legal Pokemon with none', () => {
+  // Vileplume is Champions-legal (POKEDEX_CHAMPIONS has it, per the
+  // "Regulation M-B additions" list) but was confirmed during design
+  // research to have NO entry in SETDEX_GEN10 - this is expected/normal,
+  // not a bug, and must produce a distinct message from "not Champions-legal."
+  assert.throws(() => lookupPreset('Vileplume'), /no presets available for "Vileplume"/);
+});
+
+test('lookupPreset: throws a clear "no such named preset" error for a real species with a different set name', () => {
+  assert.throws(() => lookupPreset('Garchomp', 'Definitely Not A Real Set Name'), /no preset named "Definitely Not A Real Set Name"/);
 });
 ```
 
@@ -487,18 +535,33 @@ Write `tools/damage-calc/lookup.js` using whichever vendor-loading mechanism Tas
 'use strict';
 const { getVendor } = require('./load-vendor');
 
+// Per this plan's Global Constraints: the broader natdex is consulted ONLY
+// to make error messages more informative. Its data is never returned for
+// use in a calculation - a species/move outside the Champions-curated set
+// may reflect a different game's balance, and there's no safe EV->SP
+// conversion for any reference data attached to it.
 function lookupSpecies(name) {
   const v = getVendor();
   const entry = v.POKEDEX_CHAMPIONS[name];
-  if (!entry) throw new Error(`Unknown Pokemon: "${name}"`);
-  return { name, t1: entry.t1, t2: entry.t2 || null, bs: entry.bs, ab: entry.ab };
+  if (entry) {
+    return { name, t1: entry.t1, t2: entry.t2 || null, bs: entry.bs, ab: entry.ab, w: entry.w };
+  }
+  if (v.POKEDEX_ZA_NATDEX[name]) {
+    throw new Error(`"${name}" exists in the broader dex but not in the Champions-legal roster list (vendored POKEDEX_CHAMPIONS) — this may be a genuine Champions restriction, or the vendored roster list may be lagging a recent update. Verify via live search before assuming either way. Not using broader-dex data to compute a result.`);
+  }
+  throw new Error(`Unknown Pokemon: "${name}" — not found in any vendored dex. Check spelling, or this Pokemon may not exist in any vendored data yet.`);
 }
 
 function lookupMove(name) {
   const v = getVendor();
   const entry = v.MOVES_CHAMPIONS[name];
-  if (!entry) throw new Error(`Unknown move: "${name}"`);
-  return Object.assign({ name }, entry);
+  if (entry) {
+    return Object.assign({ name }, entry);
+  }
+  if (v.MOVES_ZA_NATDEX[name]) {
+    throw new Error(`"${name}" exists in the broader move dex but not in the Champions-curated move list (vendored MOVES_CHAMPIONS) — this may mean it's not usable in Champions, or the vendored list may be lagging. Verify via live search. Not using broader-dex move data to compute a result.`);
+  }
+  throw new Error(`Unknown move: "${name}" — not found in any vendored dex. Check spelling.`);
 }
 
 function isKnownAbility(name) {
@@ -511,15 +574,36 @@ function isKnownItem(name) {
   return v.ITEMS_CHAMPIONS.includes(name);
 }
 
-module.exports = { lookupSpecies, lookupMove, isKnownAbility, isKnownItem };
+// lookupPreset(species) -> array of available set names for that species.
+// lookupPreset(species, setName) -> { ability, item, nature, sps, moves }
+// for that specific named set. SETDEX_GEN10 is best-effort/incomplete by
+// design (see this plan's Global Constraints) - a species having zero
+// presets is expected, not an error condition to silently swallow.
+function lookupPreset(species, setName) {
+  const v = getVendor();
+  const speciesPresets = v.SETDEX_GEN10[species];
+  if (!speciesPresets || Object.keys(speciesPresets).length === 0) {
+    throw new Error(`No presets available for "${species}" in the vendored SETDEX_GEN10 data — this is expected for less-common Pokemon (preset coverage is best-effort, not comprehensive), specify --*-ability/--*-item/--*-nature/--*-sp explicitly instead.`);
+  }
+  if (setName === undefined) {
+    return Object.keys(speciesPresets);
+  }
+  const preset = speciesPresets[setName];
+  if (!preset) {
+    throw new Error(`"${species}" has presets, but no preset named "${setName}". Available: ${Object.keys(speciesPresets).join(', ')}`);
+  }
+  return preset;
+}
+
+module.exports = { lookupSpecies, lookupMove, isKnownAbility, isKnownItem, lookupPreset };
 ```
 
-If Task 1 instead found that plain `require()` populates real Node globals (the simpler outcome), replace `getVendor()`'s body with direct references to the global `POKEDEX_CHAMPIONS`/`MOVES_CHAMPIONS`/`ABILITIES_CHAMPIONS`/`ITEMS_CHAMPIONS` (populated once via a `require('./vendor/...')` chain at the top of this file, matching Task 1's smoke test), dropping the `loadVendor` import entirely.
+If Task 1 instead found that plain `require()` populates real Node globals (the simpler outcome), replace `getVendor()`'s body with direct references to the global `POKEDEX_CHAMPIONS`/`POKEDEX_ZA_NATDEX`/`MOVES_CHAMPIONS`/`MOVES_ZA_NATDEX`/`ABILITIES_CHAMPIONS`/`ITEMS_CHAMPIONS`/`SETDEX_GEN10` (populated once via a `require('./vendor/...')` chain at the top of this file, matching Task 1's smoke test), dropping the `getVendor` import entirely.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `node --test tools/damage-calc/tests/lookup.test.js`
-Expected: 9 tests passing, 0 failing.
+Expected: 13 tests passing, 0 failing.
 
 - [ ] **Step 5: Commit**
 
@@ -543,8 +627,8 @@ This task is inherently exploratory — `GET_DAMAGE_SV`'s exact required object 
 - Produces: `runDamageCalc(input)` where `input` is:
   ```javascript
   {
-    attacker: { species, ability, item, nature, sp: {hp,at,df,sa,sd,sp}, boosts: {at,df,sa,sd,sp} /* optional, default 0 */ },
-    defender: { species, ability, item, nature, sp: {hp,at,df,sa,sd,sp}, boosts: {} },
+    attacker: { species, preset /* optional set name, see resolvePresetDefaults */, ability, item, nature, sp: {hp,at,df,sa,sd,sp}, boosts: {at,df,sa,sd,sp} /* optional, default 0 */ },
+    defender: { species, preset, ability, item, nature, sp: {hp,at,df,sa,sd,sp}, boosts: {} },
     move: { name },
     field: { weather /* optional */, terrain /* optional */ }
   }
@@ -606,6 +690,48 @@ test('runDamageCalc throws a clear error for a misspelled Pokemon name', () => {
     field: {},
   }), /Unknown Pokemon: "Garchmp"/);
 });
+
+test('runDamageCalc: attacker built entirely from a preset (no explicit ability/item/nature/sp)', () => {
+  // Garchomp is confirmed (design research) to have at least one entry in
+  // vendored SETDEX_GEN10 - use its first available preset by name rather
+  // than hardcoding a specific set name here, since presets can be renamed/
+  // added/removed on re-vendor and this test shouldn't be tied to one
+  // exact name persisting forever. Use lookupPreset(species) (no set name)
+  // to list available names, matching lookup.test.js's own pattern.
+  const { lookupPreset } = require('../lookup');
+  const presetNames = lookupPreset('Garchomp');
+  const result = runDamageCalc({
+    attacker: { species: 'Garchomp', preset: presetNames[0] },
+    defender: {
+      species: 'Gholdengo', ability: 'Good as Gold', item: '', nature: 'Serious',
+      sp: { hp: 0, at: 0, df: 0, sa: 0, sd: 0, sp: 0 },
+    },
+    move: { name: 'Earthquake' },
+    field: {},
+  });
+  assert.ok(result.min > 0);
+  assert.equal(result.matchedRecords.attacker.presetUsed, presetNames[0]);
+});
+
+test('runDamageCalc: explicit fields override a preset\'s defaults', () => {
+  const { lookupPreset } = require('../lookup');
+  const presetNames = lookupPreset('Garchomp');
+  const preset = lookupPreset('Garchomp', presetNames[0]);
+  const overriddenNature = preset.nature === 'Jolly' ? 'Adamant' : 'Jolly';
+  const result = runDamageCalc({
+    attacker: { species: 'Garchomp', preset: presetNames[0], nature: overriddenNature },
+    defender: {
+      species: 'Gholdengo', ability: 'Good as Gold', item: '', nature: 'Serious',
+      sp: { hp: 0, at: 0, df: 0, sa: 0, sd: 0, sp: 0 },
+    },
+    move: { name: 'Earthquake' },
+    field: {},
+  });
+  // Direct, deterministic check that the explicit override actually won
+  // over the preset's own nature - not an indirect/weak stat-based guess.
+  assert.equal(result.matchedRecords.attacker.nature, overriddenNature);
+  assert.notEqual(result.matchedRecords.attacker.nature, preset.nature);
+});
 ```
 
 - [ ] **Step 2: Run the test to confirm it fails on a missing module**
@@ -622,7 +748,7 @@ This is the well-grounded starting point from design research — expect Step 4'
 ```javascript
 'use strict';
 const { computeStat, computeHP } = require('./stat-formula');
-const { lookupSpecies, lookupMove } = require('./lookup');
+const { lookupSpecies, lookupMove, lookupPreset } = require('./lookup');
 const { getVendor } = require('./load-vendor');
 const { Side } = require('./vendor/side.js');
 
@@ -638,7 +764,44 @@ function alignmentModFor(nature, stat, natures) {
   return ALIGNMENT_NEUTRAL;
 }
 
-function buildPokemon(input, natures) {
+// If input.preset (a set name string, e.g. "Fast Offense Mega Y") is given,
+// pulls ability/item/nature/sp from SETDEX_GEN10 as DEFAULTS ONLY - any of
+// those fields the caller also specified explicitly on `input` wins. The
+// move being tested is deliberately NOT auto-filled from a preset's move
+// list (a preset has 4 moves, --move always says which one this specific
+// calculation is testing - auto-picking one would be ambiguous).
+function resolvePresetDefaults(input) {
+  if (!input.preset) return input;
+  const preset = lookupPreset(input.species, input.preset);
+  return {
+    species: input.species,
+    preset: input.preset,
+    ability: input.ability !== undefined ? input.ability : preset.ability,
+    item: input.item !== undefined ? input.item : preset.item,
+    nature: input.nature !== undefined ? input.nature : preset.nature,
+    sp: input.sp !== undefined ? input.sp : preset.sps,
+    boosts: input.boosts,
+    status: input.status,
+  };
+}
+
+function buildPokemon(rawInput, natures) {
+  const input = resolvePresetDefaults(rawInput);
+  // Final fallbacks AFTER preset resolution, not before it (see
+  // resolvePresetDefaults - the CLI layer must NOT apply these first, or a
+  // preset's own values would never be reachable). Ability has no safe
+  // neutral default and must come from either an explicit flag or a
+  // preset. Item/nature/SP have legitimate neutral defaults (no item,
+  // neutral nature, zero investment) and are allowed to fall back silently
+  // - unlike ability, "no item" and "no SP investment" are real, common
+  // builds, not signs of a forgotten input.
+  if (!input.ability) {
+    throw new Error(`Ability is required for "${input.species}" — pass --*-ability explicitly or --*-preset a set that includes one.`);
+  }
+  input.item = input.item !== undefined ? input.item : '';
+  input.nature = input.nature !== undefined ? input.nature : 'Serious';
+  input.sp = input.sp !== undefined ? input.sp : { hp: 0, at: 0, df: 0, sa: 0, sd: 0, sp: 0 };
+
   const species = lookupSpecies(input.species);
   const rawStats = {
     hp: computeHP(species.bs.hp, input.sp.hp),
@@ -666,7 +829,7 @@ function buildPokemon(input, natures) {
     nature: input.nature,
     curHP: rawStats.hp,
     maxHP: rawStats.hp,
-    weight: 0, // TODO(discovery): read actual weight from vendored pokedex 'w' field if a weight-dependent move is tested
+    weight: species.w || 0,
     canEvolve: false,
     isTransformed: false,
   };
@@ -731,8 +894,8 @@ function runDamageCalc(input) {
     max: null, // TODO(discovery): extract from rawResult's actual shape, see Step 4
     description: rawResult,
     matchedRecords: {
-      attacker: { species: attacker.name, ability: attacker.ability, item: attacker.item, rawStats: attacker.rawStats },
-      defender: { species: defender.name, ability: defender.ability, item: defender.item, rawStats: defender.rawStats },
+      attacker: { species: attacker.name, ability: attacker.ability, item: attacker.item, nature: attacker.nature, rawStats: attacker.rawStats, presetUsed: input.attacker.preset || null },
+      defender: { species: defender.name, ability: defender.ability, item: defender.item, nature: defender.nature, rawStats: defender.rawStats, presetUsed: input.defender.preset || null },
       move: { name: move.name, bp: move.bp, type: move.type, category: move.category },
     },
   };
@@ -756,12 +919,12 @@ For each failure:
 
 Once it stops throwing, inspect what `GET_DAMAGE_SV` actually returned (`rawResult` in `calc.js`) — add a temporary `console.log(JSON.stringify(rawResult, null, 2))` in a scratch script if needed to see its real shape (likely an object with a `damage` array of 16 possible rolls, or similar, based on how community damage calculators typically expose "16 damage rolls" — but confirm from the actual returned object rather than assuming). Update `runDamageCalc`'s `min`/`max` computation to `Math.min(...rawResult.damage)` / `Math.max(...rawResult.damage)` (or whatever the real property name is) instead of the `null` placeholders, and remove the two `TODO(discovery)` comments once resolved.
 
-Also resolve the `weight: 0` TODO: read `lookupSpecies(input.species)`'s underlying vendored `w` field (add it to `lookup.js`'s `lookupSpecies` return value: `w: entry.w`) and use `species.w` instead of the hardcoded `0`.
+(The `weight: 0` TODO is already resolved in Step 3's code above — `lookup.js`'s `lookupSpecies` already returns `w: entry.w`, and `buildPokemon` already uses `species.w || 0`. No further action needed here unless discovery reveals the weight field name/shape differs from what Step 3 assumed.)
 
-- [ ] **Step 5: Run the full test file to confirm both tests pass**
+- [ ] **Step 5: Run the full test file to confirm all tests pass**
 
 Run: `node --test tools/damage-calc/tests/calc.test.js`
-Expected: 2 tests passing, 0 failing.
+Expected: 4 tests passing, 0 failing.
 
 - [ ] **Step 6: Document what was discovered**
 
@@ -822,6 +985,33 @@ test('cli.js exits non-zero with a clear message for an unknown Pokemon', () => 
     ], { encoding: 'utf8', stdio: 'pipe' });
   }, /Unknown Pokemon: "Garchmp"/);
 });
+
+test('cli.js: --attacker-preset fills ability/item/nature/sp, --move still explicit', () => {
+  const { lookupPreset } = require('../lookup');
+  const presetNames = lookupPreset('Garchomp');
+
+  const output = execFileSync('node', [
+    CLI,
+    '--attacker', 'Garchomp', '--attacker-preset', presetNames[0],
+    '--defender', 'Gholdengo', '--defender-ability', 'Good as Gold', '--defender-nature', 'Serious',
+    '--move', 'Earthquake',
+  ], { encoding: 'utf8' });
+
+  const result = JSON.parse(output);
+  assert.ok(result.min > 0);
+  assert.equal(result.matchedRecords.attacker.presetUsed, presetNames[0]);
+});
+
+test('cli.js exits non-zero with a clear message when ability is missing and no preset is given', () => {
+  assert.throws(() => {
+    execFileSync('node', [
+      CLI,
+      '--attacker', 'Garchomp',
+      '--defender', 'Gholdengo', '--defender-ability', 'Good as Gold', '--defender-nature', 'Serious',
+      '--move', 'Earthquake',
+    ], { encoding: 'utf8', stdio: 'pipe' });
+  }, /Ability is required for "Garchomp"/);
+});
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -847,9 +1037,12 @@ function parseArgs(argv) {
 }
 
 function parseSpAllocation(spString) {
-  // Format: "sa:32,hp:0" — unspecified stats default to 0.
+  // Format: "sa:32,hp:0" — unspecified stats default to 0 WITHIN a given
+  // string. Returns undefined (not a default object) when no --*-sp flag
+  // was passed at all, so calc.js's resolvePresetDefaults can tell "not
+  // given, check the preset" apart from "explicitly given as all-zero."
+  if (!spString) return undefined;
   const sp = { hp: 0, at: 0, df: 0, sa: 0, sd: 0, sp: 0 };
-  if (!spString) return sp;
   for (const pair of spString.split(',')) {
     const [stat, value] = pair.split(':');
     if (!(stat in sp)) throw new Error(`Unknown stat in --*-sp: "${stat}" (use hp, at, df, sa, sd, or sp)`);
@@ -861,19 +1054,26 @@ function parseSpAllocation(spString) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
 
+  // NOTE: deliberately no `|| 'Serious'` / `|| ''` fallbacks here — if a
+  // flag wasn't passed, its value must stay undefined so calc.js's
+  // resolvePresetDefaults can fall through to a --*-preset's own value
+  // first. buildPokemon (Task 4) applies the final neutral defaults only
+  // after preset resolution has already had a chance to fill them in.
   const input = {
     attacker: {
       species: args['attacker'],
+      preset: args['attacker-preset'],
       ability: args['attacker-ability'],
-      item: args['attacker-item'] || '',
-      nature: args['attacker-nature'] || 'Serious',
+      item: args['attacker-item'],
+      nature: args['attacker-nature'],
       sp: parseSpAllocation(args['attacker-sp']),
     },
     defender: {
       species: args['defender'],
+      preset: args['defender-preset'],
       ability: args['defender-ability'],
-      item: args['defender-item'] || '',
-      nature: args['defender-nature'] || 'Serious',
+      item: args['defender-item'],
+      nature: args['defender-nature'],
       sp: parseSpAllocation(args['defender-sp']),
     },
     move: { name: args['move'] },
@@ -898,7 +1098,7 @@ try {
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `node --test tools/damage-calc/tests/cli.test.js`
-Expected: 2 tests passing, 0 failing.
+Expected: 4 tests passing, 0 failing.
 
 - [ ] **Step 5: Commit**
 
@@ -1156,6 +1356,23 @@ in the output, not hidden. Real, current-regulation data — not recalled
 from training data — since it comes from the vendored files, which are
 periodically re-synced against the upstream project (see the vendor
 staleness check in `scripts/check_damage_calc_vendor_staleness.sh`).
+
+**Optional presets**: `--attacker-preset "<set name>"` /
+`--defender-preset "<set name>"` pull ability/item/nature/SP from the
+vendored `SETDEX_GEN10` community preset data as defaults — any of those
+you also pass explicitly (e.g. `--attacker-nature`) still overrides the
+preset. Coverage is best-effort, not comprehensive — many Champions-legal
+Pokémon (e.g. Vileplume) have no preset yet, which produces a clear error
+naming that, not a crash. Presets are a starting point, not an
+authoritative "current meta" claim — cross-check against a live source
+before treating one as the build for a real recommendation (see
+`vgc_teambuilding_methodology.md`'s "Live meta lookup" section).
+
+If a Pokémon or move isn't in the vendored Champions-curated data at all,
+the CLI's error message says so explicitly, and separately flags whether
+it exists in the broader (non-Champions-specific) vendored dex — that
+broader data is NEVER used to compute a result, only to make the error
+more informative (see this tool's own `VENDOR_MANIFEST.md` for why).
 
 **Web alternative**: Pikalytics' damage calculator
 (https://www.pikalytics.com/damage-calculator) remains a browser-based
