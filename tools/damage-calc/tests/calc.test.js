@@ -228,3 +228,47 @@ test('runDamageCalc: Bullet Seed (variable multi-hit) documents its known per-hi
   assert.ok(result.max >= result.min, 'max should be >= min');
   assert.ok(result.max < 30, `max should be a single hit's damage (small, since Bullet Seed is only 25 BP), got ${result.max} — if this now fails, the vendored engine may have started auto-summing variable-hit moves and this whole limitation (and isVariableMultiHit's meaning) needs re-checking`);
 });
+
+test('runDamageCalc: Dual Wingbeat (fixed 2-hit, numeric hitRange) also flags isVariableMultiHit — regression for the broadened flag', () => {
+  // Regression test for a bug where isVariableMultiHit was defined as
+  // `Array.isArray(move.hitRange) && !move.isTripleHit`, which only caught
+  // moves whose hitRange is a [min, max] ARRAY (Bullet Seed-style). Real
+  // Champions-legal fixed-2-hit moves carry a NUMERIC hitRange instead
+  // (Dual Wingbeat, Double Hit, Twin Beam) — the vendored engine's
+  // checkAddCalcQualifications only auto-sums the Parental-Bond and
+  // isTripleHit paths (see runDamageCalc's "SCOPE OF THIS FIX" comment), so
+  // these numeric-hitRange moves are NOT auto-summed against an ordinary
+  // defender either, but the old flag reported `false` for them — silently
+  // implying a one-hit min/max was the move's trustworthy total.
+  //
+  // Real, verified data: Dual Wingbeat confirmed via
+  // `getVendor().MOVES_CHAMPIONS['Dual Wingbeat']` to be
+  // `{ bp: 40, type: 'Flying', category: 'Physical', makesContact: true,
+  // hitRange: 2 }` — a numeric (not array) hitRange, no isTripleHit flag.
+  const { getVendor } = require('../load-vendor');
+  const vendor = getVendor();
+  const dualWingbeat = vendor.MOVES_CHAMPIONS['Dual Wingbeat'];
+  assert.equal(typeof dualWingbeat.hitRange, 'number', 'Dual Wingbeat should carry a numeric hitRange in real vendored data');
+  assert.ok(!dualWingbeat.isTripleHit, 'Dual Wingbeat should not be an isTripleHit move');
+
+  const result = runDamageCalc({
+    attacker: {
+      species: 'Sneasler',
+      ability: 'Unburden',
+      item: '',
+      nature: 'Adamant',
+      sp: { hp: 0, at: 32, df: 0, sa: 0, sd: 0, sp: 0 },
+    },
+    defender: {
+      species: 'Garchomp',
+      ability: 'Rough Skin',
+      item: '',
+      nature: 'Serious',
+      sp: { hp: 0, at: 0, df: 0, sa: 0, sd: 0, sp: 0 },
+    },
+    move: { name: 'Dual Wingbeat' },
+    field: {},
+  });
+
+  assert.equal(result.matchedRecords.move.isVariableMultiHit, true);
+});

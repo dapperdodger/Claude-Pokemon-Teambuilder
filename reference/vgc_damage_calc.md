@@ -56,16 +56,20 @@ of these is `false` (useful for hypotheticals or testing a future-patch
 item), but a `false` flag means don't treat that build as usable in a
 real current-format recommendation without double-checking.
 
-**Multi-hit moves — `min`/`max` caveat**: for ordinary variable-hit-count
+**Multi-hit moves — `min`/`max` caveat**: for both ordinary variable-hit-count
 multi-hit moves (Bullet Seed, Icicle Spear, Rock Blast, etc. — real
-2-5-hit moves, not a fixed hit count), the output's `min`/`max` is ONE
-hit's damage, not a summed total for the move, even though the
+2-5-hit moves) AND fixed-2-hit moves (Dual Wingbeat, Double Hit, Twin
+Beam — real always-2-hit moves, carried as a numeric `hitRange` in the
+vendored data rather than a `[min, max]` array), the output's `min`/`max`
+is ONE hit's damage, not a summed total for the move, even though the
 human-readable `description` string correctly reports the hit count.
-`matchedRecords.move.isVariableMultiHit` is `true` for exactly this class
-of move — check it before treating `min`/`max` as "the total damage of
-using this move," or you'll silently read a number roughly 2-5x too low.
-Fixed-hit-count moves (e.g. always-3-hit moves) are unaffected and sum
-correctly.
+`matchedRecords.move.isVariableMultiHit` is `true` for both of these
+classes of move — check it before treating `min`/`max` as "the total
+damage of using this move," or you'll silently read a number roughly
+2-5x too low. The only moves the underlying engine genuinely auto-sums
+into a correct total (and where `isVariableMultiHit` is correctly `false`)
+are Parental Bond attacks and `isTripleHit`-flagged moves (Triple Axel,
+Triple Kick — always exactly 3 hits).
 
 **Web alternative**: Pikalytics' damage calculator
 (https://www.pikalytics.com/damage-calculator) remains a browser-based
@@ -95,9 +99,9 @@ formula from `vgc_current_regulation.md`'s "Stat system" section, not the
 old EV-based one.
 
 This is enough to sanity-check a suspicious number, not to hand-calculate
-full damage rolls as a matter of course — use the Pikalytics tool above
-for anything a recommendation actually depends on, especially once
-terrain/weather/abilities start stacking.
+full damage rolls as a matter of course — use the local CLI (or Pikalytics
+as a second opinion) for anything a recommendation actually depends on,
+especially once terrain/weather/abilities start stacking.
 
 ## Changelog
 
@@ -105,3 +109,4 @@ terrain/weather/abilities start stacking.
 |---|---|---|
 | 2026-07-09 | Created file; confirmed Pikalytics damage calculator is Champions-specific and what it accounts for | https://www.pikalytics.com/damage-calculator (fetched and confirmed this session) |
 | 2026-07-09 | Replaced Pikalytics-only guidance with a local CLI tool (tools/damage-calc/) vendoring the real NCP-VGC-Damage-Calculator engine | tools/damage-calc/VENDOR_MANIFEST.md |
+| 2026-07-10 | Corrected multi-hit `min`/`max` caveat: fixed-2-hit numeric-`hitRange` moves (Dual Wingbeat, Double Hit, Twin Beam) are per-hit-only too, not "unaffected and sum correctly" — only Parental Bond and `isTripleHit` moves genuinely auto-sum. Also fixed a stale "use Pikalytics for anything a recommendation depends on" sentence that contradicted the file's own local-CLI-primary framing | tools/damage-calc/calc.js `isVariableMultiHit` fix + this file's own "Web alternative" section, this session |

@@ -218,17 +218,37 @@ function buildMove(input) {
     hits = move.hitRange[move.hitRange.length - 1];
   }
   // isVariableMultiHit: true for real, currently-used VGC doubles moves like
-  // Bullet Seed/Icicle Spear/Rock Blast/Dual Wingbeat's cousins — a
-  // MOVES_CHAMPIONS `hitRange` array (variable hit count, e.g. [2, 5]) that
-  // is NOT the `isTripleHit`-flagged case (Triple Axel/Triple Kick, whose
+  // Bullet Seed/Icicle Spear/Rock Blast (a MOVES_CHAMPIONS `hitRange` array,
+  // variable hit count e.g. [2, 5]) AND fixed-2-hit moves like Dual
+  // Wingbeat/Double Hit/Twin Beam (a MOVES_CHAMPIONS `hitRange` NUMBER, e.g.
+  // 2) — i.e. any move that carries a `hitRange` field at all — that is NOT
+  // the `isTripleHit`-flagged case (Triple Axel/Triple Kick, whose
   // `hitRange` is also an array but whose hit count the vendored engine DOES
-  // fully sum via checkAddCalcQualifications's addQualList['triple']). See
-  // runDamageCalc below ("SCOPE OF THIS FIX") for why this distinction
-  // matters: the engine never sums a variable-hit-count move's damage
-  // regardless of the `hits` derived above, so `runDamageCalc`'s min/max is
-  // ONLY one hit's damage for these — this flag lets a caller detect that
-  // programmatically instead of parsing the description string.
-  const isVariableMultiHit = Array.isArray(move.hitRange) && !move.isTripleHit;
+  // fully sum via checkAddCalcQualifications's addQualList['triple']).
+  //
+  // BROADENED (post-final-review): originally only `Array.isArray(move.hitRange)`,
+  // which missed the numeric-`hitRange` fixed-2-hit class entirely (Dual
+  // Wingbeat, Double Hit, Twin Beam — confirmed via `getVendor().MOVES_CHAMPIONS`
+  // to carry `hitRange: 2`, not an array). checkAddCalcQualifications only
+  // ever auto-sums the Parental-Bond and `isTripleHit` paths (see
+  // runDamageCalc's "SCOPE OF THIS FIX" comment below) — a numeric-`hitRange`
+  // move is NOT auto-summed against an ordinary defender, so it was silently
+  // returning ONE hit's damage while reporting `isVariableMultiHit: false`,
+  // which a caller could reasonably (and wrongly) read as "this number is
+  // the move's trustworthy total". `!!move.hitRange` catches both the
+  // numeric and array cases; Parental Bond moves carry no `hitRange` field
+  // at all (see checkAddCalcQualifications's `parentalBond` gate,
+  // damage_MASTER.js ~line 2457: `... && !move.hitRange`), so they correctly
+  // remain excluded/`false` here — Parental Bond genuinely IS summed
+  // correctly by the engine's nested-damage-array path.
+  //
+  // See runDamageCalc below ("SCOPE OF THIS FIX") for why this distinction
+  // matters: the engine never sums a variable- or fixed-numeric-hitRange
+  // move's damage regardless of the `hits` derived above, so
+  // `runDamageCalc`'s min/max is ONLY one hit's damage for these — this flag
+  // lets a caller detect that programmatically instead of parsing the
+  // description string.
+  const isVariableMultiHit = !!move.hitRange && !move.isTripleHit;
   return Object.assign({}, move, {
     isCrit: false,
     isZ: false,
