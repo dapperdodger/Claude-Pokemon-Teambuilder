@@ -1,14 +1,36 @@
 'use strict';
 
+function isPlainObjectLike(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 function deepExtend(deep, target, ...sources) {
   for (const source of sources) {
     if (!source || typeof source !== 'object') continue;
     for (const key of Object.keys(source)) {
-      const value = source[key];
-      if (deep && value && typeof value === 'object' && !Array.isArray(value)) {
-        target[key] = deepExtend(true, (target[key] && typeof target[key] === 'object') ? target[key] : {}, value);
+      const copy = source[key];
+      if (copy === target) continue;
+
+      const copyIsArray = Array.isArray(copy);
+      if (deep && copy && typeof copy === 'object' && (copyIsArray || isPlainObjectLike(copy))) {
+        // Mirror real jQuery $.extend(true, ...) semantics: an array source
+        // recurses index-wise (merging target[key][i] with source[key][i]
+        // for each index present in the SOURCE), rather than being replaced
+        // wholesale or naively concatenated. Indices in the target array
+        // beyond the source array's length are left untouched, since the
+        // recursive merge below only iterates the source's own keys.
+        const existing = target[key];
+        let base;
+        if (copyIsArray && !Array.isArray(existing)) {
+          base = [];
+        } else if (!copyIsArray && !isPlainObjectLike(existing)) {
+          base = {};
+        } else {
+          base = existing;
+        }
+        target[key] = deepExtend(true, base, copy);
       } else {
-        target[key] = value;
+        target[key] = copy;
       }
     }
   }
