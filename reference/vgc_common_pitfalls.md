@@ -51,12 +51,18 @@ finalizing any team-building recommendation.
 
 ## Build assumption trap
 
-- **Don't assume a "generic" EV/item/ability spread.** A Pokémon's typing
-  and base stats don't tell you its actual competitive set. Check the
-  current meta's actual common spread (item, ability, EVs, moves) via usage
-  data before reasoning about bulk, speed tier, or damage rolls — an
-  outdated or assumed spread produces wrong damage-roll math even if the
-  typing-level reasoning is correct.
+- **Don't assume a "generic" Stat Point (SP)/item/ability spread.** A
+  Pokémon's typing and base stats don't tell you its actual competitive
+  set. Check the current meta's actual common spread (item, ability, SP
+  allocation, moves) via usage data before reasoning about bulk, speed
+  tier, or damage rolls — an outdated or assumed spread produces wrong
+  damage-roll math even if the typing-level reasoning is correct.
+- **Don't default to old "EV" terminology or numbers.** Pokémon Champions
+  replaced EVs/IVs entirely with a Stat Points (SP) system — see
+  `vgc_current_regulation.md`'s "Stat system" section for the mechanics.
+  Smogon/SV-era sets quoted in "252 EVs" terms don't map cleanly onto SP;
+  a set pulled from an outdated source needs to be re-verified in current
+  SP terms, not converted by assumption.
 
 ## Process-lesson case studies
 
@@ -84,3 +90,4 @@ only happens after a user catches a mistake:
 | Date | Change | Source |
 |---|---|---|
 | 2026-07-09 | Created file, consolidating pitfalls and process-lesson case studies from the claude.ai handoff session | pokemon_vgc_project_handoff.md (prior session notes); Tera-inactive status cross-checked against reference/vgc_current_regulation.md |
+| 2026-07-09 | Corrected "EV" terminology to Stat Points (SP) in the build assumption trap, added explicit SP-vs-EV pitfall — Champions replaced EVs/IVs entirely and this file still used the old terms. Caught while researching a speed-calc reference addition | champsdex.com EV/IV/Stats guide; cross-checked against reference/vgc_current_regulation.md |

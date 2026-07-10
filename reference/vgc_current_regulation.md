@@ -33,6 +33,35 @@ anything below, re-check it if it's been more than a couple of weeks since
 - This is a full platform change, not a patch — older Scarlet/Violet-era
   Smogon/VGC content may not reflect current mechanics, roster, or balance.
 
+## Stat system: Stat Points (SP), not EVs/IVs
+
+Pokémon Champions replaced the classic EV/IV system entirely — this is a
+structural change, not a rebalance, and it's easy to default to old
+Scarlet/Violet-era EV terminology without noticing it no longer applies.
+
+- **IVs are gone.** Every Pokémon is automatically treated as having
+  perfect 31 IVs in every stat (including via Pokémon HOME transfers).
+- **EVs are replaced by Stat Points (SP).** 66 SP total per Pokémon, spent
+  freely across the six stats, with a hard cap of 32 SP in any single
+  stat. Each SP costs 5 VP to assign (330 VP to max a single stat from
+  scratch).
+- **SP-to-stat conversion is 1:1** (not 1 point per 4, like old EVs) —
+  each SP assigned adds exactly +1 to that stat at Level 50.
+- **Natures are renamed "Stat Alignments"** but work the same way (~10%
+  boost to one stat, ~10% cut to another). 21 options exist (down from
+  25); "Serious" is the only neutral one.
+- **All Champions battles are Level 50.**
+
+**Stat formula (Level 50, Champions SP system):**
+- Non-HP: `floor((floor(((2 × Base + 31) × 50) / 100) + 5 + SP) × Alignment modifier)`
+- HP: `floor(((2 × Base + 31) × 50) / 100) + 50 + 10 + SP`
+
+Old EV numbers from Smogon/SV-era sets do NOT map 1:1 onto SP — don't
+assume "252 EVs" means "32 SP" or try to convert by formula; work from a
+set's actual current SP allocation instead. See
+`vgc_common_pitfalls.md`'s "Build assumption trap" for the pitfall this
+causes.
+
 ## Roster vs. legality — two separate checks
 
 Champions' available roster is a **subset** of the full historical Pokédex,
@@ -70,3 +99,4 @@ above.
 | Date | Change | Source |
 |---|---|---|
 | 2026-07-09 | Created file; verified M-B regulation dates, active-mechanics status (Mega only, no Tera/Dynamax/Z-Move), and platform launch dates via web search. Usage snapshot WebSearch attempted but returned no results (session limit) — left unfilled per fallback instructions | See Sources section above |
+| 2026-07-09 | Added "Stat system" section — Champions replaced EVs/IVs with a Stat Points (SP) system entirely (66 total, 32/stat cap, no IVs, Nature renamed Stat Alignment). Caught while researching a speed-calc reference addition; existing repo content still used old "EV" terminology | champsdex.com EV/IV/Stats guide, genpkm.com, game8.co (cross-checked across sources, fetched this session) |
