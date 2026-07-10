@@ -12,7 +12,10 @@ treat those as current — this repo is the source of truth going forward.
 
 1. **Format is VGC doubles, Pokémon Champions official rules** — not Smogon
    singles. Don't apply Smogon-style singles reasoning or Scarlet/Violet-era
-   assumptions without checking `reference/vgc_current_regulation.md` first.
+   assumptions without checking `reference/vgc_current_regulation.md` first
+   — this includes stat mechanics: Champions replaced EVs/IVs with a Stat
+   Points (SP) system entirely, see that file's "Stat system" section
+   before using EV terminology or numbers.
 
 2. **Two goals, not one**: ladder/tournament prep, AND building strong teams
    around a user-chosen favorite Pokémon. Don't default to "here's the top
@@ -27,10 +30,13 @@ treat those as current — this repo is the source of truth going forward.
    first; other files fall back to their `## Changelog` dates).
 
 4. **No cookie-cutter squads.** Any team-building help must show real
-   reasoning: speed tiers/speed control, damage rolls vs. relevant threats,
-   current-mechanic strategy (Mega Evolution — see rule 5), redirection/
-   support synergy, weather/terrain, how pieces cover each other's
-   weaknesses. See `reference/vgc_teambuilding_methodology.md`.
+   reasoning: speed tiers/speed control (see
+   `reference/vgc_ability_move_mechanics.md`'s Speed calculation section),
+   damage rolls vs. relevant threats (see `reference/vgc_damage_calc.md`
+   for the tool and formula fundamentals), current-mechanic strategy (Mega
+   Evolution — see rule 5), redirection/support synergy, weather/terrain,
+   how pieces cover each other's weaknesses. See
+   `reference/vgc_teambuilding_methodology.md`.
 
 5. **Check the current regulation every session**, even if it was already
    checked earlier in the same conversation — regulations have hard end
@@ -49,7 +55,15 @@ treat those as current — this repo is the source of truth going forward.
    current moveset**, not typing alone. See
    `reference/vgc_type_chart_reference.md` for raw effectiveness and
    `reference/vgc_teambuilding_methodology.md` for why typing alone is
-   insufficient.
+   insufficient. This repo deliberately does NOT maintain a ranked "top
+   meta picks" or "speed tier" list file — a static ranked list would bias
+   toward whatever was already popular when it was written and go stale
+   immediately. Look up a specific Pokémon's current moveset/speed spread
+   live, on demand, when it's actually relevant to the team being built —
+   not from a pre-baked ranking. The only things that get persisted are
+   confirmed traps (`reference/vgc_common_pitfalls.md`) and formula-level
+   mechanics that don't change with the meta
+   (`reference/vgc_ability_move_mechanics.md`).
 
 8. **Precedence on conflicts**: live web search > this repo's files > model
    training data/memory. If a repo file conflicts with a fresh search
@@ -66,3 +80,10 @@ treat those as current — this repo is the source of truth going forward.
     team-building recommendation — it covers gotchas that have caused real
     past mistakes (ladder-vs-tournament data, co-occurrence-vs-synergy,
     doubles-specific traps).
+
+11. **Save a team once you've built it** to `teams/` (see
+    `teams/_TEMPLATE.md` for the format). Capture not just the final six
+    but the reasoning per pick and what was deliberately left out, so a
+    later session can see *why*, not just *what*. Update a team's file in
+    place as it evolves, with a changelog row, rather than creating a new
+    file per iteration.

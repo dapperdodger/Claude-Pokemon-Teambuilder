@@ -28,8 +28,15 @@ present) show how fresh its content is.
 | [`reference/vgc_current_regulation.md`](reference/vgc_current_regulation.md) | Active regulation set, dates, active mechanics, roster-vs-legality rules, usage snapshot. **Most volatile file — check first.** |
 | [`reference/vgc_common_pitfalls.md`](reference/vgc_common_pitfalls.md) | Domain-specific gotchas: ladder vs. tournament data, co-occurrence vs. synergy, doubles-specific traps, past correction case studies. |
 | [`reference/vgc_type_chart_reference.md`](reference/vgc_type_chart_reference.md) | Full 18×18 Gen 6+ type effectiveness chart. |
-| [`reference/vgc_ability_move_mechanics.md`](reference/vgc_ability_move_mechanics.md) | Ability/move mechanics not captured by typing alone (Trick Room priority, Armor Tail, etc.). |
+| [`reference/vgc_ability_move_mechanics.md`](reference/vgc_ability_move_mechanics.md) | Ability/move mechanics not captured by typing alone (Trick Room priority, Armor Tail, speed calculation, etc.). |
 | [`reference/vgc_teambuilding_methodology.md`](reference/vgc_teambuilding_methodology.md) | Process rules for evaluating matchups — typing alone isn't enough to call something a counter. |
+| [`reference/vgc_damage_calc.md`](reference/vgc_damage_calc.md) | Pointer to the Pikalytics damage calculator plus damage-formula fundamentals for sanity-checking a roll by hand. |
+
+## Teams
+
+[`teams/`](teams/) holds actual built teams — one file per team, using
+[`teams/_TEMPLATE.md`](teams/_TEMPLATE.md), capturing not just the roster
+but the reasoning per pick and what was deliberately left out.
 
 ## Design history
 
