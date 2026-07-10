@@ -75,6 +75,27 @@ available in Champions yet. Before recommending any Pokémon:
 
 Both checks are required — skipping either produces a wrong recommendation.
 
+**This applies to items and abilities too, not just Pokémon.** Champions
+launched with a deliberately curated, restricted item pool — confirmed this
+session that several historically-standard competitive items (Choice Band,
+Choice Specs, Assault Vest, Safety Goggles, Covert Cloak, Clear Amulet,
+Loaded Dice, Power Herb) are genuinely NOT available right now, not just
+missing from a reference source. The pool grows via regulation updates the
+same way the Pokémon roster does — Life Orb, for example, was added
+specifically in the Regulation M-B item-pool expansion after being
+unavailable in M-A. Before assuming an item or ability is usable:
+
+1. Does it exist in Champions' current item/ability pool at all?
+2. Don't assume "this was a staple in Scarlet/Violet" or "this is common in
+   general Pokémon knowledge" means it's available now — verify per-regulation,
+   the same discipline as roster checks above.
+
+`tools/damage-calc/cli.js` (see `vgc_damage_calc.md`) surfaces this
+automatically via `itemChampionsLegal`/`abilityChampionsLegal` flags on its
+output, backed by the same vendored data this file's roster checks rely on
+— but that vendored data itself needs the same "re-verify, don't assume
+it's still current" discipline as everything else in this file.
+
 ## Usage snapshot
 
 Usage snapshot not pulled this session — re-check Pikalytics directly. A
@@ -100,3 +121,4 @@ above.
 |---|---|---|
 | 2026-07-09 | Created file; verified M-B regulation dates, active-mechanics status (Mega only, no Tera/Dynamax/Z-Move), and platform launch dates via web search. Usage snapshot WebSearch attempted but returned no results (session limit) — left unfilled per fallback instructions | See Sources section above |
 | 2026-07-09 | Added "Stat system" section — Champions replaced EVs/IVs with a Stat Points (SP) system entirely (66 total, 32/stat cap, no IVs, Nature renamed Stat Alignment). Caught while researching a speed-calc reference addition; existing repo content still used old "EV" terminology | champsdex.com EV/IV/Stats guide, genpkm.com, game8.co (cross-checked across sources, fetched this session) |
+| 2026-07-10 | Extended "Roster vs. legality" to explicitly cover items/abilities — confirmed Choice Band/Choice Specs/Assault Vest and others are genuinely unavailable in Champions right now (not a data gap), and that the item pool grows via regulation updates (Life Orb added in M-B) the same way the Pokémon roster does. Caught building tools/damage-calc's itemChampionsLegal/abilityChampionsLegal flags | Victory Road VGC, cross-checked against vendored ITEMS_CHAMPIONS data (see tools/damage-calc/VENDOR_MANIFEST.md) |
