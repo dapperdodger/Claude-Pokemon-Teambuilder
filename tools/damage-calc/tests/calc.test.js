@@ -164,3 +164,67 @@ test('runDamageCalc: Parental Bond (Mega Kangaskhan) produces a real finite min/
   assert.ok(result.min > 0, 'min damage should be positive');
   assert.ok(result.max >= result.min, 'max should be >= min');
 });
+
+test('runDamageCalc: Bullet Seed (variable multi-hit) documents its known per-hit-only limitation instead of hiding it', () => {
+  // KNOWN LIMITATION, not a bug: unlike Parental Bond (always 2 hits) and
+  // isTripleHit moves (always 3 hits), the vendored engine never auto-sums
+  // damage for ordinary variable-hit-count multi-hit moves — real Pokémon
+  // mechanics make the actual hit count per use random (2/3/4/5 hits with
+  // different probabilities), and the vendored engine's nested-damage-array
+  // path (see runDamageCalc's "SCOPE OF THIS FIX" comment) is only ever
+  // triggered by checkAddCalcQualifications's `parentalBond`/`triple` cases,
+  // neither of which fires for a plain variable-hit move. Building a true
+  // probability-weighted total is out of scope here; this test instead
+  // pins down and documents the current (honest, not silently wrong)
+  // behavior so a future vendor update that started auto-summing these
+  // would be caught by this test failing, rather than the min/max silently
+  // jumping 2-5x with nobody noticing.
+  //
+  // Real, verified data: Bullet Seed is a real currently-used VGC doubles
+  // move, confirmed via `getVendor().MOVES_CHAMPIONS['Bullet Seed']` to be
+  // `{ bp: 25, type: 'Grass', category: 'Physical', hitRange: [2, 5], ... }`
+  // — a variable [min, max] hitRange with no `isTripleHit` flag, distinct
+  // from Triple Axel/Triple Kick's fixed-count `isTripleHit` case. Sneasler
+  // (base Attack 130, confirmed via `getVendor().POKEDEX_CHAMPIONS['Sneasler']`)
+  // vs. a plain 0-SP Garchomp with no defender trait that would otherwise
+  // route through the Parental-Bond-style summing path.
+  const { getVendor } = require('../load-vendor');
+  const vendor = getVendor();
+  const bulletSeed = vendor.MOVES_CHAMPIONS['Bullet Seed'];
+  assert.ok(Array.isArray(bulletSeed.hitRange), 'Bullet Seed should carry a [min, max] hitRange in real vendored data');
+  assert.ok(!bulletSeed.isTripleHit, 'Bullet Seed should not be an isTripleHit move (that is the fixed-count case, handled separately)');
+
+  const result = runDamageCalc({
+    attacker: {
+      species: 'Sneasler',
+      ability: 'Unburden',
+      item: '',
+      nature: 'Adamant',
+      sp: { hp: 0, at: 32, df: 0, sa: 0, sd: 0, sp: 0 },
+    },
+    defender: {
+      species: 'Garchomp',
+      ability: 'Rough Skin',
+      item: '',
+      nature: 'Serious',
+      sp: { hp: 0, at: 0, df: 0, sa: 0, sd: 0, sp: 0 },
+    },
+    move: { name: 'Bullet Seed' },
+    field: {},
+  });
+
+  // The programmatic flag a caller should check before trusting min/max as
+  // a move "total".
+  assert.equal(result.matchedRecords.move.isVariableMultiHit, true);
+
+  // The description string is honest about the real hit count landed...
+  assert.match(result.description, /\(\d+ hits\)/);
+
+  // ...but min/max is verified to be ONE hit's damage, not a multi-hit
+  // total (Bullet Seed is 25 BP and hits 2-5 times per use; a real total
+  // would be in the ~34-105+ range, not ~17-21). This is the documented
+  // limitation, pinned down so a silent future change is caught.
+  assert.ok(result.min > 0, 'min damage should be positive');
+  assert.ok(result.max >= result.min, 'max should be >= min');
+  assert.ok(result.max < 30, `max should be a single hit's damage (small, since Bullet Seed is only 25 BP), got ${result.max} — if this now fails, the vendored engine may have started auto-summing variable-hit moves and this whole limitation (and isVariableMultiHit's meaning) needs re-checking`);
+});

@@ -217,12 +217,25 @@ function buildMove(input) {
   } else if (Array.isArray(move.hitRange)) {
     hits = move.hitRange[move.hitRange.length - 1];
   }
+  // isVariableMultiHit: true for real, currently-used VGC doubles moves like
+  // Bullet Seed/Icicle Spear/Rock Blast/Dual Wingbeat's cousins — a
+  // MOVES_CHAMPIONS `hitRange` array (variable hit count, e.g. [2, 5]) that
+  // is NOT the `isTripleHit`-flagged case (Triple Axel/Triple Kick, whose
+  // `hitRange` is also an array but whose hit count the vendored engine DOES
+  // fully sum via checkAddCalcQualifications's addQualList['triple']). See
+  // runDamageCalc below ("SCOPE OF THIS FIX") for why this distinction
+  // matters: the engine never sums a variable-hit-count move's damage
+  // regardless of the `hits` derived above, so `runDamageCalc`'s min/max is
+  // ONLY one hit's damage for these — this flag lets a caller detect that
+  // programmatically instead of parsing the description string.
+  const isVariableMultiHit = Array.isArray(move.hitRange) && !move.isTripleHit;
   return Object.assign({}, move, {
     isCrit: false,
     isZ: false,
     isSignatureZ: false,
     hits,
     isPlusMove: false,
+    isVariableMultiHit,
   });
 }
 
@@ -320,6 +333,40 @@ function runDamageCalc(input) {
   // Math.min/Math.max (not index [0]/[last]) is used per hit for the same
   // "don't trust an unguaranteed sort order" reason as the single-hit case
   // above.
+  //
+  // SCOPE OF THIS FIX (do not overclaim beyond it): the vendored engine only
+  // ever nests `rawResult.damage` for TWO triggers — Parental Bond
+  // (addQualList['parentalBond'], always exactly 2 hits) and moves flagged
+  // `isTripleHit` (addQualList['triple'], always exactly 3 hits; see
+  // checkAddCalcQualifications, damage_MASTER.js ~line 2451-2478). Both have
+  // a FIXED hit count, so "sum each hit's own min/max" is a complete, correct
+  // total for them, and the `isMultiHit` branch below handles both correctly.
+  //
+  // Ordinary variable-hit-count multi-hit moves (Bullet Seed, Icicle Spear,
+  // Rock Blast, etc. — real MOVES_CHAMPIONS entries with `hitRange: [2, 5]`,
+  // no `isTripleHit`) are NOT covered by this fix and are NOT auto-summed by
+  // the vendored engine at all, regardless of the `hits` value buildMove
+  // derives for them. Confirmed empirically: Sneasler Bullet Seed (25 BP,
+  // hitRange [2,5]) vs. a plain Garchomp returns `rawResult.damage` as a
+  // single FLAT 16-roll array (not nested), so `isMultiHit` is false and
+  // min/max below is ONE hit's damage (e.g. 17-21), not a hit-count total —
+  // even though `rawResult.description` separately (and correctly) reports
+  // "(5 hits)" in its human-readable string. A caller that trusts min/max as
+  // "the total damage of using this move" for these moves will silently get
+  // a result roughly 2-5x too low. This is real Pokémon-mechanic randomness
+  // (2/3/4/5 hits with different probabilities per use), not a bug to patch
+  // here — computing a true probability-weighted total is a substantially
+  // bigger feature, out of scope for this fix. Instead, `matchedRecords.move`
+  // below exposes `isVariableMultiHit: true` for exactly this class of move,
+  // so a caller can programmatically detect "this min/max is per-hit, not a
+  // total" without having to parse the free-text description string.
+  //
+  // DOC NOTE for DC Task 8 (documentation updates, not yet run as of this
+  // fix): when reference/vgc_damage_calc.md is written/updated to document
+  // this tool's output shape, it MUST call out that `min`/`max` is a
+  // per-hit value (not a move total) for `isVariableMultiHit: true` moves —
+  // do not let that doc silently imply min/max is always the full move
+  // damage.
   const isMultiHit = Array.isArray(rawResult.damage[0]);
   const min = isMultiHit
     ? rawResult.damage.reduce((sum, hitRolls) => sum + Math.min(...hitRolls), 0)
@@ -353,7 +400,13 @@ function runDamageCalc(input) {
         abilityChampionsLegal: isKnownAbility(defender.ability),
         itemChampionsLegal: defender.item ? isKnownItem(defender.item) : null,
       },
-      move: { name: move.name, bp: move.bp, type: move.type, category: move.category },
+      move: {
+        name: move.name, bp: move.bp, type: move.type, category: move.category,
+        // See buildMove's isVariableMultiHit derivation above: true only for
+        // real variable-hit-count moves (Bullet Seed, Icicle Spear, etc.)
+        // whose min/max above is one hit's damage, not a summed total.
+        isVariableMultiHit: move.isVariableMultiHit,
+      },
     },
   };
 }
