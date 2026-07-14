@@ -71,6 +71,54 @@ into a correct total (and where `isVariableMultiHit` is correctly `false`)
 are Parental Bond attacks and `isTripleHit`-flagged moves (Triple Axel,
 Triple Kick — always exactly 3 hits).
 
+## Bulk optimization: HP vs. Def/SpD SP allocation
+
+**`tools/damage-calc/optimize-bulk.js`** (CLI: `optimize-bulk-cli.js`) finds
+the real minimum-SP HP/Def/SpD spread that survives one or more named
+attacks, by brute-forcing every legal SP combination against the actual
+damage-calc engine — not by hand-deriving or assuming a split.
+
+**Why this needs its own tool, not just a mental rule of thumb**: the
+damage formula above makes damage proportional to `Attack / Defense`, so
+Defense has *diminishing* returns (each point matters less as Defense
+grows), while HP is flat/linear (each point always absorbs exactly one
+more point of damage, and HP never gets a nature multiplier). The correct
+split between HP and Def/SpD therefore depends on the defender's own base
+stats and the attacker's specific power — there's no universal ratio.
+Real example that motivated building this: for Aegislash-Shield surviving
+Kingambit's real Kowtow Cleave, the true minimum-total-SP spread is **24
+HP / 1 Def**, not an even split and not "max Def" — Aegislash's base Def
+(150) is already so high that further investment barely reduces incoming
+damage, while its base HP (60) is comparatively low.
+
+```bash
+# Single threat (mirrors cli.js's flag style):
+node tools/damage-calc/optimize-bulk-cli.js \
+  --defender "Aegislash-Shield" --defender-ability "Stance Change" --defender-nature "Impish" \
+  --defender-fixed-sp "sd:2" --budget 34 \
+  --attacker "Kingambit" --attacker-preset "Black Glasses Offense" --move "Kowtow Cleave"
+
+# Multiple threats at once (the "must survive a real physical AND a real
+# special attack" case) — pass a JSON file instead of fighting shell
+# quoting across bash/PowerShell:
+node tools/damage-calc/optimize-bulk-cli.js \
+  --defender "Corviknight" --defender-ability "Mirror Armor" --defender-nature "Impish" \
+  --budget 34 --threats-file path/to/threats.json
+# threats.json: [{ "attacker": {...}, "move": { "name": "..." }, "field"?: {...} }, ...]
+```
+
+Returns `{ solvable, minTotal, winners: [...] }` — every (hp, df, sd)
+combination tying the true minimum total SP that survives ALL given
+threats (there can be more than one, e.g. due to stat-formula flooring).
+If nothing within the given budget/32-cap survives, returns
+`{ solvable: false, closest: [...] }` instead of silently picking a losing
+spread — matching `vgc_teambuilding_methodology.md`'s "some worst cases
+have no SP-allocation fix at all" guidance. This is the concrete tool
+`scripts/check_sp_spread_optimization.js`'s hook expects a team file's
+round (0/2/32) HP/Def/SpD spreads to actually have been run through before
+being presented as justified — see that hook and
+`vgc_teambuilding_methodology.md`'s "SP spread allocation" section.
+
 **Web alternative**: Pikalytics' damage calculator
 (https://www.pikalytics.com/damage-calculator) remains a browser-based
 option covering the same ground, useful as a second opinion or if the
@@ -94,6 +142,20 @@ Adaptability), type effectiveness (from `vgc_type_chart_reference.md`),
 burn (0.5x for physical moves if the attacker is burned, unless it has
 Guts or is using Facade), and other item/ability modifiers.
 
+**`tools/damage-calc/cli.js`'s output already has the 0.75x spread-move
+reduction applied — do not multiply its `min`/`max` by 0.75 again.**
+`calc.js` hardcodes the Side's format to `'Doubles'` when calling the
+vendored engine, and the vendored engine's `calcGeneralMods` applies the
+0.75x multiplier internally whenever the move being tested has
+`isSpread: true` in the vendored move data. Confirmed via a controlled
+A/B test (2026-07-14): forcing a copy of the same call to `'Singles'`
+produced a ~33% higher result (Charizard-Y Heat Wave vs. Mega Camerupt:
+63-75 real Doubles output vs. 84-99 Singles-forced — ratio ≈0.75). A past
+session's process-lesson case study in `vgc_common_pitfalls.md` had this
+backwards (manually re-applying 0.75x to the tool's already-correct
+output), understating real damage by ~25% — see that file's corrected
+"Spread moves" entry for the full story.
+
 Attack and Defense in the formula use the Champions Stat Points (SP)
 formula from `vgc_current_regulation.md`'s "Stat system" section, not the
 old EV-based one.
@@ -110,3 +172,4 @@ especially once terrain/weather/abilities start stacking.
 | 2026-07-09 | Created file; confirmed Pikalytics damage calculator is Champions-specific and what it accounts for | https://www.pikalytics.com/damage-calculator (fetched and confirmed this session) |
 | 2026-07-09 | Replaced Pikalytics-only guidance with a local CLI tool (tools/damage-calc/) vendoring the real NCP-VGC-Damage-Calculator engine | tools/damage-calc/VENDOR_MANIFEST.md |
 | 2026-07-10 | Corrected multi-hit `min`/`max` caveat: fixed-2-hit numeric-`hitRange` moves (Dual Wingbeat, Double Hit, Twin Beam) are per-hit-only too, not "unaffected and sum correctly" — only Parental Bond and `isTripleHit` moves genuinely auto-sum. Also fixed a stale "use Pikalytics for anything a recommendation depends on" sentence that contradicted the file's own local-CLI-primary framing | tools/damage-calc/calc.js `isVariableMultiHit` fix + this file's own "Web alternative" section, this session |
+| 2026-07-14 | Added explicit note that `tools/damage-calc/cli.js` already applies the doubles 0.75x spread-move reduction internally — manually reapplying it is a double-reduction, confirmed via a controlled Singles-vs-Doubles A/B test. Also added "Bulk optimization" section documenting the new `tools/damage-calc/optimize-bulk.js`/`optimize-bulk-cli.js` tool (brute-force search for the true minimum HP/Def/SpD SP spread against named threats), built after discovering Def/SpD have diminishing returns (damage ∝ 1/Def) while HP is linear, so no single equation reliably gives the optimal split per-Pokemon | A/B test this session (Heat Wave vs. Mega Camerupt, 63-75 Doubles vs. 84-99 Singles-forced); brute-force verification (Aegislash-Shield vs. Kingambit Kowtow Cleave, true minimum 24 HP/1 Def) |

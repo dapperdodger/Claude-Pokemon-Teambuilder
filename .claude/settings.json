@@ -19,6 +19,18 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/check_sp_spread_optimization.js",
+            "statusMessage": "Checking SP spread optimization..."
+          }
+        ]
+      }
     ]
   }
 }
