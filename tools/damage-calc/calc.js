@@ -431,4 +431,4 @@ function runDamageCalc(input) {
   };
 }
 
-module.exports = { runDamageCalc };
+module.exports = { runDamageCalc, alignmentModFor };

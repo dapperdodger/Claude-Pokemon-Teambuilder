@@ -91,16 +91,23 @@ HP / 1 Def**, not an even split and not "max Def" — Aegislash's base Def
 (150) is already so high that further investment barely reduces incoming
 damage, while its base HP (60) is comparatively low.
 
+**Three modes** (`--mode solve` (default) / `rank` / `generic`), answering
+three genuinely different questions — don't reach for the wrong one:
+
+### `--mode solve` (default) — `findMinimalBulkSpread`: a hard must-survive constraint
+
+Use when there's a specific named attack (or several) the Pokemon must
+survive, no exceptions.
+
 ```bash
-# Single threat (mirrors cli.js's flag style):
 node tools/damage-calc/optimize-bulk-cli.js \
   --defender "Aegislash-Shield" --defender-ability "Stance Change" --defender-nature "Impish" \
   --defender-fixed-sp "sd:2" --budget 34 \
   --attacker "Kingambit" --attacker-preset "Black Glasses Offense" --move "Kowtow Cleave"
 
-# Multiple threats at once (the "must survive a real physical AND a real
-# special attack" case) — pass a JSON file instead of fighting shell
-# quoting across bash/PowerShell:
+# Multiple threats at once (must survive a real physical AND a real special
+# attack the same turn — pass a JSON file instead of fighting shell quoting
+# across bash/PowerShell):
 node tools/damage-calc/optimize-bulk-cli.js \
   --defender "Corviknight" --defender-ability "Mirror Armor" --defender-nature "Impish" \
   --budget 34 --threats-file path/to/threats.json
@@ -113,10 +120,93 @@ threats (there can be more than one, e.g. due to stat-formula flooring).
 If nothing within the given budget/32-cap survives, returns
 `{ solvable: false, closest: [...] }` instead of silently picking a losing
 spread — matching `vgc_teambuilding_methodology.md`'s "some worst cases
-have no SP-allocation fix at all" guidance. This is the concrete tool
-`scripts/check_sp_spread_optimization.js`'s hook expects a team file's
-round (0/2/32) HP/Def/SpD spreads to actually have been run through before
-being presented as justified — see that hook and
+have no SP-allocation fix at all" guidance.
+
+### `--mode rank` — `rankSpreadsByOverallSurvival`: no forcing threat, leftover SP needs a home
+
+Use when there's no single hard requirement — just a real, broader threat
+list (a mix of physical/special, some resisted/immune, some genuinely
+dangerous) and leftover SP to spend well across all of it.
+
+**Scoring is continuous, not a survive/die bit-flip.** Per threat,
+`remainingHPFraction = max(0, (HP - maxDamage) / HP)` — the fraction of HP
+left after the worst-case hit, clamped to exactly 0 for anything
+lethal-or-worse. This matters for two reasons: (1) surviving with 60% HP
+left is a materially better outcome than surviving with 2% left, so "how
+much HP remains" has to be central, not a tiebreaker behind a binary
+survived/died count; (2) dying by 1% and dying by 500% overkill are the
+*same* real outcome (fainted is fainted) and must score identically — a
+spread that "almost" survives an unsolvable threat isn't meaningfully
+better than one crushed by it, so the losing side is flat-clamped rather
+than differentiated.
+
+Each threat may carry an optional `weight` (default 1 — every threat counts
+equally if unweighted, which is itself an arbitrary flattening: a 95%-usage
+staple move and a niche tech pick shouldn't vote the same). The principled
+weight is `P(attacker present) × P(this move on that attacker)`, both real,
+live-verifiable numbers per CLAUDE.md rule 3 — turning the ranking into a
+genuine expected-value calculation (maximize weighted expected remaining
+HP), though still only an *approximation* of true survival probability:
+usage stats are ladder-derived (ladder ≠ tournament, see
+`vgc_common_pitfalls.md`), and this doesn't know this team's own bring-6-
+pick-4 exposure (a threat this Pokemon is never brought against shouldn't
+count against it at all, regardless of usage weight).
+
+```bash
+node tools/damage-calc/optimize-bulk-cli.js --mode rank \
+  --defender "Noivern" --defender-ability "Infiltrator" --defender-nature "Timid" \
+  --defender-fixed-sp "sa:32,sp:30" --budget 4 --threats-file path/to/threats.json
+# threats.json entries may add "weight": <number> (defaults to 1 if omitted)
+```
+
+Returns `{ totalThreats, totalWeight, winners: [...] }` — every combo
+tying the best weighted-expected-remaining-HP score (with worst-single-
+threat remaining fraction as a secondary tiebreak, preferring a more
+balanced spread over one with the same total but a worse floor).
+
+### `--mode generic` — `maximizeGenericBulk`: DOWNGRADED STATUS, rough estimate only
+
+No move, no attacker, no threat data at all — purely "given this
+defender's own base stats/nature, what HP/Def/SpD split is structurally
+bulkiest against a hypothetical, generic hit?" This is the real,
+closed-form continuous math credited below (Jenkins' video) — but **that
+same source's central finding is that continuous math is a poor predictor
+of the real, floor-rounded damage-vs-Defense relationship once an actual
+move is checked**, and this function's `danger` score has no way to see
+where those real rounding jumps fall, since it never computes an actual
+damage roll. Confirmed this session that `--mode generic` and `--mode rank`
+can give different, even opposite recommendations for the same Pokemon
+(Noivern: generic said "put leftover SP in HP," the real threat-based
+ranking said "Def," because real threats happened to cluster physical) —
+that's not two valid perspectives to weigh against each other, the generic
+estimate is just wrong in exactly the way the source predicts. Use only as
+a rough starting neighborhood when literally no threat data exists yet;
+always prefer `solve`/`rank` once any real threat is known, even one.
+
+```bash
+node tools/damage-calc/optimize-bulk-cli.js --mode generic \
+  --defender "Aegislash-Shield" --defender-nature "Impish" \
+  --defender-fixed-sp "sd:2" --budget 34
+# optional: --physical-weight N --special-weight N (default 1 each)
+```
+
+Returns `{ winners: [...], best: {...} }` with the real HP/Def/SpD stat
+values for whichever split minimizes the continuous danger estimate.
+
+**Credit**: the continuous math behind `--mode generic` (and the "HP vs.
+Def/SpD have fundamentally different marginal value" insight behind
+`--mode solve`/`rank`'s whole design) is derived independently in Jenkins
+(VGC player/theorist), "How to Optimize Defensive Spreads in Pokemon
+Champions Using Math" (https://www.youtube.com/watch?v=FxfI7I_sSnM) and his
+companion tool (https://jenkinsvgc.github.io/damage-rounding-calc/) — see
+`vgc_teambuilding_methodology.md`'s "SP spread allocation" section for the
+full writeup, including his key finding that continuous math is a
+genuinely unreliable guide to the real integer-rounded optimum once actual
+damage modifiers (weather/crit/STAB/spread/multi-hit) enter the picture.
+
+This is the concrete tool `scripts/check_sp_spread_optimization.js`'s hook
+expects a team file's round (0/2/32) HP/Def/SpD spreads to actually have
+been run through before being presented as justified — see that hook and
 `vgc_teambuilding_methodology.md`'s "SP spread allocation" section.
 
 **Web alternative**: Pikalytics' damage calculator
@@ -173,3 +263,4 @@ especially once terrain/weather/abilities start stacking.
 | 2026-07-09 | Replaced Pikalytics-only guidance with a local CLI tool (tools/damage-calc/) vendoring the real NCP-VGC-Damage-Calculator engine | tools/damage-calc/VENDOR_MANIFEST.md |
 | 2026-07-10 | Corrected multi-hit `min`/`max` caveat: fixed-2-hit numeric-`hitRange` moves (Dual Wingbeat, Double Hit, Twin Beam) are per-hit-only too, not "unaffected and sum correctly" — only Parental Bond and `isTripleHit` moves genuinely auto-sum. Also fixed a stale "use Pikalytics for anything a recommendation depends on" sentence that contradicted the file's own local-CLI-primary framing | tools/damage-calc/calc.js `isVariableMultiHit` fix + this file's own "Web alternative" section, this session |
 | 2026-07-14 | Added explicit note that `tools/damage-calc/cli.js` already applies the doubles 0.75x spread-move reduction internally — manually reapplying it is a double-reduction, confirmed via a controlled Singles-vs-Doubles A/B test. Also added "Bulk optimization" section documenting the new `tools/damage-calc/optimize-bulk.js`/`optimize-bulk-cli.js` tool (brute-force search for the true minimum HP/Def/SpD SP spread against named threats), built after discovering Def/SpD have diminishing returns (damage ∝ 1/Def) while HP is linear, so no single equation reliably gives the optimal split per-Pokemon | A/B test this session (Heat Wave vs. Mega Camerupt, 63-75 Doubles vs. 84-99 Singles-forced); brute-force verification (Aegislash-Shield vs. Kingambit Kowtow Cleave, true minimum 24 HP/1 Def) |
+| 2026-07-14 | Rewrote "Bulk optimization" to cover all three real modes: `solve` (unchanged), `rank` (rebuilt around a continuous, clamped `remainingHPFraction` score plus optional per-threat `weight` instead of a binary survived-count — user caught that survival isn't a bit-flip problem and that treating every listed threat as an equal vote was itself arbitrary), and new `generic` (move-agnostic continuous-math estimate, explicitly downgraded to rough-estimate-only status since it can't see real damage-formula rounding jumps). Added citation for Jenkins' video/tool, which independently derives the same HP-vs-Def/SpD math and the reason continuous math shouldn't be trusted for precise real answers | User-provided video transcript; user-driven corrections to the scoring model this session; brute-force verification (Klefki vs. weighted Kowtow Cleave/Moonblast: winner shifts from 17 HP/0 Def to 4 HP/13 Def as weight shifts) |

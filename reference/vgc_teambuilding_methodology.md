@@ -49,6 +49,52 @@ a different bulk stat, Speed), rather than maxing a stat by default.
   (0/2/32) HP/Def/SpD spread to have actually been run through before being
   presented as justified.
 
+- **The continuous-math "starting neighborhood" — and why it's only a
+  starting point.** Credit: Jenkins (VGC player/theorist), "How to Optimize
+  Defensive Spreads in Pokemon Champions Using Math"
+  (https://www.youtube.com/watch?v=FxfI7I_sSnM) and his companion tool
+  (https://jenkinsvgc.github.io/damage-rounding-calc/). Treating damage as
+  continuously proportional to `Attack/Defense` (ignoring integer
+  floors/rounding) turns "minimize damage taken" into a classic fixed-budget
+  optimization: for a single physical-or-special threat, the optimum is
+  `HP = Def` (or `HP = SpD`) — the same shape as the "maximize a rectangle's
+  area for a fixed perimeter" calculus problem. For the real VGC case of
+  needing to survive a physical AND a special hit the same turn (no
+  switching), the optimum becomes **HP = Def + SpD** — and if physical and
+  special threats matter equally, that means Def = SpD, so HP ends up
+  roughly *twice* either individual stat (matches this file's own
+  Aegislash/Noivern findings: HP is more valuable than either single
+  Def/SpD stat precisely because it's "counted twice," once for each
+  category). A bias term generalizes this to weighting one category more:
+  weighting physical `B` times more than special gives `(Def/SpD)² = B`
+  while HP still equals their sum.
+  **But — Jenkins' own central finding — this continuous math is a
+  genuinely unreliable guide to the real, integer/floor-rounded optimum.**
+  Real damage calculation applies a *chain* of modifiers (weather, crit,
+  STAB, spread-move, type effectiveness, item/ability mods...), each
+  rounded down at every step, which turns the true damage-vs-Defense
+  relationship into a jagged step function with irregular "jumps" (not the
+  smooth curve continuous math assumes) — his own worked example found the
+  *real* optimal Pelipper spread nowhere near where continuous math placed
+  it, with 3x the swing between best- and worst-case integer spreads that
+  the smooth approximation predicted. **This is exactly why
+  `tools/damage-calc/optimize-bulk.js` brute-forces the real engine across
+  every integer combination instead of applying a formula** — it was never
+  at risk of this trap, since it never computes a recommendation from the
+  continuous approximation, only from the real, discrete calc output. Use
+  `HP ≈ Def + SpD` (weighted by a bias term if one category matters more)
+  as a rough mental *starting neighborhood* when reasoning about a spread
+  by hand, never as the actual answer for a real recommendation.
+  **Also confirmed by this source**: there is no universal "always want an
+  odd/even defensive stat" property — the specific favorable breakpoints
+  depend entirely on the exact modifier chain (weather/crit/STAB/spread/
+  multi-hit) of the specific attack being checked, not a fixed parity rule.
+  And multi-hit moves amplify this further — a 1-point Defense increase
+  that shaves 1 off a 5-hit move's per-hit damage saves 5 total, which is
+  why `optimize-bulk.js` treating multi-hit moves as out-of-scope (see
+  `vgc_damage_calc.md`'s multi-hit caveat) is a real gap worth closing, not
+  just a permanent limitation.
+
 Traps caught while doing this for real:
 - **Check the attacker's realistic held item before trusting a "safe"
   breakpoint.** A no-item test can understate the true worst case — e.g. a
@@ -133,3 +179,4 @@ team — only surfaced once the top-teams page was actually pulled.
 | 2026-07-10 | Added "Do this every session" note under Live meta lookup — check Pikalytics' top-teams/cores page, not just per-Pokémon usage rank, before giving bring-6-pick-4 or top-threat advice. Missed the Sun archetype (Charizard-Mega-Y/Sylveon/Aerodactyl-Mega) entirely on a first pass because only individual usage rankings had been checked | https://www.pikalytics.com/topteams fetched this session; user asked this be made a standing habit |
 | 2026-07-14 | Added "Team-building is collaborative, not a solo deliverable" section — built and saved a full anti-meta team (`teams/surprise-trick-room-anti-meta.md`) in one uninterrupted pass without checking in on the strategic direction or individual picks first. User said this isn't how they want to work | User correction, same session as the surprise-trick-room-anti-meta build |
 | 2026-07-14 | Rewrote "SP spread allocation" to split Speed breakpoints (still a `cli.js` binary search) from HP-vs-Def/SpD breakpoints (now `tools/damage-calc/optimize-bulk.js`, a brute-force tool built this session after finding no single equation reliably gives the optimal split — Def/SpD have diminishing returns, HP is linear, and the right ratio depends on the defender's own base stats). Also added the "never manually multiply by 0.75x again" trap after discovering a real double-reduction error | User asked "are you figuring out optimal HP/Def/SpD spreads" then asked for the real damage-calc math to be investigated and turned into a tool; brute-force verification this session (Aegislash-Shield vs. Kingambit Kowtow Cleave: true minimum 24 HP/1 Def) |
+| 2026-07-14 | Added citation/credit for Jenkins' "How to Optimize Defensive Spreads in Pokemon Champions Using Math" video and damage-rounding-calc tool — confirmed our own from-scratch Lagrangian derivation (HP = Def + SpD at the equal-weighting optimum) independently matches his, and documented his key finding that continuous math is a poor guide to the real integer-rounded optimum (motivating why `optimize-bulk.js` brute-forces the real engine instead of applying a formula). Also flagged that `optimize-bulk.js`'s current multi-hit-move exclusion is a real gap worth closing, not a permanent limitation, since multi-hit moves amplify exactly this rounding effect | User-provided video transcript and tool link this session |
