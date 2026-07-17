@@ -6,11 +6,9 @@ sources instead of letting the model coast on stale training data, and to
 support both ladder/tournament prep and building around user-chosen favorite
 Pokémon rather than copy-pasting top-usage squads.
 
-This repo is the **sole source of truth** for this project. It supersedes an
-earlier claude.ai chat + Google Drive setup (see `docs/superpowers/specs/`
-for the design history) that hit a hard limitation: claude.ai's Drive
-connector can create files but not update or delete them, so there was no
-real way to maintain files or version history there.
+This repo is the **sole source of truth** for this project — reference
+files, behavioral rules, and built teams all live here with real version
+history via git.
 
 ## How to use this repo
 
@@ -38,8 +36,42 @@ present) show how fresh its content is.
 [`teams/_TEMPLATE.md`](teams/_TEMPLATE.md), capturing not just the roster
 but the reasoning per pick and what was deliberately left out.
 
+## Using this repo for your own teambuilding
+
+This setup isn't tied to any one person's roster — the `CLAUDE.md` rules and
+`reference/` files are general VGC knowledge (type chart, mechanics, current
+regulation, methodology), and `teams/` is just where built teams accumulate.
+To use it for your own teambuilding:
+
+1. Clone the repo and open it in Claude Code — `CLAUDE.md` is picked up
+   automatically and governs every session, no setup needed.
+2. Start fresh in `teams/` (or clear out the existing files) — those are
+   one person's specific builds, not shared reference material.
+3. `reference/vgc_current_regulation.md` decays fast (it has a "Last
+   verified" stamp for this reason) — expect Claude to re-verify it live
+   each session rather than trust it indefinitely, per `CLAUDE.md` rule 5.
+4. `tools/damage-calc/` needs Node.js installed to run damage-calc/SP-spread
+   calculations locally; see `tools/damage-calc/VENDOR_MANIFEST.md` for
+   where its vendored data comes from.
+5. Tell Claude which Pokémon you want to build around, or that you're
+   prepping for ladder/a specific tournament — rule 2 in `CLAUDE.md` means
+   it won't default to just handing you the top-usage squad.
+
 ## Design history
 
 `docs/superpowers/specs/` and `docs/superpowers/plans/` contain the design
-spec and implementation plan for how this repo was built, including the
-migration from the prior claude.ai-based workflow.
+spec and implementation plan for how this repo evolved.
+
+## Maintenance notes
+
+- **File size**: none of the `reference/` files are bloated yet (largest is
+  ~270 lines as of 2026-07-17), but if one grows past ~300-400 lines or
+  starts covering two clearly distinct topics, split it and add a pointer
+  from the other files/README rather than letting it keep growing. This
+  keeps context load down for sessions that only need part of the domain.
+- **Changelogs vs. git history**: each file's `## Changelog` section is
+  deliberately not redundant with `git log` — it's a fast, in-file "when was
+  this last verified/corrected and why" signal (used by CLAUDE.md rule 5's
+  staleness check) that doesn't require leaving the file to check. Keep this
+  even though full history lives in git; the two serve different purposes
+  (at-a-glance decay signal vs. complete audit trail).
