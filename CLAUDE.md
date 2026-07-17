@@ -90,3 +90,12 @@ treat those as current — this repo is the source of truth going forward.
     later session can see *why*, not just *what*. Update a team's file in
     place as it evolves, with a changelog row, rather than creating a new
     file per iteration.
+
+12. **Refining an existing team is a different, narrower job than building
+    one.** When the user says they want to refine a team they've already
+    mostly built — not construct one from scratch — follow
+    `reference/vgc_team_refining_mode.md`: verify moves (legality +
+    meta-relevance) and optimize the full SP spread (speed, offense, bulk)
+    against current threats. Don't relitigate species/item/ability picks or
+    overall synergy in that mode — that scope creep is explicitly called
+    out as a non-goal in the reference file.
