@@ -168,6 +168,33 @@ recommendations per-threat without checking this page first, and missed an
 entire common archetype (Sun) that directly conflicts with a rain-based
 team — only surfaced once the top-teams page was actually pulled.
 
+**"What's the meta / how do I counter it" needs three Pikalytics surfaces
+together, not one** — each answers a different question and none
+substitutes for the others:
+
+1. `https://www.pikalytics.com/topteams` — real six-Pokémon tournament
+   teams as actually brought by real players. Good for "here's a concrete
+   team I might face," but each entry is one specific build, not a
+   frequency signal.
+2. `https://www.pikalytics.com/team-usage` — full six-Pokémon *archetypes*
+   ranked by win rate and team count/match record (W-L-D), i.e. how well
+   an archetype actually performs, not just that it exists. This is the
+   "is this team good" check that `/topteams` alone doesn't give you.
+3. `/pokedex`'s **"Common Team Cores" section** (distinct from the
+   per-Pokémon teammates list) — dedicated 2/3/4-Pokémon core groupings
+   ranked by how many teams feature them, sitting between the Top 20
+   individual-usage table and the Recent Top Teams listing. This is what
+   surfaces a popular sub-core (e.g. a specific 3-mon rain or Trick Room
+   piece) that's common across *many different* six-mon teams, even when
+   no single full team dominates raw usage — `/topteams`/`/team-usage`
+   alone can miss this if the core gets paired with a long tail of
+   different last-two-picks.
+
+When asked to counter "the meta" (as opposed to one named Pokémon or one
+named team), pull all three before answering: cores tell you what to
+expect to see paired together, team-usage tells you which full archetypes
+actually win, topteams gives concrete real builds to test against.
+
 ## Changelog
 
 | Date | Change | Source |
@@ -180,3 +207,4 @@ team — only surfaced once the top-teams page was actually pulled.
 | 2026-07-14 | Added "Team-building is collaborative, not a solo deliverable" section — built and saved a full anti-meta team (`teams/surprise-trick-room-anti-meta.md`) in one uninterrupted pass without checking in on the strategic direction or individual picks first. User said this isn't how they want to work | User correction, same session as the surprise-trick-room-anti-meta build |
 | 2026-07-14 | Rewrote "SP spread allocation" to split Speed breakpoints (still a `cli.js` binary search) from HP-vs-Def/SpD breakpoints (now `tools/damage-calc/optimize-bulk.js`, a brute-force tool built this session after finding no single equation reliably gives the optimal split — Def/SpD have diminishing returns, HP is linear, and the right ratio depends on the defender's own base stats). Also added the "never manually multiply by 0.75x again" trap after discovering a real double-reduction error | User asked "are you figuring out optimal HP/Def/SpD spreads" then asked for the real damage-calc math to be investigated and turned into a tool; brute-force verification this session (Aegislash-Shield vs. Kingambit Kowtow Cleave: true minimum 24 HP/1 Def) |
 | 2026-07-14 | Added citation/credit for Jenkins' "How to Optimize Defensive Spreads in Pokemon Champions Using Math" video and damage-rounding-calc tool — confirmed our own from-scratch Lagrangian derivation (HP = Def + SpD at the equal-weighting optimum) independently matches his, and documented his key finding that continuous math is a poor guide to the real integer-rounded optimum (motivating why `optimize-bulk.js` brute-forces the real engine instead of applying a formula). Also flagged that `optimize-bulk.js`'s current multi-hit-move exclusion is a real gap worth closing, not a permanent limitation, since multi-hit moves amplify exactly this rounding effect | User-provided video transcript and tool link this session |
+| 2026-07-17 | Added "three Pikalytics surfaces together" note under Live meta lookup — `/topteams` (concrete real teams), `/team-usage` (full six-mon archetypes ranked by win rate/W-L-D), and `/pokedex`'s "Common Team Cores" section (2/3/4-mon groupings by team count) each answer a different question about "the meta," and a general meta/counter-the-meta question needs all three, not just `/topteams`. User flagged that team-usage and cores were missing from the existing process | User correction; confirmed page contents via WebFetch on pikalytics.com/team-usage and pikalytics.com/pokedex this session |

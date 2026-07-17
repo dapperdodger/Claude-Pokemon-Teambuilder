@@ -31,6 +31,27 @@ finalizing any team-building recommendation.
   `vgc_current_regulation.md` says Tera is active as of its "Last verified"
   date.
 
+## Weather effects on move power
+
+- **Rain halves Fire-type moves and boosts Water-type moves 1.5x; Sun halves
+  Water-type moves and boosts Fire-type moves 1.5x** (confirmed directly in
+  this repo's own vendored engine — `damage_MASTER.js`'s `calcGeneralMods`
+  applies `0x800/0x1000` = 0.5x for the halved case and `0x1800/0x1000` =
+  1.5x for the boosted case, and `tools/damage-calc/cli.js`'s `--weather`
+  flag triggers this automatically). **Always pass the realistic `--weather`
+  flag for the matchup being calculated, not just for the user's own
+  weather-setting Pokémon** — if the *opponent* is the one running the
+  weather (e.g. checking a move against a Rain-team Pokémon like Archaludon
+  or Sinistcha), their team's real weather is very likely to be active
+  during that actual matchup, and omitting it gives a misleadingly strong
+  number. Real example: Salazzle's Fire Blast vs. Sinistcha (a real Rain-
+  team member) looked like a near-guaranteed OHKO (94-112% of HP) with no
+  weather set, but dropped to a survivable 47-55% once Rain was correctly
+  applied — the same mistake in the other direction (crediting a move with
+  full power against a target whose own team would realistically have it
+  weakened) as forgetting to check an attacker's boosted weather in the
+  first place. Caught by the user, not proactively.
+
 ## Doubles-specific traps
 
 - **Grass-type immunity to powder moves can break a redirection plan.**
@@ -73,6 +94,35 @@ finalizing any team-building recommendation.
   allocation, moves) via usage data before reasoning about bulk, speed
   tier, or damage rolls — an outdated or assumed spread produces wrong
   damage-roll math even if the typing-level reasoning is correct.
+- **Most non-Mega Pokémon legally have 2-3 abilities (two regular slots
+  plus a hidden ability), not one** — `tools/damage-calc/vendor/pokedex.js`'s
+  `POKEDEX_CHAMPIONS[species].ab` field returns a single string, but that's
+  one legal option surfaced by the vendor data, not proof it's the only one
+  or the one any given real set actually uses. Always check whether a real
+  preset (`SETDEX_GEN10`) or live usage data names a *different* ability for
+  the specific role being built, and trust that over the bare `.ab` field.
+  Real example: the vendored dex's `.ab` for Maushold is "Technician," but
+  its real, actually-used competitive Follow-Me-support preset runs
+  **Friend Guard** instead — reporting "Technician" without checking the
+  preset would have been a real, wrong claim about the set being built, not
+  just an incomplete one. This is a different trap from
+  `vgc_ability_move_mechanics.md`'s "Mega Evolution ability changes"
+  section (a Mega's ability is genuinely fixed to one value, overriding
+  pre-Mega selection) — this one is about ordinary, non-Mega Pokémon
+  having real optionality that a single vendored field doesn't show.
+- **An ability's power-boosted move category isn't automatically the best move
+  in that category — always compare real effective power against the
+  unboosted alternatives, don't stop at "this move matches the ability."**
+  Mega Launcher boosts pulse/aura moves 1.5x, so Water Pulse (60 BP) looked
+  like the obvious Water-STAB pick for a Mega Launcher Blastoise — but
+  60 BP × 1.5 (Mega Launcher) still loses to Hydro Pump's unboosted 110 BP,
+  and both lose to Water Spout's unboosted 150 BP (which also has 100%
+  accuracy vs. Hydro Pump's 80%, and hits both opponents as a spread move).
+  Real calc: Mega Launcher Water Pulse into Kingambit = 97-115; Water Spout
+  into the same target = 121-144, *higher* despite getting no ability boost
+  at all. Verify with an actual damage-calc run whenever an ability-boosted
+  option is being chosen over a higher-base-power unboosted move, rather
+  than assuming the synergy pick wins by default.
 - **Don't default to old "EV" terminology or numbers.** Pokémon Champions
   replaced EVs/IVs entirely with a Stat Points (SP) system — see
   `vgc_current_regulation.md`'s "Stat system" section for the mechanics.
@@ -167,6 +217,42 @@ only happens after a user catches a mistake:
   always check "attacking type row vs. defending type column" in
   `vgc_type_chart_reference.md`, not the mirrored cell, before claiming a
   one-way immunity.
+- **Claimed Tinkaton (Steel/Fairy) shared Altaria's weakness to Poison-type
+  coverage** by checking only the Fairy half's effectiveness (Poison vs.
+  Fairy = 2x weak) and never multiplying it against the Steel half —
+  Poison vs. Steel is 0 (immune), and immunity always wins in the
+  multiplicative chain (2 × 0 = 0), so Tinkaton is flatly immune to Poison
+  overall, not weak to it. For any dual-type Pokémon, compute BOTH halves'
+  effectiveness against the incoming type and multiply them together —
+  don't reason from a single half and assume it holds for the combined
+  typing, especially when one half might be an immunity that overrides
+  the other. Caught by the user, not proactively.
+
+- **Built an entire team's strategic premise ("Mega Altaria Calm Mind sweeper
+  core") around a move the Pokémon cannot actually learn in Champions,**
+  without ever running a learnset check until asked to "deeply examine each
+  move" at the very end of a long build. Calm Mind does not appear anywhere
+  in Altaria's Champions learnset (confirmed via direct Bulbapedia fetch),
+  and Altaria has **no Special Attack-boosting move at all** in its kit
+  (Dragon Dance boosts Attack/Speed, Agility boosts Speed only — nothing
+  touches SpA). Real tournament data confirms the actual role: Pikalytics
+  shows Altaria's top moves are Will-O-Wisp (63%), Protect (63%), Tailwind
+  (47%), Brave Bird (42%), Perish Song (26%), Roost (26%) — a support/
+  utility set, not a self-setup special sweeper — and Cloud Nine (89.5%)
+  outweighs Pixilate as the actual common ability, meaning most real
+  Altaria isn't even the Mega/Pixilate build at all. Several other picks
+  (a Follow-Me support Pokémon framed as "protecting Altaria's setup turn,"
+  a second Mega framed as "backup sweeper for when Altaria's matchup is
+  bad") were reasoned from this false premise. **Lesson: verify a
+  Pokémon's actual learnset for its intended role-defining move BEFORE
+  building team strategy around that role, not after the roster is
+  finalized** — a name-recognition move ("Altaria runs Calm Mind" from
+  general Pokémon knowledge/mainline-game memory) is not a substitute for
+  checking the specific game's learnset, and this is a more severe version
+  of the same trap as the Gyarados/Rock Slide and Blastoise/Water Pulse
+  cases below: those were single-move corrections, this was a whole team's
+  win condition. Caught only because the user asked for a full move-by-move
+  audit at the end, not proactively during the build.
 
 ## Changelog
 
@@ -180,3 +266,8 @@ only happens after a user catches a mistake:
 | 2026-07-10 | Added process-lesson case study: claimed Garchomp was immune to Mega Staraptor's Flying STAB, inverting the real Ground-move-vs-Flying-type immunity direction. Caught while re-verifying Garchomp's actual value to the team via damage calc | tools/damage-calc/cli.js (Dual Wingbeat vs Garchomp = 42-51 per hit, not 0) |
 | 2026-07-10 | Added "Team-finalization checks" section — gave two Pokémon (Rotom-Wash, Archaludon) the same item (Leftovers) across several messages of a six-Pokémon build before the duplicate was caught. No two Pokémon on a team may hold the same item in doubles VGC/Champions | User caught it directly; fixed via Rotom-Wash's real second-most-common item (Sitrus Berry, 39.1% usage per Pikalytics) |
 | 2026-07-14 | Corrected the "Spread moves" bullet and its 2026-07-10 process-lesson case study — `tools/damage-calc/cli.js` already applies the doubles 0.75x spread-move reduction internally (confirmed via git history: `calc.js` hardcoded Doubles format from its first commit, predating that case study) and manually multiplying its output by 0.75x again is a double-reduction that understates real damage by ~25%. The 2026-07-10 entry's own "corrected math" was almost certainly this same error, not a real fix, and likely a source the mistake propagated from | Controlled Singles-vs-Doubles A/B test this session (Charizard-Y Heat Wave vs. Mega Camerupt: 63-75 real Doubles output vs. 84-99 Singles-forced); `git log -S` on calc.js |
+| 2026-07-14 | Added "Most non-Mega Pokémon legally have 2-3 abilities, not one" bullet — treated the vendored dex's single `.ab` field as if it were the only/correct ability for Maushold (reported "Technician") without checking whether its real competitive preset used something else, which it did (Friend Guard, for the actual Follow-Me-support role being built). User flagged this as a recurring pattern to always keep in mind, not a one-off | User correction; `tools/damage-calc/vendor/pokedex.js`'s `SETDEX_GEN10['Maushold']['Chople Support']` preset (real ability: Friend Guard) vs. `POKEDEX_CHAMPIONS['Maushold'].ab` (Technician) |
+| 2026-07-14 | Added process-lesson case study: claimed Tinkaton (Steel/Fairy) shared Altaria's weakness to Poison-type coverage by checking only the Fairy half's Poison weakness and never multiplying against the Steel half's Poison immunity (0 × anything = 0, immunity always wins). Tinkaton is flatly immune to Poison, not weak to it | User correction |
+| 2026-07-14 | Added "Weather effects on move power" section — Rain halves Fire moves/boosts Water 1.5x, Sun halves Water/boosts Fire 1.5x. Calculated Salazzle's Fire Blast vs. Sinistcha (a real Rain-team member) with no weather flag set, overstating it as a near-guaranteed OHKO (94-112%) when the real number under the Rain their own team would have active is only 47-55% | User correction; confirmed via `tools/damage-calc/cli.js`'s `--weather Rain` flag, cross-checked against `damage_MASTER.js`'s `calcGeneralMods` weather multipliers |
+| 2026-07-14 | Added "ability's power-boosted move category isn't automatically the best move" bullet — picked Mega Launcher-boosted Water Pulse (60 BP) as Mega Blastoise's Water STAB without comparing it against unboosted higher-BP alternatives; real calc showed unboosted Water Spout (150 BP, 100% acc, spread) and Hydro Pump (110 BP) both outdamage the "ability synergy" pick | User asked "does it matter in actual matchups"; confirmed via `tools/damage-calc/cli.js` (Water Spout 121-144 vs. Water Pulse 97-115 into Kingambit) and Bulbapedia accuracy pages |
+| 2026-07-14 | Added major process-lesson case study: built a whole team's strategic premise ("Mega Altaria Calm Mind sweeper") around a move Altaria cannot learn in Champions at all — never checked until a final "deeply examine each move" audit. Altaria has no Special Attack-boosting move in its kit; real tournament usage is a Will-O-Wisp/Protect/Tailwind support set, not a sweeper | Direct Bulbapedia Champions-learnset fetch (Calm Mind absent from full move list); Pikalytics championstournaments/Altaria usage data (Will-O-Wisp 63%, Cloud Nine 89.5% over Pixilate) |
