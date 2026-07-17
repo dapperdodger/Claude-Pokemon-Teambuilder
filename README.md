@@ -28,6 +28,7 @@ present) show how fresh its content is.
 | [`reference/vgc_type_chart_reference.md`](reference/vgc_type_chart_reference.md) | Full 18×18 Gen 6+ type effectiveness chart. |
 | [`reference/vgc_ability_move_mechanics.md`](reference/vgc_ability_move_mechanics.md) | Ability/move mechanics not captured by typing alone (Trick Room priority, Armor Tail, speed calculation, etc.). |
 | [`reference/vgc_teambuilding_methodology.md`](reference/vgc_teambuilding_methodology.md) | Process rules for evaluating matchups — typing alone isn't enough to call something a counter. |
+| [`reference/vgc_team_refining_mode.md`](reference/vgc_team_refining_mode.md) | Narrower workflow for refining an already-mostly-built team: move verification + full SP-spread optimization against current threats, not full teambuilding. |
 | [`reference/vgc_damage_calc.md`](reference/vgc_damage_calc.md) | Local damage-calculator CLI (tools/damage-calc/) plus formula fundamentals for manual sanity-checks. |
 
 ## Teams
