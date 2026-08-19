@@ -121,7 +121,17 @@ function buildPokemon(rawInput, natures) {
   }
   input.item = input.item !== undefined ? input.item : '';
   input.nature = input.nature !== undefined ? input.nature : 'Serious';
-  input.sp = input.sp !== undefined ? input.sp : { hp: 0, at: 0, df: 0, sa: 0, sd: 0, sp: 0 };
+  // Merge per-key, not replace-if-fully-undefined: a caller passing a
+  // partial sp map (e.g. { hp: 32, df: 19, sd: 15 }, the normal shape for a
+  // defensive Pokemon that isn't investing in Atk/SpA/Spe at all) must get
+  // 0 for the omitted keys, not `undefined` silently flowing into
+  // computeStat/computeHP. Discovered when a defender-only-declared sp map
+  // in optimize-bulk.js's rankSpreadsByOverallSurvival produced `at: null`
+  // (undefined SP fed into the stat formula), which then propagated as
+  // NaN through the move-damage calc and, worse, silently emptied the
+  // ranking's `winners` array (NaN !== NaN broke the tie-detection filter)
+  // instead of surfacing an error.
+  input.sp = { hp: 0, at: 0, df: 0, sa: 0, sd: 0, sp: 0, ...(input.sp || {}) };
 
   const rawStats = {
     hp: computeHP(species.bs.hp, input.sp.hp),

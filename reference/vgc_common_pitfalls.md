@@ -19,6 +19,56 @@ finalizing any team-building recommendation.
   strong and get used a lot. Verify the actual synergy mechanism (redirection,
   speed control, type coverage, etc.) rather than citing co-occurrence rate
   as if it were evidence of a working game plan.
+- **Generic WebSearch snippets mentioning "top Pokémon" are NOT the same as
+  actually pulling Pikalytics' team-level pages, and built a 5-Pokémon
+  "threat list" from the former without ever fetching the latter** — a
+  repeat of a mistake `vgc_teambuilding_methodology.md`'s own "Live meta
+  lookup" section already documents being caught and fixed once before
+  (2026-07-10 changelog entry, missing the Sun archetype core on a first
+  pass). That section explicitly says to check
+  `https://www.pikalytics.com/topteams` and
+  `https://www.pikalytics.com/team-usage` for real team-level archetypes
+  before giving "what beats the meta" advice, not just per-Pokémon usage
+  rank — but a later session still built threat-coverage advice (Palafin
+  moveset calcs) from WebSearch snippets off individual Pokémon pages alone,
+  never fetching either URL. When actually fetched, `team-usage` surfaced
+  real top-10-by-frequency Pokémon across the top 100 team cores
+  (Charizard-Mega-Y, Garchomp, Basculegion, **Archaludon, Swampert-Mega,
+  Sinistcha, Pelipper**, Incineroar, Floette-Eternal, Kingambit) that the
+  WebSearch-only pass had entirely missed — Archaludon, Swampert-Mega, and
+  Pelipper never came up once, despite the Swampert-Mega/Pelipper/Archaludon
+  rain core appearing dozens of times in the top-100 list, meaning the
+  format's single most common weather archetype (highly relevant to a
+  Water-type-heavy team, since rain doubles the size of the "does this OHKO"
+  question already being calculated) was absent from the threat list being
+  used for real moveset decisions. Caught only because the user asked
+  directly whether `team-usage` should have been checked, not proactively.
+  **Lesson: having the correct instruction written down once in one file is
+  not sufficient — re-read `vgc_teambuilding_methodology.md`'s "Live meta
+  lookup" section and actually fetch both team-level URLs at the start of
+  any threat-list-building work, every session, not just recall that a
+  search was already done.**
+- **A Pikalytics per-Pokémon page's "Best Moves/Items/Abilities" panel
+  rendering empty or `NaN%`/`undefined%` is a client-side loading
+  artifact, not proof the Pokémon has no real presence.** Confirmed by
+  fetching the same page for a Pokémon already known to have heavy real
+  usage (Aerodactyl-Mega) via WebFetch/the Browser tool — its own
+  moves/items/abilities panels were just as empty, even though it's a
+  documented top-20 real pick. The plain-text-only `WebFetch` tool in
+  particular can't trigger this site's client-side data loading at all;
+  even the in-app Browser tool's rendered DOM leaves these specific panels
+  empty. **The reliable real-data source on this same page is the
+  "[Species] Pokemon Champions Teams" section** (curated real tournament
+  results from Limitless/Twitter/VGCPastes) — when it lists real teams
+  with records, the Pokémon has confirmed real tournament presence; when
+  it's entirely absent (checked directly this session: Mega Pidgeot had
+  zero curated teams, Mega Dragonite and Mega Aerodactyl each had several
+  with real records like 9-0, 11-1), that's the actual signal, not the
+  empty stat panels above it. For the full real moveset/item/ability of a
+  specific curated team entry, read the underlying JSON API directly
+  (`https://www.pikalytics.com/api/p/<date>/<format>-<id>/<species>`,
+  found via the Browser tool's network-request log after loading the
+  page) rather than trying to parse the rendered panels.
 
 ## Current-mechanic correction
 
@@ -140,6 +190,19 @@ finalizing any team-building recommendation.
   actual second-most-common real item (Sitrus Berry, 39.1% usage) rather
   than an arbitrary swap — when fixing a duplicate, prefer the displaced
   Pokémon's next-most-common real item over guessing.
+  **This recurred in a different team file** (`palafin-arcanine-sinistcha-core.md`):
+  gave Gallade Life Orb when Palafin already held it, in the same message
+  that finalized the sixth roster slot — despite this exact rule already
+  being documented here. Caught by the user, not proactively, again. This
+  wasn't a one-time slip either time: both misses happened while actively
+  building/finalizing a team, meaning the check has to be run explicitly
+  at the moment an item is assigned (cross-reference against every other
+  already-locked item on the roster), not just recalled as a rule that
+  exists. When fixing this instance, re-verified the displaced Pokémon's
+  damage breakpoints under the replacement item before committing to it
+  (Focus Sash preserved both of Gallade's guaranteed OHKOs, though the
+  Attack SP breakpoint that secured one of them changed as a result) —
+  don't assume a same-Pokémon item swap is damage-neutral.
 
 ## Process-lesson case studies
 
@@ -271,3 +334,6 @@ only happens after a user catches a mistake:
 | 2026-07-14 | Added "Weather effects on move power" section — Rain halves Fire moves/boosts Water 1.5x, Sun halves Water/boosts Fire 1.5x. Calculated Salazzle's Fire Blast vs. Sinistcha (a real Rain-team member) with no weather flag set, overstating it as a near-guaranteed OHKO (94-112%) when the real number under the Rain their own team would have active is only 47-55% | User correction; confirmed via `tools/damage-calc/cli.js`'s `--weather Rain` flag, cross-checked against `damage_MASTER.js`'s `calcGeneralMods` weather multipliers |
 | 2026-07-14 | Added "ability's power-boosted move category isn't automatically the best move" bullet — picked Mega Launcher-boosted Water Pulse (60 BP) as Mega Blastoise's Water STAB without comparing it against unboosted higher-BP alternatives; real calc showed unboosted Water Spout (150 BP, 100% acc, spread) and Hydro Pump (110 BP) both outdamage the "ability synergy" pick | User asked "does it matter in actual matchups"; confirmed via `tools/damage-calc/cli.js` (Water Spout 121-144 vs. Water Pulse 97-115 into Kingambit) and Bulbapedia accuracy pages |
 | 2026-07-14 | Added major process-lesson case study: built a whole team's strategic premise ("Mega Altaria Calm Mind sweeper") around a move Altaria cannot learn in Champions at all — never checked until a final "deeply examine each move" audit. Altaria has no Special Attack-boosting move in its kit; real tournament usage is a Will-O-Wisp/Protect/Tailwind support set, not a sweeper | Direct Bulbapedia Champions-learnset fetch (Calm Mind absent from full move list); Pikalytics championstournaments/Altaria usage data (Will-O-Wisp 63%, Cloud Nine 89.5% over Pixilate) |
+| 2026-07-23 | Added "Generic WebSearch snippets are not the same as fetching Pikalytics' team-level pages" bullet — built a 5-Pokémon threat list (for real Palafin-moveset damage-calc decisions) from WebSearch snippets off individual Pokémon pages only, never fetching `topteams`/`team-usage` as `vgc_teambuilding_methodology.md`'s own "Live meta lookup" section already instructs. Missed Archaludon, Swampert-Mega, and Pelipper entirely — the Swampert-Mega/Pelipper/Archaludon rain core turned out to be one of the most common archetypes in the real top-100 team-usage list, which is especially relevant to a Water-type-heavy team since rain doubles the relevant "does this OHKO" question already being calculated. This is a repeat of the exact mistake the methodology file's 2026-07-10 changelog entry already documents being caught once (missed the Sun archetype core from usage-rank-only checking) — the written instruction existing in one file wasn't sufficient to prevent recurrence three sessions later | User asked directly whether `pikalytics.com/team-usage` should have been checked; fetched `topteams` and `team-usage` this session, cross-referenced against the prior 2026-07-10 entry |
+| 2026-07-23 | Extended the duplicate-item bullet (originally added 2026-07-10 after the Rotom-Wash/Archaludon Leftovers miss) with a second real recurrence in a different team file — gave Gallade Life Orb when Palafin already held it, in the very message finalizing the sixth roster slot. Both misses happened while actively assigning an item during team construction, not as a one-off; the rule existing in this file wasn't enough to prevent it being missed a second time. Added explicit guidance: the check has to be run at the moment of assignment (cross-reference every other already-locked item), and when fixing a duplicate, re-verify the displaced Pokémon's damage breakpoints under the replacement item rather than assuming the swap is damage-neutral | User caught it directly; tools/damage-calc/cli.js re-verification of both affected breakpoints under the replacement item (Focus Sash) |
+| 2026-07-27 | Added "Pikalytics per-Pokémon panel rendering empty is a loading artifact, not a low-usage signal" bullet — while scouting Mega Tailwind-setter alternatives to Aerodactyl, an empty "Best Moves" panel for Mega Pidgeot was initially treated as evidence of near-zero real usage, until the same empty-panel pattern was confirmed on Mega Aerodactyl's own page too (a known heavily-used real pick), proving it's a client-rendering limitation affecting every Pokémon's page, not a usage signal. The page's curated "Champions Teams" section (and its underlying `/api/p/...` JSON, found via the Browser tool's network log) turned out to be the real, reliable signal instead | Direct comparison via the Browser tool: Mega Pidgeot had zero curated real teams (genuinely low presence) vs. Mega Aerodactyl (19) and Mega Dragonite (9, including three 8-0/9-0/11-1 finishes) both having real ones despite identical empty stat panels |
