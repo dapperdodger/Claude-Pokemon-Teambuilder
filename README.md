@@ -31,6 +31,21 @@ present) show how fresh its content is.
 | [`reference/vgc_team_refining_mode.md`](reference/vgc_team_refining_mode.md) | Narrower workflow for refining an already-mostly-built team: move verification + full SP-spread optimization against current threats, not full teambuilding. |
 | [`reference/vgc_damage_calc.md`](reference/vgc_damage_calc.md) | Local damage-calculator CLI (tools/damage-calc/) plus formula fundamentals for manual sanity-checks. |
 
+## Skills
+
+[`.claude/skills/`](.claude/skills/) holds project skills that surface the
+relevant reference files and behavioral rules automatically when a session
+matches their trigger, instead of relying on the rules being recalled from
+`CLAUDE.md` alone. Each skill is a thin trigger/checklist layer — the
+reference files above remain the actual source of truth; skills point at
+them rather than duplicating their content.
+
+| Skill | Triggers on |
+|---|---|
+| [`vgc-team-building`](.claude/skills/vgc-team-building/SKILL.md) | Building a new team, extending a partial one, or building around a named favorite Pokémon. |
+| [`vgc-team-refining`](.claude/skills/vgc-team-refining/SKILL.md) | An already-mostly-decided team (species/item/ability locked in) needing move verification + SP-spread optimization only. |
+| [`vgc-threat-evaluation`](.claude/skills/vgc-threat-evaluation/SKILL.md) | Evaluating whether something counters/answers/beats something else — used standalone or invoked from the two skills above. |
+
 ## Teams
 
 [`teams/`](teams/) holds actual built teams — one file per team, using
