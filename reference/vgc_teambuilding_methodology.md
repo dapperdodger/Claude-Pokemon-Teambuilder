@@ -134,7 +134,12 @@ back with a finished, saved six.
 ## Live meta lookup: Pikalytics per-Pokémon pages
 
 CLAUDE.md rule 3 requires live verification before any moveset/build
-suggestion — this is the concrete "how" for Pikalytics specifically.
+suggestion — this is the concrete "how" for Pikalytics specifically. This
+section is also packaged as the `vgc-meta-lookup` skill (`.claude/skills/vgc-meta-lookup/`)
+for standalone "what's the meta" questions with no specific Pokémon/team
+named yet, and invoked from `vgc-team-building`/`vgc-team-refining` for
+their own meta scans — this file remains the full-detail source both defer
+to.
 
 URL pattern: `https://www.pikalytics.com/pokedex/{format-slug}/{Pokemon}`
 (e.g. `.../pokedex/battledataregmbs3/Garchomp`). Fetchable via WebFetch —
@@ -208,3 +213,4 @@ actually win, topteams gives concrete real builds to test against.
 | 2026-07-14 | Rewrote "SP spread allocation" to split Speed breakpoints (still a `cli.js` binary search) from HP-vs-Def/SpD breakpoints (now `tools/damage-calc/optimize-bulk.js`, a brute-force tool built this session after finding no single equation reliably gives the optimal split — Def/SpD have diminishing returns, HP is linear, and the right ratio depends on the defender's own base stats). Also added the "never manually multiply by 0.75x again" trap after discovering a real double-reduction error | User asked "are you figuring out optimal HP/Def/SpD spreads" then asked for the real damage-calc math to be investigated and turned into a tool; brute-force verification this session (Aegislash-Shield vs. Kingambit Kowtow Cleave: true minimum 24 HP/1 Def) |
 | 2026-07-14 | Added citation/credit for Jenkins' "How to Optimize Defensive Spreads in Pokemon Champions Using Math" video and damage-rounding-calc tool — confirmed our own from-scratch Lagrangian derivation (HP = Def + SpD at the equal-weighting optimum) independently matches his, and documented his key finding that continuous math is a poor guide to the real integer-rounded optimum (motivating why `optimize-bulk.js` brute-forces the real engine instead of applying a formula). Also flagged that `optimize-bulk.js`'s current multi-hit-move exclusion is a real gap worth closing, not a permanent limitation, since multi-hit moves amplify exactly this rounding effect | User-provided video transcript and tool link this session |
 | 2026-07-17 | Added "three Pikalytics surfaces together" note under Live meta lookup — `/topteams` (concrete real teams), `/team-usage` (full six-mon archetypes ranked by win rate/W-L-D), and `/pokedex`'s "Common Team Cores" section (2/3/4-mon groupings by team count) each answer a different question about "the meta," and a general meta/counter-the-meta question needs all three, not just `/topteams`. User flagged that team-usage and cores were missing from the existing process | User correction; confirmed page contents via WebFetch on pikalytics.com/team-usage and pikalytics.com/pokedex this session |
+| 2026-08-19 | Added a pointer from "Live meta lookup" to the new `vgc-meta-lookup` skill, which packages this section's process for standalone meta questions (previously only reachable via `vgc-team-building`/`vgc-team-refining`, so a bare "what's popular right now" question with no team on the table wouldn't reliably trigger this section's process) | Skill-triggering audit this session (tested vgc-team-building/vgc-team-refining/vgc-threat-evaluation against realistic phrasing, found the standalone-meta-question gap) |

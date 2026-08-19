@@ -1,6 +1,6 @@
 # Current Regulation — Pokémon Champions VGC
 
-**Last verified: 2026-07-09**
+**Last verified: 2026-08-19**
 
 This is the single most volatile fact set in this repo. Before relying on
 anything below, re-check it if it's been more than a couple of weeks since
@@ -9,7 +9,9 @@ anything below, re-check it if it's been more than a couple of weeks since
 ## Active regulation
 
 - **Regulation Set M-B**
-- Active dates: **17 June 2026 – 2 September 2026** (covers Worlds 2026)
+- Active dates: **17 June 2026 – 9 September 2026** (covers Worlds 2026). Originally
+  scheduled to end 2 September 2026; extended by one week via an official
+  update announced 5 August 2026.
 - Prior regulation was M-A (ended 17 June 2026)
 
 ## Active mechanics
@@ -122,3 +124,5 @@ above.
 | 2026-07-09 | Created file; verified M-B regulation dates, active-mechanics status (Mega only, no Tera/Dynamax/Z-Move), and platform launch dates via web search. Usage snapshot WebSearch attempted but returned no results (session limit) — left unfilled per fallback instructions | See Sources section above |
 | 2026-07-09 | Added "Stat system" section — Champions replaced EVs/IVs with a Stat Points (SP) system entirely (66 total, 32/stat cap, no IVs, Nature renamed Stat Alignment). Caught while researching a speed-calc reference addition; existing repo content still used old "EV" terminology | champsdex.com EV/IV/Stats guide, genpkm.com, game8.co (cross-checked across sources, fetched this session) |
 | 2026-07-10 | Extended "Roster vs. legality" to explicitly cover items/abilities — confirmed Choice Band/Choice Specs/Assault Vest and others are genuinely unavailable in Champions right now (not a data gap), and that the item pool grows via regulation updates (Life Orb added in M-B) the same way the Pokémon roster does. Caught building tools/damage-calc's itemChampionsLegal/abilityChampionsLegal flags | Victory Road VGC, cross-checked against vendored ITEMS_CHAMPIONS data (see tools/damage-calc/VENDOR_MANIFEST.md) |
+| 2026-07-24 | Routine re-verification (session-start staleness flag, >14 days since last check) — confirmed M-B is still active, no regulation change | Live web search this session |
+| 2026-08-19 | Routine re-verification (session-start staleness flag, >14 days since last check) — caught that M-B's end date was extended from 2 September to 9 September 2026 via an official update announced 5 August 2026; still Mega-only, no Tera/Dynamax/Z-Move | victoryroad.pro/champions-regulations/, serebii.net/pokemonchampions/rankedbattle/regulationm-b.shtml (cross-checked both) |

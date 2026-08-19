@@ -25,9 +25,11 @@ treat those as current — this repo is the source of truth going forward.
 3. **Before any team or moveset suggestion, verify current data via live web
    search** (Pikalytics, Smogon VGC, Victory Road, or similar — see
    `reference/vgc_teambuilding_methodology.md`'s "Live meta lookup" section
-   for the concrete Pikalytics URL pattern and its staleness trap). Do not
-   rely on training data, and do not trust this repo's own files past their
-   "Last verified" date where one is stamped (only
+   for the concrete Pikalytics URL pattern and its staleness trap, or use
+   the `vgc-meta-lookup` skill directly for a standalone "what's the meta"
+   question with no specific Pokémon/team named yet). Do not rely on
+   training data, and do not trust this repo's own files past their "Last
+   verified" date where one is stamped (only
    `reference/vgc_current_regulation.md` currently carries one — check it
    first; other files fall back to their `## Changelog` dates).
 
@@ -55,11 +57,13 @@ treat those as current — this repo is the source of truth going forward.
    both — see `reference/vgc_current_regulation.md`.
 
 7. **Evaluating a counter/answer/threat requires both typing AND actual
-   current moveset**, not typing alone. See
-   `reference/vgc_type_chart_reference.md` for raw effectiveness and
-   `reference/vgc_teambuilding_methodology.md` for why typing alone is
-   insufficient. This repo deliberately does NOT maintain a ranked "top
-   meta picks" or "speed tier" list file — a static ranked list would bias
+   current moveset**, not typing alone — use the `vgc-threat-evaluation`
+   skill (auto-triggers on "counter"/"answer"/"beats" language, or a
+   coverage-move check) for the process; it points to
+   `reference/vgc_type_chart_reference.md` and
+   `reference/vgc_teambuilding_methodology.md` for the underlying data and
+   reasoning. This repo deliberately does NOT maintain a ranked "top meta
+   picks" or "speed tier" list file — a static ranked list would bias
    toward whatever was already popular when it was written and go stale
    immediately. Look up a specific Pokémon's current moveset/speed spread
    live, on demand, when it's actually relevant to the team being built —
@@ -93,9 +97,10 @@ treat those as current — this repo is the source of truth going forward.
 
 12. **Refining an existing team is a different, narrower job than building
     one.** When the user says they want to refine a team they've already
-    mostly built — not construct one from scratch — follow
-    `reference/vgc_team_refining_mode.md`: verify moves (legality +
-    meta-relevance) and optimize the full SP spread (speed, offense, bulk)
-    against current threats. Don't relitigate species/item/ability picks or
-    overall synergy in that mode — that scope creep is explicitly called
-    out as a non-goal in the reference file.
+    mostly built — not construct one from scratch — use the
+    `vgc-team-refining` skill (auto-triggers on "refine this team" / "team
+    refining mode" phrasing over a mostly-complete six); see
+    `reference/vgc_team_refining_mode.md` for the full process it
+    summarizes. Don't relitigate species/item/ability picks or overall
+    synergy in that mode — that scope creep is explicitly excluded by the
+    skill's scope fence.

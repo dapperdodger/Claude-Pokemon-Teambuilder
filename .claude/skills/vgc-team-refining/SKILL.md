@@ -16,7 +16,7 @@ A narrower job than `vgc-team-building`. The user provides a mostly-complete six
 
 ## Process
 1. **Move legality + meta-relevance**, per Pokémon per listed move — legal this regulation (`reference/vgc_current_regulation.md`), and actually run on real current sets (not just legal-but-obscure). Flag mismatches; don't auto-swap, report and let the user decide.
-2. **Threat sourcing** — default to live top-usage threats (roughly top 10-15) weighted by usage share, or use threats the user names directly. Use the **vgc-threat-evaluation** skill for any individual counter/matchup call.
+2. **Threat sourcing** — default to live top-usage threats (roughly top 10-15) weighted by usage share, or use threats the user names directly. Use the **vgc-meta-lookup** skill to derive that list from all three Pikalytics surfaces (not per-mon usage rank alone), and the **vgc-threat-evaluation** skill for any individual counter/matchup call.
 3. **SP spread, all three axes**:
    - Speed breakpoints via `tools/damage-calc/cli.js` binary search
    - Offense: minimum SP to hit real OHKO/2HKO breakpoints via the same CLI

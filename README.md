@@ -45,6 +45,7 @@ them rather than duplicating their content.
 | [`vgc-team-building`](.claude/skills/vgc-team-building/SKILL.md) | Building a new team, extending a partial one, or building around a named favorite Pokémon. |
 | [`vgc-team-refining`](.claude/skills/vgc-team-refining/SKILL.md) | An already-mostly-decided team (species/item/ability locked in) needing move verification + SP-spread optimization only. |
 | [`vgc-threat-evaluation`](.claude/skills/vgc-threat-evaluation/SKILL.md) | Evaluating whether something counters/answers/beats something else — used standalone or invoked from the two skills above. |
+| [`vgc-meta-lookup`](.claude/skills/vgc-meta-lookup/SKILL.md) | "What's the meta / what's popular" with no specific Pokémon or team named yet — used standalone or invoked from the team-building/refining skills for their own meta scans. |
 
 ## Teams
 

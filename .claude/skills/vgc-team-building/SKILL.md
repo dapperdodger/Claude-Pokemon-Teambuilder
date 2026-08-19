@@ -10,7 +10,7 @@ Format is Pokémon Champions VGC doubles, not Smogon singles — don't import si
 
 ## Process, in order
 1. **Regulation check, fresh this session** — `reference/vgc_current_regulation.md`, even if already checked earlier in this conversation. Note it stamps a "Last verified" date; don't trust it past that date. Roster availability and regulation legality are two separate checks — a Pokémon can be legal but not yet in Champions' roster, or vice versa.
-2. **Live meta lookup — all three Pikalytics surfaces**, not just per-mon usage rank: `/topteams` (real builds), `/team-usage` (archetypes by win rate), and a per-mon page's "Common Team Cores" section. A flat top-20 list has missed real archetypes (Sun, rain cores) before — see `reference/vgc_teambuilding_methodology.md`'s "Live meta lookup" section. Watch the season-slug in the URL; it isn't permanent.
+2. **Use the vgc-meta-lookup skill** for the live meta scan — all three Pikalytics surfaces (`/topteams`, `/team-usage`, per-mon "Common Team Cores"), not just per-mon usage rank. A flat top-20 list has missed real archetypes (Sun, rain cores) before.
 3. **Check in at real decision points** — the strategic archetype and any genuine judgment-call pick — before finalizing. This isn't "ask permission for every lookup"; research legwork just gets done. It's not disappearing and returning with a finished six.
 4. **Use the vgc-threat-evaluation skill** whenever a pick is justified as a counter/answer/check to something.
 5. **Verify numbers via the CLI tools**, don't hand-calculate: `tools/damage-calc/cli.js` for rolls, `optimize-bulk-cli.js` for HP/Def/SpD breakpoints. Solve for the minimum SP a spread actually needs — don't default to an even 32/32/2 split.
