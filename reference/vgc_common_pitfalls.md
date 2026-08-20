@@ -102,6 +102,26 @@ finalizing any team-building recommendation.
   weakened) as forgetting to check an attacker's boosted weather in the
   first place. Caught by the user, not proactively.
 
+- **`tools/damage-calc/cli.js`'s `--weather` value is case-sensitive and
+  silently no-ops on a mismatch instead of erroring** — the vendored engine
+  matches against exact capitalized strings (`Sun`, `Rain`, `Sand`, `Hail`,
+  `Snow`, `Harsh Sun`, `Heavy Rain`, `Strong Winds`), several via `===`
+  and others via `.indexOf("Sun")`/`.indexOf("Rain")` substring checks —
+  both fail equally on a lowercase `sun`/`rain`. Passing `--weather sun`
+  (lowercase) produces a real, plausible-looking JSON result with no error,
+  but silently drops both the attacker's same-weather STAB boost (1.5x Fire
+  in Sun, 1.5x Water in Rain) AND, for Solar Beam/Solar Blade specifically,
+  applies the *wrong-weather* 0.5x power penalty (60 BP instead of 120)
+  since the engine's Solar Beam check only exempts the exact strings
+  `"None"/"Sun"/"Harsh Sun"/"Strong Winds"/""`. Confirmed directly: Mega
+  Charizard Y Heat Wave vs. 0 SP Scizor came out 336-400 with
+  `--weather sun` vs. the correct 508-600 with `--weather Sun`; Solar Beam
+  vs. Milotic came out 68-80 (60 BP) with `--weather sun` vs. the correct
+  132-156 (120 BP) with `--weather Sun`. **Always pass the exact capitalized
+  weather string**, and treat a "reasonable-looking" number with no error as
+  no guarantee the flag was actually recognized. Caught while evaluating a
+  Mega Charizard Y matchup, not proactively.
+
 ## Doubles-specific traps
 
 - **Grass-type immunity to powder moves can break a redirection plan.**
@@ -203,6 +223,18 @@ finalizing any team-building recommendation.
   (Focus Sash preserved both of Gallade's guaranteed OHKOs, though the
   Attack SP breakpoint that secured one of them changed as a result) —
   don't assume a same-Pokémon item swap is damage-neutral.
+- **A Pokémon's item, moveset, ability, and SP spread are fixed when the
+  team is built/registered — Team Preview only lets you choose which 4 of
+  6 to bring and see the opponent's 6, it does not let you swap a held
+  item (or anything else) per-opponent or per-game.** Suggested "Occa Berry
+  vs. a Charizard-Y matchup, Colbur Berry vs. a Tyranitar/sand matchup" as
+  if Sinistcha could carry whichever one fit the game currently being
+  played — that's not how the format works; whichever berry gets chosen
+  is on the team for every game until the team itself is rebuilt/re-
+  registered. Any item recommendation that's phrased as "flex this per
+  matchup" needs to instead be phrased as a genuine trade-off between two
+  fixed, permanent choices (which threat is more likely/costly to face
+  overall), not a situational pick. Caught by the user, not proactively.
 
 ## Process-lesson case studies
 
@@ -290,6 +322,31 @@ only happens after a user catches a mistake:
   don't reason from a single half and assume it holds for the combined
   typing, especially when one half might be an immunity that overrides
   the other. Caught by the user, not proactively.
+- **Grouped two different moves from the same attacker under one blanket
+  matchup claim ("Solar Beam / Weather Ball: both resisted") because they're
+  both a sun-setter's special options, without checking that they're
+  different types.** Weather Ball genuinely does become Fire-type in Sun
+  (correctly established earlier in the same session) and is resisted by a
+  Water-type like Milotic — but Solar Beam is plain Grass-type regardless of
+  weather, and Grass is Milotic's one real weakness, already correctly
+  logged as "weak" in an audit table three messages earlier in the *same*
+  conversation. The error wasn't missing data — the correct number (Solar
+  Beam 132-156 vs. Milotic's 170 HP, from `vgc_damage_calc.md`'s tool) was
+  already sitting in context — it was re-deriving a matchup claim from a
+  vague "these are both the sun-setter's moves" pattern-match instead of
+  checking each move's actual type independently, and not cross-referencing
+  a conclusion already reached earlier in the same session before restating
+  it. **Two things to actually do differently: (1) never bundle multiple
+  moves into one matchup claim without listing each move's type and
+  checking it separately — shared attacker or shared boost mechanism
+  (e.g. "both benefit from Sun") does not imply shared defensive
+  interaction; (2) before asserting a matchup claim, check whether it was
+  already computed earlier in the conversation and would contradict a
+  number already given** — this is the same shape of failure as the Mega
+  Swampert/Mega Raichu-Y ability-fix case above (a check applied correctly
+  once, then skipped on the very next similar claim), just for type
+  interactions instead of ability fixes. Caught by the user, not
+  proactively.
 
 - **Built an entire team's strategic premise ("Mega Altaria Calm Mind sweeper
   core") around a move the Pokémon cannot actually learn in Champions,**
@@ -337,3 +394,6 @@ only happens after a user catches a mistake:
 | 2026-07-23 | Added "Generic WebSearch snippets are not the same as fetching Pikalytics' team-level pages" bullet — built a 5-Pokémon threat list (for real Palafin-moveset damage-calc decisions) from WebSearch snippets off individual Pokémon pages only, never fetching `topteams`/`team-usage` as `vgc_teambuilding_methodology.md`'s own "Live meta lookup" section already instructs. Missed Archaludon, Swampert-Mega, and Pelipper entirely — the Swampert-Mega/Pelipper/Archaludon rain core turned out to be one of the most common archetypes in the real top-100 team-usage list, which is especially relevant to a Water-type-heavy team since rain doubles the relevant "does this OHKO" question already being calculated. This is a repeat of the exact mistake the methodology file's 2026-07-10 changelog entry already documents being caught once (missed the Sun archetype core from usage-rank-only checking) — the written instruction existing in one file wasn't sufficient to prevent recurrence three sessions later | User asked directly whether `pikalytics.com/team-usage` should have been checked; fetched `topteams` and `team-usage` this session, cross-referenced against the prior 2026-07-10 entry |
 | 2026-07-23 | Extended the duplicate-item bullet (originally added 2026-07-10 after the Rotom-Wash/Archaludon Leftovers miss) with a second real recurrence in a different team file — gave Gallade Life Orb when Palafin already held it, in the very message finalizing the sixth roster slot. Both misses happened while actively assigning an item during team construction, not as a one-off; the rule existing in this file wasn't enough to prevent it being missed a second time. Added explicit guidance: the check has to be run at the moment of assignment (cross-reference every other already-locked item), and when fixing a duplicate, re-verify the displaced Pokémon's damage breakpoints under the replacement item rather than assuming the swap is damage-neutral | User caught it directly; tools/damage-calc/cli.js re-verification of both affected breakpoints under the replacement item (Focus Sash) |
 | 2026-07-27 | Added "Pikalytics per-Pokémon panel rendering empty is a loading artifact, not a low-usage signal" bullet — while scouting Mega Tailwind-setter alternatives to Aerodactyl, an empty "Best Moves" panel for Mega Pidgeot was initially treated as evidence of near-zero real usage, until the same empty-panel pattern was confirmed on Mega Aerodactyl's own page too (a known heavily-used real pick), proving it's a client-rendering limitation affecting every Pokémon's page, not a usage signal. The page's curated "Champions Teams" section (and its underlying `/api/p/...` JSON, found via the Browser tool's network log) turned out to be the real, reliable signal instead | Direct comparison via the Browser tool: Mega Pidgeot had zero curated real teams (genuinely low presence) vs. Mega Aerodactyl (19) and Mega Dragonite (9, including three 8-0/9-0/11-1 finishes) both having real ones despite identical empty stat panels |
+| 2026-08-19 | Added "`--weather` value is case-sensitive and silently no-ops" bullet — ran `tools/damage-calc/cli.js` with `--weather sun` (lowercase) while checking Mega Charizard Y's Heat Wave/Solar Beam against a user's team; the engine only matches exact capitalized strings (`Sun`, `Rain`, etc.), so the lowercase flag was silently ignored with no error, dropping Heat Wave from 508-600 to a wrong 336-400 and Solar Beam from 120 BP to a wrong 60 BP against Scizor/Milotic | Caught proactively by comparing `--weather Sun` vs `--weather sun` output side-by-side this session; confirmed root cause in `tools/damage-calc/vendor/damage_MASTER.js` line ~1723 (Solar Beam weather-string allowlist) and its other `===`/`.indexOf` weather checks |
+| 2026-08-19 | Added process-lesson case study: while recommending a Team Preview lead pairing, claimed "Solar Beam / Weather Ball: both resisted" for Milotic by grouping the two moves as "the sun-setter's special options" without checking each move's type separately — Weather Ball is Fire-type in Sun (correctly resisted), but Solar Beam is plain Grass-type, Milotic's one real weakness, already correctly logged as "weak" in this same session's own audit table three messages earlier. The correct number (132-156 vs. 170 HP) was already in context; the failure was re-deriving a matchup claim from a vague shared-attacker pattern instead of checking it, and not cross-referencing a conclusion already reached earlier in the same conversation | User correction; re-verified via `tools/damage-calc/cli.js` for all four move/defender pairs before restating the corrected lead recommendation |
+| 2026-08-19 | Added "item/moveset/ability/SP are fixed at team-build time, not swappable per-opponent at Team Preview" bullet to "Team-finalization checks" — suggested Sinistcha carry Occa Berry into a Charizard-Y matchup and Colbur Berry into a sand-Tyranitar matchup as if it could flex per-game; Team Preview only selects which 4 of 6 to bring, it doesn't let a held item change between games. Any item recommendation needs to be framed as one permanent trade-off, not a situational swap | User correction ("i cant swap items in team preview, dont make that mistake again") |

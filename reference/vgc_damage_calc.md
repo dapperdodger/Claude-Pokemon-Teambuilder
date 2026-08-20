@@ -18,6 +18,15 @@ node tools/damage-calc/cli.js \
   --move "Make It Rain"
 ```
 
+**`--weather`/`--terrain` values are case-sensitive and fail silently on a
+mismatch** — pass the exact capitalized strings (`Sun`, `Rain`, `Sand`,
+`Hail`, `Snow`, `Harsh Sun`, `Heavy Rain`, `Strong Winds`); a lowercase
+`sun` produces a plausible-looking result with no error, but silently drops
+the weather's same-type STAB boost and (for Solar Beam/Solar Blade) applies
+the wrong-weather halved-power penalty instead of full power. See
+`vgc_common_pitfalls.md`'s "Weather effects on move power" section for a
+confirmed before/after example.
+
 Prints structured JSON including the exact matched Pokémon/move records used
 (base stats, computed stats, type, power) so a wrong name match is visible
 in the output, not hidden. Real, current-regulation data — not recalled
@@ -264,3 +273,4 @@ especially once terrain/weather/abilities start stacking.
 | 2026-07-10 | Corrected multi-hit `min`/`max` caveat: fixed-2-hit numeric-`hitRange` moves (Dual Wingbeat, Double Hit, Twin Beam) are per-hit-only too, not "unaffected and sum correctly" — only Parental Bond and `isTripleHit` moves genuinely auto-sum. Also fixed a stale "use Pikalytics for anything a recommendation depends on" sentence that contradicted the file's own local-CLI-primary framing | tools/damage-calc/calc.js `isVariableMultiHit` fix + this file's own "Web alternative" section, this session |
 | 2026-07-14 | Added explicit note that `tools/damage-calc/cli.js` already applies the doubles 0.75x spread-move reduction internally — manually reapplying it is a double-reduction, confirmed via a controlled Singles-vs-Doubles A/B test. Also added "Bulk optimization" section documenting the new `tools/damage-calc/optimize-bulk.js`/`optimize-bulk-cli.js` tool (brute-force search for the true minimum HP/Def/SpD SP spread against named threats), built after discovering Def/SpD have diminishing returns (damage ∝ 1/Def) while HP is linear, so no single equation reliably gives the optimal split per-Pokemon | A/B test this session (Heat Wave vs. Mega Camerupt, 63-75 Doubles vs. 84-99 Singles-forced); brute-force verification (Aegislash-Shield vs. Kingambit Kowtow Cleave, true minimum 24 HP/1 Def) |
 | 2026-07-14 | Rewrote "Bulk optimization" to cover all three real modes: `solve` (unchanged), `rank` (rebuilt around a continuous, clamped `remainingHPFraction` score plus optional per-threat `weight` instead of a binary survived-count — user caught that survival isn't a bit-flip problem and that treating every listed threat as an equal vote was itself arbitrary), and new `generic` (move-agnostic continuous-math estimate, explicitly downgraded to rough-estimate-only status since it can't see real damage-formula rounding jumps). Added citation for Jenkins' video/tool, which independently derives the same HP-vs-Def/SpD math and the reason continuous math shouldn't be trusted for precise real answers | User-provided video transcript; user-driven corrections to the scoring model this session; brute-force verification (Klefki vs. weighted Kowtow Cleave/Moonblast: winner shifts from 17 HP/0 Def to 4 HP/13 Def as weight shifts) |
+| 2026-08-19 | Added case-sensitivity warning for `--weather`/`--terrain` — a lowercase `sun` silently fails to match the vendored engine's exact-capitalized weather strings, dropping both the same-type STAB weather boost and (for Solar Beam/Solar Blade) applying the wrong-weather halved-power penalty, with no error raised. Caught while evaluating Mega Charizard Y's Heat Wave/Solar Beam against a user's team | Side-by-side `--weather Sun` vs `--weather sun` comparison this session; root cause confirmed in `tools/damage-calc/vendor/damage_MASTER.js`'s weather-string checks |
