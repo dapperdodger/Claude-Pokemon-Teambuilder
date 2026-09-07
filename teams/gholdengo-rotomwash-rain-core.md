@@ -17,7 +17,7 @@
 | Archaludon | Leftovers | Stamina | Modest | 32 HP / 2 Def / 32 SpA | Electro Shot / Flash Cannon / Protect / Dragon Pulse |
 
 (SP allocation uses the current Champions Stat Points system, not old EVs
-— see `reference/vgc_current_regulation.md`'s "Stat system" section.)
+— see `reference/regulation.md`'s "Stat system" section.)
 
 ## Why these six
 
@@ -188,7 +188,7 @@ SpD) to Bold/32 Def, which is what actually matters against its real
 
 Checked against real top-team archetypes from Pikalytics' top-teams/cores
 page (not just individual usage rankings — see the "Do this every
-session" note in `vgc_teambuilding_methodology.md`), not theorized.
+session" note in `methodology.md`), not theorized.
 
 - **vs. Trick Room (Farigiraf+Kingambit or Sinistcha+Incineroar/Staraptor)**:
   Bring Grimmsnarl, Rotom-Wash, Gholdengo, Pelipper — bench Swampert and
@@ -263,4 +263,4 @@ session" note in `vgc_teambuilding_methodology.md`), not theorized.
 | 2026-07-10 | Filled in Bring-6-pick-4 notes against real top-team archetypes (not just individual Pokémon) — Trick Room, Mega Staraptor, Sneasler, Kingambit, Metagross, Sun, Fire-focused, and rain-mirror cores. Found a real gap on the first pass (missed the Sun archetype entirely using only per-Pokémon usage rank) and a real weakness once Sun was checked properly (halves Hydro Pump/Wave Crash; Gholdengo can't face a Sun-boosted Charizard-Y at all) | https://www.pikalytics.com/topteams fetched this session; tools/damage-calc/cli.js for the Sun-weather damage checks |
 | 2026-07-10 | Corrected the Sun/Charizard-Y matchup entirely — the prior entry used Flare Blitz, a physical move that isn't in Charizard-Y's real set at all (95.4% usage is Heat Wave/Solar Beam/Weather Ball, a special Drought set). Real check found Solar Beam (fires without a charge turn in Sun) is 4x on Swampert (guaranteed kill, screens don't help) and 2x on Rotom-Wash (guaranteed kill unscreened, survives with Grimmsnarl's Light Screen). Archaludon quad-resists it. User pushed back that "we don't have a real plan" against Charizard, which is what triggered re-checking the actual moveset instead of reusing the earlier assumption | tools/damage-calc/cli.js; Pikalytics real Charizard-Y moveset; doubles screen-reduction mechanic (~1/3, confirmed via web search) applied to the results |
 | 2026-07-10 | Checked the Sun archetype's other three real pieces (Sylveon, Garchomp, Aerodactyl) with the same rigor, and validated a user-proposed tech: swapping Pelipper in after Light Screen is up to overwrite their Sun with Rain, stripping Solar Beam's no-charge-turn trick and cutting Heat Wave's real damage roughly in half | tools/damage-calc/cli.js; real Pikalytics movesets for Sylveon/Garchomp/Aerodactyl |
-| 2026-07-10 | Fixed a duplicate item — Rotom-Wash and Archaludon both had Leftovers, which isn't legal (no two Pokémon on a team can hold the same item). Archaludon kept Leftovers (its real 88.6% dominant item); Rotom-Wash switched to Sitrus Berry, its actual real second-most-common item (39.1%) rather than an arbitrary replacement | User caught it directly; logged as a standing "Team-finalization check" in reference/vgc_common_pitfalls.md |
+| 2026-07-10 | Fixed a duplicate item — Rotom-Wash and Archaludon both had Leftovers, which isn't legal (no two Pokémon on a team can hold the same item). Archaludon kept Leftovers (its real 88.6% dominant item); Rotom-Wash switched to Sitrus Berry, its actual real second-most-common item (39.1%) rather than an arbitrary replacement | User caught it directly; logged as a standing "Team-finalization check" in reference/pitfalls.md |

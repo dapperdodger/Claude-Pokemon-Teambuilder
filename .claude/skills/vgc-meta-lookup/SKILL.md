@@ -22,7 +22,7 @@ both invisible from individual usage rankings alone.
   `vgc-team-refining`)
 
 ## Before pulling any data
-Confirm the regulation is current this session — `reference/vgc_current_regulation.md`,
+Confirm the regulation is current this session — `reference/regulation.md`,
 even if already checked earlier in this conversation (CLAUDE.md rule 5).
 Then check `https://www.pikalytics.com/pokedex` for the current
 format-slug before using any per-mon or per-format URL — the slug
@@ -61,8 +61,16 @@ threat list in this repo's history (see Common mistakes below).
   synergy rather than a frequency signal — verify the actual mechanism
   before citing a core as a reason for anything.
 
-See `reference/vgc_teambuilding_methodology.md`'s "Live meta lookup"
-section (full detail, URL patterns, citations) and
-`reference/vgc_common_pitfalls.md` (case studies of this exact mistake:
-missed Sun core, missed rain core, both from skipping the team-level
-surfaces).
+## Handing the result onward
+A threat list is a *usage* signal, not a set of verified facts. Before any
+claim about a threat's typing, Mega ability, or item legality gets made from
+it, resolve that claim with `node tools/dex/cli.js` (see CLAUDE.md's table)
+and its real moveset with a live per-mon lookup.
+
+Saved files under `teams/` are historical records, never a meta source.
+
+## References
+- `reference/methodology.md` — "Live meta lookup": full detail, URL patterns, citations
+- `reference/pitfalls.md` — the trap checklist, including the data-source traps above
+- `reference/regulation.md` — regulation authority
+- `docs/case-studies.md` — the missed Sun core and missed rain core in full

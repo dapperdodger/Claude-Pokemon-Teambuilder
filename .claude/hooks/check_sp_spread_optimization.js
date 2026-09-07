@@ -8,7 +8,7 @@
 // correct, optimal spread (e.g. a wallbreaker's Attack really should be
 // maxed, or 32 Def really is the minimum that clears a named threat with
 // nothing left over). What's banned is landing on round numbers with no
-// visible justification — see reference/vgc_teambuilding_methodology.md's
+// visible justification — see reference/methodology.md's
 // "SP spread allocation" section. A first version of this hook blocked on
 // round numbers alone regardless of justification; the user pointed out
 // that's wrong (a real doc-and-blame flagged, not fixed then) — round is
@@ -125,7 +125,7 @@ function main() {
       `reasoning in "Why these six" (e.g. "the minimum SP that survives X is Y, leftover points went to Z"), not just a ` +
       `percentage showing the chosen spread happens to survive something (that proves survival, not minimality). ` +
       `Use tools/damage-calc/cli.js to binary-search a Speed breakpoint, or tools/damage-calc/optimize-bulk.js to find the ` +
-      `real minimum HP/Def/SpD split for a named threat (see reference/vgc_damage_calc.md's "Bulk optimization" section — ` +
+      `real minimum HP/Def/SpD split for a named threat (see reference/damage-calc.md's "Bulk optimization" section — ` +
       `HP-vs-Def/SpD is NOT a 50/50 or "max the relevant stat" split, it depends on the defender's own base stats), ` +
       `then either lower the spread and spend the rest elsewhere, or write the explicit justification if 32/2/0 truly is optimal.`;
     const msg = `SP spread check: ${unjustified.length} Pokemon in ${base} have round spreads without visible optimization evidence.`;

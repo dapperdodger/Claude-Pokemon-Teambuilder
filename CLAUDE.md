@@ -1,106 +1,84 @@
 # CLAUDE.md
 
-Behavioral rules for any Claude Code session working in this repo. These
-apply repo-wide, for any task — this repo's sole purpose is VGC
-team-building support, so there's no meaningful case where they don't apply.
+This repo is VGC team-building support for **Pokémon Champions** official
+doubles — not Smogon singles, not Scarlet/Violet. Champions replaced EVs/IVs
+with Stat Points (SP) entirely: never use EV numbers, and never assume an
+EV→SP conversion factor. These rules apply to every session here.
 
-This repo supersedes the claude.ai memory entries and Google Drive files
-from the prior workflow (see `docs/superpowers/specs/` for history). Do not
-treat those as current — this repo is the source of truth going forward.
+## Never state these from recall — run the command
 
-## Rules
+| Claim | Command |
+|---|---|
+| Type effectiveness: resistance, weakness, immunity, coverage | `node tools/dex/cli.js type <Type> --vs <Def1[,Def2]>` |
+| A Mega's ability, typing, or base stats | `node tools/dex/cli.js mon "Mega <Species>"` |
+| Item or ability legality in Champions | `node tools/dex/cli.js legal --item "<Item>"` |
+| Move power, type, spread/priority flags | `node tools/dex/cli.js move "<Move>"` |
+| Damage rolls | `node tools/damage-calc/cli.js …` — see `reference/damage-calc.md` |
+| Minimum SP to survive a named attack | `node tools/damage-calc/optimize-bulk-cli.js …` |
 
-1. **Format is VGC doubles, Pokémon Champions official rules** — not Smogon
-   singles. Don't apply Smogon-style singles reasoning or Scarlet/Violet-era
-   assumptions without checking `reference/vgc_current_regulation.md` first
-   — this includes stat mechanics: Champions replaced EVs/IVs with a Stat
-   Points (SP) system entirely, see that file's "Stat system" section
-   before using EV terminology or numbers.
+Every claim in that table has been stated wrong from recall in this repo
+**while the correct answer was already written down here**. The command costs
+less than being wrong, so run it every time — including for matchups that
+feel too obvious to check. That feeling is the failure mode, not a signal.
 
-2. **Two goals, not one**: ladder/tournament prep, AND building strong teams
-   around a user-chosen favorite Pokémon. Don't default to "here's the top
-   usage squad" when the user names a Pokémon they want to build around —
-   that's the opposite of what this repo is for.
+Two specifics the tool exists to settle:
 
-3. **Before any team or moveset suggestion, verify current data via live web
-   search** (Pikalytics, Smogon VGC, Victory Road, or similar — see
-   `reference/vgc_teambuilding_methodology.md`'s "Live meta lookup" section
-   for the concrete Pikalytics URL pattern and its staleness trap, or use
-   the `vgc-meta-lookup` skill directly for a standalone "what's the meta"
-   question with no specific Pokémon/team named yet). Do not rely on
-   training data, and do not trust this repo's own files past their "Last
-   verified" date where one is stamped (only
-   `reference/vgc_current_regulation.md` currently carries one — check it
-   first; other files fall back to their `## Changelog` dates).
+- A usage page's ability percentages for a Mega-capable species report the
+  **pre-Mega** selection, never the Mega's fixed battle ability. `dex mon`
+  labels which is which.
+- For a dual-type defender, pass both types in one call and let the tool
+  multiply. Reasoning from one half is how a 0x immunity gets missed.
 
-4. **No cookie-cutter squads.** Any team-building help must show real
-   reasoning: speed tiers/speed control (see
-   `reference/vgc_ability_move_mechanics.md`'s Speed calculation section),
-   damage rolls vs. relevant threats (see `reference/vgc_damage_calc.md` —
-   run tools/damage-calc/cli.js for a real calculation rather than
-   hand-computing one), current-mechanic strategy (Mega
-   Evolution — see rule 5), redirection/support synergy, weather/terrain,
-   how pieces cover each other's weaknesses. See
-   `reference/vgc_teambuilding_methodology.md`.
+Non-Mega Pokémon usually have 2-3 legal abilities. `dex mon` returns one
+option, not the only one — check the real preset for the specific set being
+built.
 
-5. **Check the current regulation every session**, even if it was already
-   checked earlier in the same conversation — regulations have hard end
-   dates. `reference/vgc_current_regulation.md` is the sole authority on
-   which mechanics are active (as of its last verification: Mega Evolution
-   only, no Tera/Dynamax/Z-Move) — read it fresh each session rather than
-   assuming that stays true; it's the one fact in this repo most likely to
-   flip.
+## Every session, before giving advice
 
-6. **Roster availability and regulation legality are two separate checks.**
-   A Pokémon can be unrestricted by the rules but not yet available in
-   Champions' roster, or available but restricted this regulation. Check
-   both — see `reference/vgc_current_regulation.md`.
+1. **Regulation** — read `reference/regulation.md` fresh, even if it was
+   already checked earlier in this same conversation. It is the sole
+   authority on which mechanics are active, and the fact here most likely
+   to have flipped.
+2. **Live meta** — pull current data before any team or moveset suggestion
+   (the `vgc-meta-lookup` skill). Never rely on training data, and never
+   cite `teams/` files as current meta.
+3. **Roster availability and regulation legality are separate checks.** Both
+   are required, for Pokémon, items, and abilities alike.
 
-7. **Evaluating a counter/answer/threat requires both typing AND actual
-   current moveset**, not typing alone — use the `vgc-threat-evaluation`
-   skill (auto-triggers on "counter"/"answer"/"beats" language, or a
-   coverage-move check) for the process; it points to
-   `reference/vgc_type_chart_reference.md` and
-   `reference/vgc_teambuilding_methodology.md` for the underlying data and
-   reasoning. This repo deliberately does NOT maintain a ranked "top meta
-   picks" or "speed tier" list file — a static ranked list would bias
-   toward whatever was already popular when it was written and go stale
-   immediately. Look up a specific Pokémon's current moveset/speed spread
-   live, on demand, when it's actually relevant to the team being built —
-   not from a pre-baked ranking. The only things that get persisted are
-   confirmed traps (`reference/vgc_common_pitfalls.md`) and formula-level
-   mechanics that don't change with the meta
-   (`reference/vgc_ability_move_mechanics.md`).
+## How to work
 
-8. **Precedence on conflicts**: live web search > this repo's files > model
-   training data/memory. If a repo file conflicts with a fresh search
-   result, the search result wins — and the file should be corrected
-   (rule 9), not just overridden in chat.
+- **Two goals, not one:** ladder/tournament prep, *and* building around a
+  user-named favourite. Never answer the second with the top-usage squad.
+- **Collaborative, not a solo deliverable.** Research legwork needs no
+  permission; locking things in does. Check in at real decision points, and
+  when filling a single roster slot present 3-5 verified candidates with
+  their trade-offs rather than one researched answer.
+- **Never `Write` or `Edit` anything in `teams/` until the user explicitly
+  says to save.** Working a full loadout out in chat is not permission to
+  persist it — that is a separate step the user gates.
+- **Solve for the minimum SP** each stat actually needs; don't default to a
+  round 32/32/2 split. Verifying that 32 survives a hit is not the same as
+  finding the minimum that survives it.
+- **No cookie-cutter squads.** Show the reasoning: speed control, real
+  damage rolls, redirection/weather synergy, how the pieces cover each
+  other's weaknesses.
+- **A support pick isn't judged on damage.** Redirection, screens, speed
+  control and status are judged on whether the action actually goes off.
+- **Precedence on conflicts:** live web search > this repo's files > recall.
+  When a repo file turns out to be wrong, fix it in the same session with a
+  new `## Changelog` row — don't just correct it in chat and move on.
 
-9. **When a correction or new pitfall is caught mid-session, fix the
-   relevant file in the same session**, with a new `## Changelog` row
-   (`Date | Change | Source`). Don't just give the correct answer in chat
-   and leave the file stale — that's how the prior claude.ai workflow's
-   files drifted from what was actually being told to the user.
+## Where things live
 
-10. **Check `reference/vgc_common_pitfalls.md`** before finalizing any
-    team-building recommendation — it covers gotchas that have caused real
-    past mistakes (ladder-vs-tournament data, co-occurrence-vs-synergy,
-    doubles-specific traps).
-
-11. **Save a team once you've built it** to `teams/` (see
-    `teams/_TEMPLATE.md` for the format). Capture not just the final six
-    but the reasoning per pick and what was deliberately left out, so a
-    later session can see *why*, not just *what*. Update a team's file in
-    place as it evolves, with a changelog row, rather than creating a new
-    file per iteration.
-
-12. **Refining an existing team is a different, narrower job than building
-    one.** When the user says they want to refine a team they've already
-    mostly built — not construct one from scratch — use the
-    `vgc-team-refining` skill (auto-triggers on "refine this team" / "team
-    refining mode" phrasing over a mostly-complete six); see
-    `reference/vgc_team_refining_mode.md` for the full process it
-    summarizes. Don't relitigate species/item/ability picks or overall
-    synergy in that mode — that scope creep is explicitly excluded by the
-    skill's scope fence.
+| Need | Go to |
+|---|---|
+| Building a team | `vgc-team-building` skill |
+| Refining an already-decided team | `vgc-team-refining` skill |
+| "Does X counter/answer/beat Y" | `vgc-threat-evaluation` skill |
+| "What's the meta / what will I face" | `vgc-meta-lookup` skill |
+| Active regulation, SP system, roster and item legality | `reference/regulation.md` |
+| Known traps — check before finalising any recommendation | `reference/pitfalls.md` |
+| Process and reasoning rules | `reference/methodology.md` |
+| Priority, speed modifiers, item and ability mechanics | `reference/mechanics.md` |
+| Damage-calc CLI usage and its caveats | `reference/damage-calc.md` |
+| Why a rule exists — the incident behind it | `docs/case-studies.md` |

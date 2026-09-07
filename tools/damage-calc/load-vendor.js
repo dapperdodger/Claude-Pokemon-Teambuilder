@@ -76,7 +76,7 @@ function loadVendorUncached() {
   // real ap_calc.js this is driven by a UI dropdown; we have no UI, so we
   // choose "SPs" deliberately (not arbitrarily) — this project's whole data
   // model is the Champions Stat Points system (see
-  // reference/vgc_current_regulation.md), so "SPs" is the one mode whose
+  // reference/regulation.md), so "SPs" is the one mode whose
   // backing fields (`.sps`/`.HPSPs`) we can populate with real, meaningful
   // values rather than needing to fake `.evs`/`.HPraw`. This only affects
   // cosmetic description strings, never the computed damage numbers

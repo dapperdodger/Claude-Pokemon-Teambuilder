@@ -2,7 +2,7 @@
 
 **Status:** Finalized
 **Built for:** Exploring a concept — built around Mega Drampa as a favorite/chosen centerpiece, then generalized into a flexible dual-mode ladder team
-**Regulation:** M-B (as of `reference/vgc_current_regulation.md`'s 2026-07-09 last-verified date)
+**Regulation:** M-B (as of `reference/regulation.md`'s 2026-07-09 last-verified date)
 **Last updated:** 2026-07-14
 
 ## The six
@@ -56,7 +56,7 @@ Blastoise's Shell Smash turn (Shell Smash's own Def/SpD drop makes that
 turn genuinely risky) and, in a Trick-Room game, to back up Sinistcha's
 redirection. Real ability is Friend Guard (not the vendored dex's default
 Technician field — that field is a real trap, see
-`reference/vgc_common_pitfalls.md`'s multi-ability bullet) paired with a
+`reference/pitfalls.md`'s multi-ability bullet) paired with a
 real Chople Berry set (weakens the first Fighting hit it takes, its one
 real shared weakness with Drampa).
 
@@ -112,7 +112,7 @@ Tailwind is accounted for. Trick Room doesn't care about anyone's actual
 Speed stat at all. Both Follow Me and Rage Powder carry +2 priority
 (confirmed live — the vendored move data was missing the priority flag
 for both, a real gap now documented in
-`reference/vgc_ability_move_mechanics.md`), so neither redirector needs
+`reference/mechanics.md`), so neither redirector needs
 Speed investment to act before an incoming threat either.
 
 ## Intentional exclusions

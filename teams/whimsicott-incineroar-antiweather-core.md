@@ -17,7 +17,7 @@
 | Drampa | Silk Scarf | Cloud Nine | Bold | 32 HP / 32 Def / 2 SpA | Hyper Voice / Protect / Earth Power / Calm Mind |
 
 (SP allocation uses the current Champions Stat Points system, not old EVs
-— see `reference/vgc_current_regulation.md`'s "Stat system" section.)
+— see `reference/regulation.md`'s "Stat system" section.)
 
 ## Why these six
 
@@ -77,7 +77,7 @@ the confirmed Make It Rain/Shadow Ball/Protect/Nasty Plot kit intact.
 the only live mechanic this regulation) and the third member of that same
 real 10-0 team. Real build shows Staraptorite at 94.5% usage — the
 same pre-Mega-ability-selection trap already documented in
-`vgc_common_pitfalls.md` (Swampert's Torrent/Damp) shows up again here:
+`pitfalls.md` (Swampert's Torrent/Damp) shows up again here:
 Pikalytics reports "Intimidate 97.1%" for Staraptor, but that's the
 pre-Mega ability choice — **Contrary is Mega Staraptor's real fixed
 battle ability** once it evolves (confirmed via live search), turning
@@ -227,5 +227,5 @@ does.
 
 | Date | Change | Reasoning |
 |---|---|---|
-| 2026-07-10 | Initial build — required Whimsicott + Incineroar (with Taunt) core, plus a dedicated Cloud Nine Altaria anti-weather piece (chosen over an own-weather-overwrite plan per user preference). Completed with Garchomp/Gholdengo/Mega Staraptor, extending a real, verified 10-0 Reg M-B tournament team (Garchomp/Whimsicott/Incineroar/Gholdengo/Sylveon/Staraptor) by swapping Sylveon for Altaria | Pikalytics `battledataregmbs3` real usage data for all six; live search confirming Mega Staraptor's real fixed Contrary ability and Mega Froslass's real fixed Snow Warning ability (both pre-Mega-ability-selection traps, same pattern as the Swampert case in `vgc_common_pitfalls.md`); `tools/damage-calc/cli.js` for the Sneasler-vs-Incineroar and Blizzard-vs-Cloud-Nine verifications |
+| 2026-07-10 | Initial build — required Whimsicott + Incineroar (with Taunt) core, plus a dedicated Cloud Nine Altaria anti-weather piece (chosen over an own-weather-overwrite plan per user preference). Completed with Garchomp/Gholdengo/Mega Staraptor, extending a real, verified 10-0 Reg M-B tournament team (Garchomp/Whimsicott/Incineroar/Gholdengo/Sylveon/Staraptor) by swapping Sylveon for Altaria | Pikalytics `battledataregmbs3` real usage data for all six; live search confirming Mega Staraptor's real fixed Contrary ability and Mega Froslass's real fixed Snow Warning ability (both pre-Mega-ability-selection traps, same pattern as the Swampert case in `pitfalls.md`); `tools/damage-calc/cli.js` for the Sneasler-vs-Incineroar and Blizzard-vs-Cloud-Nine verifications |
 | 2026-07-10 | Swapped Altaria → non-Mega Drampa for the anti-weather slot, at user request to consider Mega Drampa. Caught mid-check that Mega Drampa's fixed ability is Berserk, not Cloud Nine (same trap as Mega Altaria/Pixilate) — Drampa only works for this role non-Mega. Damage-calc comparison found Drampa actually survives a connecting Snow-boosted Blizzard (122-146 of 185 HP) where Altaria was guaranteed-killed by it (216-256 of 182 HP) despite Cloud Nine being active on both, at the cost of Drampa being 2x weak to Fighting where Altaria resisted it (0.5x). Also corrected an overclaim in the original Altaria writeup: Cloud Nine blocks weather's accuracy/move-legality effects (Blizzard accuracy, Aurora Veil), it does not reduce a connecting attack's raw damage | Game8 Mega Drampa guide (fixed Berserk ability); Pikalytics `battledataregmbs3` Drampa page (80.5% Drampanite vs. 81.4% "Cloud Nine" selected — the same pre-Mega-ability-selection mismatch as Staraptor/Froslass); `tools/damage-calc/cli.js` Blizzard/Close Combat comparisons vs. both Drampa and Altaria |

@@ -2,7 +2,7 @@
 
 **Status:** Finalized
 **Built for:** Ladder — user brought a pre-built six, this session covered matchup verification and SP-spread optimization
-**Regulation:** M-B (as of `reference/vgc_current_regulation.md`'s 2026-07-09 last-verified date)
+**Regulation:** M-B (as of `reference/regulation.md`'s 2026-07-09 last-verified date)
 **Last updated:** 2026-07-17
 
 ## The six
@@ -18,7 +18,7 @@
 
 (SP allocation uses the current Champions Stat Points system, 66 total per
 Pokémon, hard-capped at 32 in any single stat — see
-`reference/vgc_current_regulation.md`'s "Stat system" section.)
+`reference/regulation.md`'s "Stat system" section.)
 
 ## Why these six
 

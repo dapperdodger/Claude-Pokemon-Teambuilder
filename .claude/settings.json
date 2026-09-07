@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash scripts/check_regulation_staleness.sh 2>/dev/null || true",
+            "command": "bash .claude/hooks/check_regulation_staleness.sh 2>/dev/null || true",
             "statusMessage": "Checking regulation staleness..."
           }
         ]
@@ -14,7 +14,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash scripts/check_damage_calc_vendor_staleness.sh 2>/dev/null || true",
+            "command": "bash .claude/hooks/check_damage_calc_vendor_staleness.sh 2>/dev/null || true",
             "statusMessage": "Checking damage calculator vendor staleness..."
           }
         ]
@@ -26,8 +26,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/check_sp_spread_optimization.js",
+            "command": "node .claude/hooks/check_sp_spread_optimization.js",
             "statusMessage": "Checking SP spread optimization..."
+          }
+        ]
+      },
+      {
+        "matcher": "WebFetch|WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/verify-mega-ability.js 2>/dev/null || true",
+            "statusMessage": "Cross-checking Mega abilities against the local dex..."
           }
         ]
       }

@@ -39,7 +39,7 @@ test('Modest 32-SP-SpA Life Orb Gholdengo Make It Rain vs neutral 0-SP Garchomp'
 
   // Sanity bounds, not a bit-exact assertion yet (Task 6 cross-validates
   // exact numbers against the real NCP calculator). Steel vs Dragon/Ground
-  // is neutral (1x) per reference/vgc_type_chart_reference.md, Life Orb
+  // is neutral (1x) — confirm with `node tools/dex/cli.js type Steel --vs Dragon,Ground`. Life Orb
   // is a 1.3x boost, so this should be a substantial hit but not a OHKO
   // against Garchomp's ~183 HP (0 SP) — assert plausible bounds only.
   assert.ok(result.min > 0, 'min damage should be positive');

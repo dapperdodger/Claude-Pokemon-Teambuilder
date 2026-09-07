@@ -4,6 +4,13 @@ Pointer file — this repo doesn't try to reproduce a damage calculator,
 just where to find one and the fundamentals for sanity-checking its
 output by hand.
 
+## Contents
+
+- [Tool](#tool)
+- [Bulk optimization: HP vs. Def/SpD SP allocation](#bulk-optimization-hp-vs-defspd-sp-allocation)
+- [Damage formula fundamentals](#damage-formula-fundamentals)
+- [Changelog](#changelog)
+
 ## Tool
 
 **Local calculator**: `tools/damage-calc/cli.js` — a Bash-invokable CLI
@@ -24,7 +31,7 @@ mismatch** — pass the exact capitalized strings (`Sun`, `Rain`, `Sand`,
 `sun` produces a plausible-looking result with no error, but silently drops
 the weather's same-type STAB boost and (for Solar Beam/Solar Blade) applies
 the wrong-weather halved-power penalty instead of full power. See
-`vgc_common_pitfalls.md`'s "Weather effects on move power" section for a
+`pitfalls.md`'s "Weather effects on move power" section for a
 confirmed before/after example.
 
 Prints structured JSON including the exact matched Pokémon/move records used
@@ -32,7 +39,7 @@ Prints structured JSON including the exact matched Pokémon/move records used
 in the output, not hidden. Real, current-regulation data — not recalled
 from training data — since it comes from the vendored files, which are
 periodically re-synced against the upstream project (see the vendor
-staleness check in `scripts/check_damage_calc_vendor_staleness.sh`).
+staleness check in `.claude/hooks/check_damage_calc_vendor_staleness.sh`).
 
 **Optional presets**: `--attacker-preset "<set name>"` /
 `--defender-preset "<set name>"` pull ability/item/nature/SP from the
@@ -43,7 +50,7 @@ Pokémon (e.g. Vileplume) have no preset yet, which produces a clear error
 naming that, not a crash. Presets are a starting point, not an
 authoritative "current meta" claim — cross-check against a live source
 before treating one as the build for a real recommendation (see
-`vgc_teambuilding_methodology.md`'s "Live meta lookup" section).
+`methodology.md`'s "Live meta lookup" section).
 
 If a Pokémon or move isn't in the vendored Champions-curated data at all,
 the CLI's error message says so explicitly, and separately flags whether
@@ -128,7 +135,7 @@ combination tying the true minimum total SP that survives ALL given
 threats (there can be more than one, e.g. due to stat-formula flooring).
 If nothing within the given budget/32-cap survives, returns
 `{ solvable: false, closest: [...] }` instead of silently picking a losing
-spread — matching `vgc_teambuilding_methodology.md`'s "some worst cases
+spread — matching `methodology.md`'s "some worst cases
 have no SP-allocation fix at all" guidance.
 
 ### `--mode rank` — `rankSpreadsByOverallSurvival`: no forcing threat, leftover SP needs a home
@@ -157,7 +164,7 @@ live-verifiable numbers per CLAUDE.md rule 3 — turning the ranking into a
 genuine expected-value calculation (maximize weighted expected remaining
 HP), though still only an *approximation* of true survival probability:
 usage stats are ladder-derived (ladder ≠ tournament, see
-`vgc_common_pitfalls.md`), and this doesn't know this team's own bring-6-
+`pitfalls.md`), and this doesn't know this team's own bring-6-
 pick-4 exposure (a threat this Pokemon is never brought against shouldn't
 count against it at all, regardless of usage weight).
 
@@ -208,15 +215,15 @@ Def/SpD have fundamentally different marginal value" insight behind
 (VGC player/theorist), "How to Optimize Defensive Spreads in Pokemon
 Champions Using Math" (https://www.youtube.com/watch?v=FxfI7I_sSnM) and his
 companion tool (https://jenkinsvgc.github.io/damage-rounding-calc/) — see
-`vgc_teambuilding_methodology.md`'s "SP spread allocation" section for the
+`methodology.md`'s "SP spread allocation" section for the
 full writeup, including his key finding that continuous math is a
 genuinely unreliable guide to the real integer-rounded optimum once actual
 damage modifiers (weather/crit/STAB/spread/multi-hit) enter the picture.
 
-This is the concrete tool `scripts/check_sp_spread_optimization.js`'s hook
+This is the concrete tool `.claude/hooks/check_sp_spread_optimization.js`'s hook
 expects a team file's round (0/2/32) HP/Def/SpD spreads to actually have
 been run through before being presented as justified — see that hook and
-`vgc_teambuilding_methodology.md`'s "SP spread allocation" section.
+`methodology.md`'s "SP spread allocation" section.
 
 **Web alternative**: Pikalytics' damage calculator
 (https://www.pikalytics.com/damage-calculator) remains a browser-based
@@ -235,9 +242,9 @@ Damage = floor(floor(floor(2 x Level / 5 + 2) x Power x Attack / Defense) / 50 +
 
 `modifiers` is the product of, roughly in this order: targets (0.75 in
 doubles if the move is a spread move hitting multiple targets — see
-`vgc_common_pitfalls.md`'s doubles-specific traps), weather, critical hit,
+`pitfalls.md`'s doubles-specific traps), weather, critical hit,
 a random factor (0.85-1.00, applied last), STAB (1.5x, or 2x for
-Adaptability), type effectiveness (from `vgc_type_chart_reference.md`),
+Adaptability), type effectiveness (query with `node tools/dex/cli.js type <Type> --vs <A,B>`),
 burn (0.5x for physical moves if the attacker is burned, unless it has
 Guts or is using Facade), and other item/ability modifiers.
 
@@ -250,13 +257,13 @@ vendored engine, and the vendored engine's `calcGeneralMods` applies the
 A/B test (2026-07-14): forcing a copy of the same call to `'Singles'`
 produced a ~33% higher result (Charizard-Y Heat Wave vs. Mega Camerupt:
 63-75 real Doubles output vs. 84-99 Singles-forced — ratio ≈0.75). A past
-session's process-lesson case study in `vgc_common_pitfalls.md` had this
+session's process-lesson case study in `pitfalls.md` had this
 backwards (manually re-applying 0.75x to the tool's already-correct
 output), understating real damage by ~25% — see that file's corrected
 "Spread moves" entry for the full story.
 
 Attack and Defense in the formula use the Champions Stat Points (SP)
-formula from `vgc_current_regulation.md`'s "Stat system" section, not the
+formula from `regulation.md`'s "Stat system" section, not the
 old EV-based one.
 
 This is enough to sanity-check a suspicious number, not to hand-calculate
@@ -274,3 +281,4 @@ especially once terrain/weather/abilities start stacking.
 | 2026-07-14 | Added explicit note that `tools/damage-calc/cli.js` already applies the doubles 0.75x spread-move reduction internally — manually reapplying it is a double-reduction, confirmed via a controlled Singles-vs-Doubles A/B test. Also added "Bulk optimization" section documenting the new `tools/damage-calc/optimize-bulk.js`/`optimize-bulk-cli.js` tool (brute-force search for the true minimum HP/Def/SpD SP spread against named threats), built after discovering Def/SpD have diminishing returns (damage ∝ 1/Def) while HP is linear, so no single equation reliably gives the optimal split per-Pokemon | A/B test this session (Heat Wave vs. Mega Camerupt, 63-75 Doubles vs. 84-99 Singles-forced); brute-force verification (Aegislash-Shield vs. Kingambit Kowtow Cleave, true minimum 24 HP/1 Def) |
 | 2026-07-14 | Rewrote "Bulk optimization" to cover all three real modes: `solve` (unchanged), `rank` (rebuilt around a continuous, clamped `remainingHPFraction` score plus optional per-threat `weight` instead of a binary survived-count — user caught that survival isn't a bit-flip problem and that treating every listed threat as an equal vote was itself arbitrary), and new `generic` (move-agnostic continuous-math estimate, explicitly downgraded to rough-estimate-only status since it can't see real damage-formula rounding jumps). Added citation for Jenkins' video/tool, which independently derives the same HP-vs-Def/SpD math and the reason continuous math shouldn't be trusted for precise real answers | User-provided video transcript; user-driven corrections to the scoring model this session; brute-force verification (Klefki vs. weighted Kowtow Cleave/Moonblast: winner shifts from 17 HP/0 Def to 4 HP/13 Def as weight shifts) |
 | 2026-08-19 | Added case-sensitivity warning for `--weather`/`--terrain` — a lowercase `sun` silently fails to match the vendored engine's exact-capitalized weather strings, dropping both the same-type STAB weather boost and (for Solar Beam/Solar Blade) applying the wrong-weather halved-power penalty, with no error raised. Caught while evaluating Mega Charizard Y's Heat Wave/Solar Beam against a user's team | Side-by-side `--weather Sun` vs `--weather sun` comparison this session; root cause confirmed in `tools/damage-calc/vendor/damage_MASTER.js`'s weather-string checks |
+| 2026-09-07 | Added a Contents list; hook paths updated for the move to `.claude/hooks/`; type-effectiveness pointer now names `node tools/dex/cli.js type` rather than the deleted markdown chart | docs/specs/2026-09-07-repo-reorganization.md |

@@ -3,8 +3,17 @@
 Reference for a narrower teambuilding workflow: the user already has most
 or all of a team's species/items/abilities decided and wants a focused pass
 on move verification and SP-spread optimization — not a full teambuilding
-review. See `reference/vgc_teambuilding_methodology.md` for the general
+review. See `reference/methodology.md` for the general
 (from-scratch) teambuilding process this mode is deliberately narrower than.
+
+## Contents
+
+- [Trigger](#trigger)
+- [Scope](#scope)
+- [Input format](#input-format)
+- [Process](#process)
+- [Output format](#output-format)
+- [Changelog](#changelog)
 
 ## Trigger
 
@@ -18,7 +27,7 @@ team construction.
 **In scope**, per Pokémon given:
 - Species, item, and ability are fixed inputs — not re-evaluated.
 - Move legality check (does this Pokémon learn this move, is it available
-  this regulation — see `reference/vgc_current_regulation.md`, and
+  this regulation — see `reference/regulation.md`, and
   `CLAUDE.md` rules 6/7).
 - Move meta-relevance check (is it actually run on current sets, or
   legal-but-obscure).
@@ -35,7 +44,7 @@ full teambuilding):
 
 **Still bound by standing `CLAUDE.md` rules**: live-search verification
 (rule 3), roster-availability-vs-legality (rule 6), common-pitfalls check
-(rule 10, see `reference/vgc_common_pitfalls.md`) — this mode is a
+(rule 10, see `reference/pitfalls.md`) — this mode is a
 narrower entry point into the same rulebook, not an exception to it.
 
 ## Input format
@@ -53,7 +62,7 @@ the Scope section above rather than filling it.
    learnset and not restricted this regulation.
 2. **Meta-relevance**: cross-check live Pikalytics per-Pokémon set data
    (see the "Live meta lookup" section of
-   `reference/vgc_teambuilding_methodology.md`). If a move is legal but
+   `reference/methodology.md`). If a move is legal but
    rarely appears on real sets, flag it and name what's commonly run
    instead. Do not auto-swap it — report the finding and let the user
    decide.
@@ -64,7 +73,7 @@ Default: derive the current top-usage threats via live Pikalytics
 regulation usage data (roughly top 10-15), then pull each one's common
 set(s) — moves, item, ability, spread — from their per-mon pages. Weight by
 usage share rather than treating every threat as equally likely (see the
-co-occurrence-vs-synergy trap in `reference/vgc_common_pitfalls.md`).
+co-occurrence-vs-synergy trap in `reference/pitfalls.md`).
 
 If the user names specific threats or matchups instead, use those in place
 of (or in addition to) the auto-derived list.
@@ -75,10 +84,10 @@ Full allocation across all three axes — not bulk alone:
 
 1. **Speed** — compute relevant breakpoints against the threat list (who
    this Pokémon needs to outrun, or undercut for Trick Room), per the speed
-   calculation section of `reference/vgc_ability_move_mechanics.md`.
+   calculation section of `reference/mechanics.md`.
 2. **Offense** — minimum SP on the relevant attacking stat to hit real
    OHKO/2HKO breakpoints against the threats' actual bulk, via
-   `tools/damage-calc/cli.js` (see `reference/vgc_damage_calc.md`).
+   `tools/damage-calc/cli.js` (see `reference/damage-calc.md`).
 3. **Bulk** — minimum defensive SP to survive the threats' relevant hits,
    via `tools/damage-calc/optimize-bulk-cli.js`. Use `--mode solve` for a
    hard must-survive-all constraint across the threat list; use
@@ -87,7 +96,7 @@ Full allocation across all three axes — not bulk alone:
    JSON array of `{ attacker, move, field?, weight? }` — see the CLI's own
    header comment for the exact schema).
 4. Reconcile 1-3 into a single spread within the SP budget (see
-   `reference/vgc_current_regulation.md`'s Stat system section for the
+   `reference/regulation.md`'s Stat system section for the
    current cap/budget), calling out any real trade-off where the budget is
    too tight to hit every breakpoint at once.
 

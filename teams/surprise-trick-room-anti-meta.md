@@ -43,9 +43,9 @@ them, per rule 6's roster-vs-legality check.
 | Aegislash | Shell Bell | Stance Change | Adamant | 32 HP / 32 Def / 2 Atk | King's Shield / Shadow Sneak / Iron Head / Sacred Sword |
 
 (SP allocation uses the current Champions Stat Points system, not old EVs —
-see `reference/vgc_current_regulation.md`'s "Stat system" section. No two
+see `reference/regulation.md`'s "Stat system" section. No two
 Pokémon share an item — checked per the Team-finalization rule in
-`vgc_common_pitfalls.md`.)
+`pitfalls.md`.)
 
 ## Why these six
 
@@ -108,7 +108,7 @@ offensive answer to Sun, Rain, and Sand simultaneously — verified, not
 assumed. Its fixed ability is **Sheer Force** (confirmed via the vendored
 pokedex's dedicated `Mega Camerupt` entry, distinct from base Camerupt's
 Magma Armor/Solid Rock — the same pre-Mega-ability-selection trap already
-documented for Swampert/Staraptor/Froslass in `vgc_common_pitfalls.md`, this
+documented for Swampert/Staraptor/Froslass in `pitfalls.md`, this
 time avoided from the start). Base Speed drops to 20 on Mega Evolution —
 excellent for Trick Room. Verified real numbers:
 - **vs. Charizard-Mega-Y (real Fast-Offense-Mega-Y set)**: Heat Wave does

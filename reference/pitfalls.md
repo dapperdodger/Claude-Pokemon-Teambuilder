@@ -1,8 +1,56 @@
 # Common Pitfalls (VGC / Pokémon Champions)
 
-Domain-specific gotchas that have caused real mistakes in past team-building
-sessions, or that are easy to get wrong by default. Check this file before
-finalizing any team-building recommendation.
+Traps that have caused real mistakes in past sessions, or that are easy to
+get wrong by default. **Run the checklist below before finalising any team
+recommendation**; read the matching section only when a line applies.
+
+The incidents behind these — what was claimed, what was true, how it was
+caught — live in `docs/case-studies.md`, deliberately out of the hot path.
+
+## Contents
+
+- [Quick checklist](#quick-checklist)
+- [Data source pitfalls](#data-source-pitfalls)
+- [Current-mechanic correction](#current-mechanic-correction)
+- [Weather effects on move power](#weather-effects-on-move-power)
+- [Doubles-specific traps](#doubles-specific-traps)
+- [Build assumption trap](#build-assumption-trap)
+- [Team-finalization checks](#team-finalization-checks)
+- [Changelog](#changelog)
+
+## Quick checklist
+
+Scan this. Follow a link only where the answer isn't already obviously fine.
+
+**Before trusting data**
+- [ ] Threat list built from Pikalytics' *team-level* pages, not per-mon usage rank or a WebSearch summary → [Data source pitfalls](#data-source-pitfalls)
+- [ ] Ladder usage is not tournament results — don't treat one as the other
+- [ ] Co-occurrence is a frequency signal, not proof of synergy
+- [ ] An empty Pikalytics stats panel is a loading artifact, not absence of usage — check the curated Champions Teams section instead
+
+**Before trusting a number**
+- [ ] `--weather` passed with the **exact capitalised** string, including when the *opponent* sets it (silently no-ops on a mismatch) → [Weather](#weather-effects-on-move-power)
+- [ ] Spread-move damage **not** manually multiplied by 0.75 — the CLI already applies it → [Doubles traps](#doubles-specific-traps)
+- [ ] Multi-hit move: `min`/`max` is one hit, not the total (`isVariableMultiHit`)
+- [ ] Attacker's realistic held item included in the worst case
+
+**Before trusting a build**
+- [ ] SP spread solved for the *minimum* per stat, not defaulted to 32/32/2
+- [ ] Real current preset checked for item/ability/spread — not assumed from typing → [Build assumptions](#build-assumption-trap)
+- [ ] Non-Mega ability: 2-3 legal options exist; the one the *set* runs may differ from the dex default
+- [ ] An ability-boosted move still compared against higher-base-power unboosted alternatives
+- [ ] No EV terminology, and no assumed EV→SP conversion factor
+
+**Before calling a team finished**
+- [ ] **No duplicate items across the six** — hard rule, has been missed twice → [Team-finalization](#team-finalization-checks)
+- [ ] No "flex this item per matchup" advice — items are fixed at registration
+- [ ] Synergy claims scoped to a specific bring-6-pick-4 subset
+- [ ] Tera **not** assumed active (confirm in `reference/regulation.md`)
+- [ ] Redirection plan checked against Grass-types and Overcoat (powder immunity)
+
+**Facts that must come from `tools/dex/cli.js`, never recall** — type
+matchups, Mega abilities and typing, item/ability legality. See CLAUDE.md's
+table; these are no longer documentation problems, they are tool calls.
 
 ## Data source pitfalls
 
@@ -19,66 +67,33 @@ finalizing any team-building recommendation.
   strong and get used a lot. Verify the actual synergy mechanism (redirection,
   speed control, type coverage, etc.) rather than citing co-occurrence rate
   as if it were evidence of a working game plan.
-- **Generic WebSearch snippets mentioning "top Pokémon" are NOT the same as
-  actually pulling Pikalytics' team-level pages, and built a 5-Pokémon
-  "threat list" from the former without ever fetching the latter** — a
-  repeat of a mistake `vgc_teambuilding_methodology.md`'s own "Live meta
-  lookup" section already documents being caught and fixed once before
-  (2026-07-10 changelog entry, missing the Sun archetype core on a first
-  pass). That section explicitly says to check
-  `https://www.pikalytics.com/topteams` and
-  `https://www.pikalytics.com/team-usage` for real team-level archetypes
-  before giving "what beats the meta" advice, not just per-Pokémon usage
-  rank — but a later session still built threat-coverage advice (Palafin
-  moveset calcs) from WebSearch snippets off individual Pokémon pages alone,
-  never fetching either URL. When actually fetched, `team-usage` surfaced
-  real top-10-by-frequency Pokémon across the top 100 team cores
-  (Charizard-Mega-Y, Garchomp, Basculegion, **Archaludon, Swampert-Mega,
-  Sinistcha, Pelipper**, Incineroar, Floette-Eternal, Kingambit) that the
-  WebSearch-only pass had entirely missed — Archaludon, Swampert-Mega, and
-  Pelipper never came up once, despite the Swampert-Mega/Pelipper/Archaludon
-  rain core appearing dozens of times in the top-100 list, meaning the
-  format's single most common weather archetype (highly relevant to a
-  Water-type-heavy team, since rain doubles the size of the "does this OHKO"
-  question already being calculated) was absent from the threat list being
-  used for real moveset decisions. Caught only because the user asked
-  directly whether `team-usage` should have been checked, not proactively.
-  **Lesson: having the correct instruction written down once in one file is
-  not sufficient — re-read `vgc_teambuilding_methodology.md`'s "Live meta
-  lookup" section and actually fetch both team-level URLs at the start of
-  any threat-list-building work, every session, not just recall that a
-  search was already done.**
-- **A Pikalytics per-Pokémon page's "Best Moves/Items/Abilities" panel
-  rendering empty or `NaN%`/`undefined%` is a client-side loading
-  artifact, not proof the Pokémon has no real presence.** Confirmed by
-  fetching the same page for a Pokémon already known to have heavy real
-  usage (Aerodactyl-Mega) via WebFetch/the Browser tool — its own
-  moves/items/abilities panels were just as empty, even though it's a
-  documented top-20 real pick. The plain-text-only `WebFetch` tool in
-  particular can't trigger this site's client-side data loading at all;
-  even the in-app Browser tool's rendered DOM leaves these specific panels
-  empty. **The reliable real-data source on this same page is the
-  "[Species] Pokemon Champions Teams" section** (curated real tournament
-  results from Limitless/Twitter/VGCPastes) — when it lists real teams
-  with records, the Pokémon has confirmed real tournament presence; when
-  it's entirely absent (checked directly this session: Mega Pidgeot had
-  zero curated teams, Mega Dragonite and Mega Aerodactyl each had several
-  with real records like 9-0, 11-1), that's the actual signal, not the
-  empty stat panels above it. For the full real moveset/item/ability of a
-  specific curated team entry, read the underlying JSON API directly
-  (`https://www.pikalytics.com/api/p/<date>/<format>-<id>/<species>`,
-  found via the Browser tool's network-request log after loading the
-  page) rather than trying to parse the rendered panels.
-
+- **A WebSearch summary that mentions Pikalytics is not the same as fetching
+  Pikalytics' team-level pages.** Build any threat list from
+  `/topteams` + `/team-usage` + `/pokedex`'s "Common Team Cores", not from
+  per-Pokémon usage rank or a search snippet. A search-only pass has twice
+  produced a threat list missing an entire dominant archetype — the Sun core
+  once, the Swampert-Mega/Pelipper/Archaludon rain core again later, both
+  invisible from individual rankings. Use the `vgc-meta-lookup` skill, which
+  encodes this. → `docs/case-studies.md`
+- **An empty or `NaN%`/`undefined%` stats panel on a Pikalytics per-Pokémon
+  page is a client-side loading artifact, not proof of low usage.** Plain
+  `WebFetch` cannot trigger that page's data loading at all, and even a
+  rendered DOM leaves those specific panels empty — confirmed against a
+  known top-20 pick whose panels were equally blank. The reliable signal on
+  that page is the **"[Species] Pokemon Champions Teams"** section (curated
+  tournament results with real records); absence there is the real
+  low-presence signal. For a specific curated entry's full moveset, read the
+  JSON API directly: `https://www.pikalytics.com/api/p/<date>/<format>-<id>/<species>`.
+  → `docs/case-studies.md`
 ## Current-mechanic correction
 
 - **Terastallization is NOT active in the current regulation.** See
-  `vgc_current_regulation.md` for the authoritative status. This file exists
+  `regulation.md` for the authoritative status. This file exists
   partly because an earlier claude.ai session incorrectly implied Tera
   strategy should be considered for current-format teams — it was corrected
   after user pushback, not caught proactively. Don't recommend Tera-based
   game plans (Tera-blast coverage, defensive Tera typing swaps, etc.) unless
-  `vgc_current_regulation.md` says Tera is active as of its "Last verified"
+  `regulation.md` says Tera is active as of its "Last verified"
   date.
 
 ## Weather effects on move power
@@ -176,7 +191,7 @@ finalizing any team-building recommendation.
   **Friend Guard** instead — reporting "Technician" without checking the
   preset would have been a real, wrong claim about the set being built, not
   just an incomplete one. This is a different trap from
-  `vgc_ability_move_mechanics.md`'s "Mega Evolution ability changes"
+  `mechanics.md`'s "Mega Evolution ability changes"
   section (a Mega's ability is genuinely fixed to one value, overriding
   pre-Mega selection) — this one is about ordinary, non-Mega Pokémon
   having real optionality that a single vendored field doesn't show.
@@ -193,12 +208,21 @@ finalizing any team-building recommendation.
   at all. Verify with an actual damage-calc run whenever an ability-boosted
   option is being chosen over a higher-base-power unboosted move, rather
   than assuming the synergy pick wins by default.
-- **Don't default to old "EV" terminology or numbers.** Pokémon Champions
-  replaced EVs/IVs entirely with a Stat Points (SP) system — see
-  `vgc_current_regulation.md`'s "Stat system" section for the mechanics.
-  Smogon/SV-era sets quoted in "252 EVs" terms don't map cleanly onto SP;
-  a set pulled from an outdated source needs to be re-verified in current
-  SP terms, not converted by assumption.
+- **Don't default to old "EV" terminology or numbers, and don't assume a
+  fixed EV→SP conversion factor (e.g. "252 EVs = 32 SP" — there isn't
+  one).** Pokémon Champions replaced EVs/IVs entirely with a Stat Points
+  (SP) system — see `regulation.md`'s "Stat system" section for
+  the mechanics. Smogon/SV-era or Legends: Z-A-era sets quoted in EV terms
+  don't map onto SP via any constant factor; prefer a real current-game SP
+  allocation from live usage data when one exists. **When one doesn't
+  exist, proportionally scaling the EV spread's *ratio* onto the 66-point
+  SP budget is an acceptable starting point** (user-requested standing
+  method, 2026-09-07) — see `methodology.md`'s "Converting
+  an inherited EV spread" bullet for the exact steps (scale by 66/sum, clamp
+  anything over the 32/stat cap, re-split the freed points by the remaining
+  ratio) and its worked Milotic Coil/Hypnosis example. Treat the scaled
+  result as a starting point to run through `optimize-bulk.js`/a
+  Speed-breakpoint search, not a verified final spread.
 
 ## Team-finalization checks
 
@@ -238,150 +262,18 @@ finalizing any team-building recommendation.
 
 ## Process-lesson case studies
 
-These are real corrections from a past team-building session (Whimsicott +
-Gholdengo core), kept here as concrete examples of why "verify the real
-chart, don't rely on recall" has to be a default step, not something that
-only happens after a user catches a mistake:
-
-- **Kingambit (Dark/Steel)** was initially suggested as a Farigiraf/Trick
-  Room answer, but is actually a bad pick against that specific team —
-  Dark/Steel is **4x weak to Fighting** (not "a bit weak"; both types are
-  independently weak to Fighting, so it compounds), plus 2x Fire and 2x
-  Ground, which would have stacked on top of that team's existing Fire
-  weakness. This was only caught via user pushback.
-- **Mega Aerodactyl (Rock/Flying)** was initially miscalculated as 4x weak
-  to Ice — it's actually only **2x weak** (Ice is neutral against the Rock
-  half, only super-effective against the Flying half). It's also **immune
-  to Ground** entirely (Flying half cancels Ground's normal super-effective
-  matchup against Rock). Both errors were caught only after the user
-  demanded the real chart be pulled instead of relying on recall — see
-  `vgc_type_chart_reference.md` for the verified chart.
-- **Recommending "lean on priority moves (Fake Out, Aqua Jet, Prankster
-  status) to disrupt Trick Room" without checking Farigiraf's ability
-  first.** Farigiraf runs Armor Tail at ~99.9% usage (Pikalytics), which
-  blocks any priority-boosted move — including Prankster-boosted Taunt/
-  Encore — from hitting it or its ally that turn (see
-  `vgc_ability_move_mechanics.md`'s "Priority & turn order" section, which
-  already documented this correctly before this mistake was made — the
-  failure was not checking that file before giving priority-based advice).
-  The good news buried in that same file: it doesn't matter, because
-  Trick Room itself is -7 priority and always resolves last on the turn
-  it's set — a normal-priority attack (Rock Slide, Wave Crash, Make It
-  Rain, anything at 0 priority) still lands before the room goes up
-  regardless of the attacker's Speed or whether Armor Tail is in play.
-  Armor Tail only shuts down priority-based disruption on *later* turns
-  while Farigiraf/its ally remains on the field — the real counter to a
-  Farigiraf lead is raw damage that turn, not a priority trick.
-- **Misread a usage-stat "Torrent 58.7% / Damp 46.4%" ability split as Mega
-  Swampert's actual battle ability**, and recommended it as if Swift Swim
-  were a rare minority tech pick rather than what it always is once
-  evolved. Some Megas fix their ability on evolution, overriding whatever
-  the base Pokémon had — see `vgc_ability_move_mechanics.md`'s "Mega
-  Evolution ability changes" section. The ironic part: this exact check
-  (does the Mega fix the ability?) had already been applied correctly to
-  Mega Raichu-Y two turns earlier in the same session — it just wasn't
-  applied consistently to the next Mega that came up. Caught by the user,
-  not proactively.
-- **Quoted a spread move's single-target damage-calc output as the real
-  in-game number, twice, without applying the doubles 0.75x spread-move
-  reduction** documented in this same file's "Spread moves hit multiple
-  targets but at reduced damage" bullet above — forgot it applies even
-  when reasoning about damage *to* a Trick Room setter, not just the
-  user's own spread moves. This made "just kill the Trick Room setter
-  turn 1" look like a real answer; corrected math (0.75x applied) shows
-  the best case — both attackers connect, zero Fake Out disruption —
-  still leaves Farigiraf at 36-61 of 195 HP, and Sinistcha often survives
-  too. Caught only after the user asked directly whether the setter
-  actually dies.
-  **Addendum (2026-07-14): git history shows `tools/damage-calc/calc.js`
-  already hardcoded Doubles format (and therefore already applied the 0.75x
-  spread reduction internally) from its very first commit (2026-07-09),
-  before this entry was even written (2026-07-10) — meaning this entry's
-  "corrected math (0.75x applied)" was almost certainly a double-reduction
-  on an already-correct tool output, not a real fix. Do not treat this
-  entry as a template to follow: never manually multiply
-  `tools/damage-calc/cli.js`'s min/max by 0.75 for a spread move, the tool
-  already did it (see the "Spread moves" bullet above, confirmed via a
-  controlled Singles-vs-Doubles A/B test). This mistake likely propagated
-  from this very file into at least one later session before being caught.**
-- **Claimed Garchomp (Ground/Dragon) was "immune to Mega Staraptor's Flying
-  STAB,"** inverting a real mechanic: Ground-type *moves* have no effect on
-  Flying-types (why Earthquake whiffs on Pelipper), not the reverse —
-  Flying-type moves hit Ground-types completely normally. Calc confirmed
-  Dual Wingbeat does 42-51 per hit to Garchomp, not zero. Direction matters:
-  always check "attacking type row vs. defending type column" in
-  `vgc_type_chart_reference.md`, not the mirrored cell, before claiming a
-  one-way immunity.
-- **Claimed Tinkaton (Steel/Fairy) shared Altaria's weakness to Poison-type
-  coverage** by checking only the Fairy half's effectiveness (Poison vs.
-  Fairy = 2x weak) and never multiplying it against the Steel half —
-  Poison vs. Steel is 0 (immune), and immunity always wins in the
-  multiplicative chain (2 × 0 = 0), so Tinkaton is flatly immune to Poison
-  overall, not weak to it. For any dual-type Pokémon, compute BOTH halves'
-  effectiveness against the incoming type and multiply them together —
-  don't reason from a single half and assume it holds for the combined
-  typing, especially when one half might be an immunity that overrides
-  the other. Caught by the user, not proactively.
-- **Grouped two different moves from the same attacker under one blanket
-  matchup claim ("Solar Beam / Weather Ball: both resisted") because they're
-  both a sun-setter's special options, without checking that they're
-  different types.** Weather Ball genuinely does become Fire-type in Sun
-  (correctly established earlier in the same session) and is resisted by a
-  Water-type like Milotic — but Solar Beam is plain Grass-type regardless of
-  weather, and Grass is Milotic's one real weakness, already correctly
-  logged as "weak" in an audit table three messages earlier in the *same*
-  conversation. The error wasn't missing data — the correct number (Solar
-  Beam 132-156 vs. Milotic's 170 HP, from `vgc_damage_calc.md`'s tool) was
-  already sitting in context — it was re-deriving a matchup claim from a
-  vague "these are both the sun-setter's moves" pattern-match instead of
-  checking each move's actual type independently, and not cross-referencing
-  a conclusion already reached earlier in the same session before restating
-  it. **Two things to actually do differently: (1) never bundle multiple
-  moves into one matchup claim without listing each move's type and
-  checking it separately — shared attacker or shared boost mechanism
-  (e.g. "both benefit from Sun") does not imply shared defensive
-  interaction; (2) before asserting a matchup claim, check whether it was
-  already computed earlier in the conversation and would contradict a
-  number already given** — this is the same shape of failure as the Mega
-  Swampert/Mega Raichu-Y ability-fix case above (a check applied correctly
-  once, then skipped on the very next similar claim), just for type
-  interactions instead of ability fixes. Caught by the user, not
-  proactively.
-
-- **Built an entire team's strategic premise ("Mega Altaria Calm Mind sweeper
-  core") around a move the Pokémon cannot actually learn in Champions,**
-  without ever running a learnset check until asked to "deeply examine each
-  move" at the very end of a long build. Calm Mind does not appear anywhere
-  in Altaria's Champions learnset (confirmed via direct Bulbapedia fetch),
-  and Altaria has **no Special Attack-boosting move at all** in its kit
-  (Dragon Dance boosts Attack/Speed, Agility boosts Speed only — nothing
-  touches SpA). Real tournament data confirms the actual role: Pikalytics
-  shows Altaria's top moves are Will-O-Wisp (63%), Protect (63%), Tailwind
-  (47%), Brave Bird (42%), Perish Song (26%), Roost (26%) — a support/
-  utility set, not a self-setup special sweeper — and Cloud Nine (89.5%)
-  outweighs Pixilate as the actual common ability, meaning most real
-  Altaria isn't even the Mega/Pixilate build at all. Several other picks
-  (a Follow-Me support Pokémon framed as "protecting Altaria's setup turn,"
-  a second Mega framed as "backup sweeper for when Altaria's matchup is
-  bad") were reasoned from this false premise. **Lesson: verify a
-  Pokémon's actual learnset for its intended role-defining move BEFORE
-  building team strategy around that role, not after the roster is
-  finalized** — a name-recognition move ("Altaria runs Calm Mind" from
-  general Pokémon knowledge/mainline-game memory) is not a substitute for
-  checking the specific game's learnset, and this is a more severe version
-  of the same trap as the Gyarados/Rock Slide and Blastoise/Water Pulse
-  cases below: those were single-move corrections, this was a whole team's
-  win condition. Caught only because the user asked for a full move-by-move
-  audit at the end, not proactively during the build.
+Moved to `docs/case-studies.md` — the full narrative of each incident, kept
+out of the decision-time hot path. Read it when revising a rule or when
+checking whether a new mistake repeats an old one.
 
 ## Changelog
 
 | Date | Change | Source |
 |---|---|---|
-| 2026-07-09 | Created file, consolidating pitfalls and process-lesson case studies from the claude.ai handoff session | pokemon_vgc_project_handoff.md (prior session notes); Tera-inactive status cross-checked against reference/vgc_current_regulation.md |
-| 2026-07-09 | Corrected "EV" terminology to Stat Points (SP) in the build assumption trap, added explicit SP-vs-EV pitfall — Champions replaced EVs/IVs entirely and this file still used the old terms. Caught while researching a speed-calc reference addition | champsdex.com EV/IV/Stats guide; cross-checked against reference/vgc_current_regulation.md |
-| 2026-07-10 | Added process-lesson case study: gave "use priority to disrupt Trick Room" advice without checking vgc_ability_move_mechanics.md's existing Armor Tail/Farigiraf note first, which would have caught it. User flagged that Farigiraf (current top TR setter) blocks priority-based disruption | Pikalytics Farigiraf page (Armor Tail ~99.9% usage); reference/vgc_ability_move_mechanics.md (already correct, just unconsulted) |
-| 2026-07-10 | Added process-lesson case study: misread Mega Swampert's pre-Mega ability usage split (Torrent/Damp) as its actual battle ability, calling Swift Swim a rare tech pick when it's always the Mega's fixed ability. User caught it after the same check had already been done correctly for Mega Raichu-Y earlier in the session | User correction; cross-referenced against new reference/vgc_ability_move_mechanics.md "Mega Evolution ability changes" section |
+| 2026-07-09 | Created file, consolidating pitfalls and process-lesson case studies from the claude.ai handoff session | pokemon_vgc_project_handoff.md (prior session notes); Tera-inactive status cross-checked against reference/regulation.md |
+| 2026-07-09 | Corrected "EV" terminology to Stat Points (SP) in the build assumption trap, added explicit SP-vs-EV pitfall — Champions replaced EVs/IVs entirely and this file still used the old terms. Caught while researching a speed-calc reference addition | champsdex.com EV/IV/Stats guide; cross-checked against reference/regulation.md |
+| 2026-07-10 | Added process-lesson case study: gave "use priority to disrupt Trick Room" advice without checking mechanics.md's existing Armor Tail/Farigiraf note first, which would have caught it. User flagged that Farigiraf (current top TR setter) blocks priority-based disruption | Pikalytics Farigiraf page (Armor Tail ~99.9% usage); reference/mechanics.md (already correct, just unconsulted) |
+| 2026-07-10 | Added process-lesson case study: misread Mega Swampert's pre-Mega ability usage split (Torrent/Damp) as its actual battle ability, calling Swift Swim a rare tech pick when it's always the Mega's fixed ability. User caught it after the same check had already been done correctly for Mega Raichu-Y earlier in the session | User correction; cross-referenced against new reference/mechanics.md "Mega Evolution ability changes" section |
 | 2026-07-10 | Added process-lesson case study: quoted spread-move damage-calc output (Rock Slide/Make It Rain into Farigiraf/Sinistcha) without applying the doubles 0.75x multi-target reduction already documented in this file's own doubles-traps section, twice across two separate messages. Overstated "kill the Trick Room setter turn 1" as a real answer. User asked directly whether the setter actually dies, which forced the correction | User question; recalculated with 0.75x applied via tools/damage-calc/cli.js this session |
 | 2026-07-10 | Added process-lesson case study: claimed Garchomp was immune to Mega Staraptor's Flying STAB, inverting the real Ground-move-vs-Flying-type immunity direction. Caught while re-verifying Garchomp's actual value to the team via damage calc | tools/damage-calc/cli.js (Dual Wingbeat vs Garchomp = 42-51 per hit, not 0) |
 | 2026-07-10 | Added "Team-finalization checks" section — gave two Pokémon (Rotom-Wash, Archaludon) the same item (Leftovers) across several messages of a six-Pokémon build before the duplicate was caught. No two Pokémon on a team may hold the same item in doubles VGC/Champions | User caught it directly; fixed via Rotom-Wash's real second-most-common item (Sitrus Berry, 39.1% usage per Pikalytics) |
@@ -391,9 +283,15 @@ only happens after a user catches a mistake:
 | 2026-07-14 | Added "Weather effects on move power" section — Rain halves Fire moves/boosts Water 1.5x, Sun halves Water/boosts Fire 1.5x. Calculated Salazzle's Fire Blast vs. Sinistcha (a real Rain-team member) with no weather flag set, overstating it as a near-guaranteed OHKO (94-112%) when the real number under the Rain their own team would have active is only 47-55% | User correction; confirmed via `tools/damage-calc/cli.js`'s `--weather Rain` flag, cross-checked against `damage_MASTER.js`'s `calcGeneralMods` weather multipliers |
 | 2026-07-14 | Added "ability's power-boosted move category isn't automatically the best move" bullet — picked Mega Launcher-boosted Water Pulse (60 BP) as Mega Blastoise's Water STAB without comparing it against unboosted higher-BP alternatives; real calc showed unboosted Water Spout (150 BP, 100% acc, spread) and Hydro Pump (110 BP) both outdamage the "ability synergy" pick | User asked "does it matter in actual matchups"; confirmed via `tools/damage-calc/cli.js` (Water Spout 121-144 vs. Water Pulse 97-115 into Kingambit) and Bulbapedia accuracy pages |
 | 2026-07-14 | Added major process-lesson case study: built a whole team's strategic premise ("Mega Altaria Calm Mind sweeper") around a move Altaria cannot learn in Champions at all — never checked until a final "deeply examine each move" audit. Altaria has no Special Attack-boosting move in its kit; real tournament usage is a Will-O-Wisp/Protect/Tailwind support set, not a sweeper | Direct Bulbapedia Champions-learnset fetch (Calm Mind absent from full move list); Pikalytics championstournaments/Altaria usage data (Will-O-Wisp 63%, Cloud Nine 89.5% over Pixilate) |
-| 2026-07-23 | Added "Generic WebSearch snippets are not the same as fetching Pikalytics' team-level pages" bullet — built a 5-Pokémon threat list (for real Palafin-moveset damage-calc decisions) from WebSearch snippets off individual Pokémon pages only, never fetching `topteams`/`team-usage` as `vgc_teambuilding_methodology.md`'s own "Live meta lookup" section already instructs. Missed Archaludon, Swampert-Mega, and Pelipper entirely — the Swampert-Mega/Pelipper/Archaludon rain core turned out to be one of the most common archetypes in the real top-100 team-usage list, which is especially relevant to a Water-type-heavy team since rain doubles the relevant "does this OHKO" question already being calculated. This is a repeat of the exact mistake the methodology file's 2026-07-10 changelog entry already documents being caught once (missed the Sun archetype core from usage-rank-only checking) — the written instruction existing in one file wasn't sufficient to prevent recurrence three sessions later | User asked directly whether `pikalytics.com/team-usage` should have been checked; fetched `topteams` and `team-usage` this session, cross-referenced against the prior 2026-07-10 entry |
+| 2026-07-23 | Added "Generic WebSearch snippets are not the same as fetching Pikalytics' team-level pages" bullet — built a 5-Pokémon threat list (for real Palafin-moveset damage-calc decisions) from WebSearch snippets off individual Pokémon pages only, never fetching `topteams`/`team-usage` as `methodology.md`'s own "Live meta lookup" section already instructs. Missed Archaludon, Swampert-Mega, and Pelipper entirely — the Swampert-Mega/Pelipper/Archaludon rain core turned out to be one of the most common archetypes in the real top-100 team-usage list, which is especially relevant to a Water-type-heavy team since rain doubles the relevant "does this OHKO" question already being calculated. This is a repeat of the exact mistake the methodology file's 2026-07-10 changelog entry already documents being caught once (missed the Sun archetype core from usage-rank-only checking) — the written instruction existing in one file wasn't sufficient to prevent recurrence three sessions later | User asked directly whether `pikalytics.com/team-usage` should have been checked; fetched `topteams` and `team-usage` this session, cross-referenced against the prior 2026-07-10 entry |
 | 2026-07-23 | Extended the duplicate-item bullet (originally added 2026-07-10 after the Rotom-Wash/Archaludon Leftovers miss) with a second real recurrence in a different team file — gave Gallade Life Orb when Palafin already held it, in the very message finalizing the sixth roster slot. Both misses happened while actively assigning an item during team construction, not as a one-off; the rule existing in this file wasn't enough to prevent it being missed a second time. Added explicit guidance: the check has to be run at the moment of assignment (cross-reference every other already-locked item), and when fixing a duplicate, re-verify the displaced Pokémon's damage breakpoints under the replacement item rather than assuming the swap is damage-neutral | User caught it directly; tools/damage-calc/cli.js re-verification of both affected breakpoints under the replacement item (Focus Sash) |
 | 2026-07-27 | Added "Pikalytics per-Pokémon panel rendering empty is a loading artifact, not a low-usage signal" bullet — while scouting Mega Tailwind-setter alternatives to Aerodactyl, an empty "Best Moves" panel for Mega Pidgeot was initially treated as evidence of near-zero real usage, until the same empty-panel pattern was confirmed on Mega Aerodactyl's own page too (a known heavily-used real pick), proving it's a client-rendering limitation affecting every Pokémon's page, not a usage signal. The page's curated "Champions Teams" section (and its underlying `/api/p/...` JSON, found via the Browser tool's network log) turned out to be the real, reliable signal instead | Direct comparison via the Browser tool: Mega Pidgeot had zero curated real teams (genuinely low presence) vs. Mega Aerodactyl (19) and Mega Dragonite (9, including three 8-0/9-0/11-1 finishes) both having real ones despite identical empty stat panels |
 | 2026-08-19 | Added "`--weather` value is case-sensitive and silently no-ops" bullet — ran `tools/damage-calc/cli.js` with `--weather sun` (lowercase) while checking Mega Charizard Y's Heat Wave/Solar Beam against a user's team; the engine only matches exact capitalized strings (`Sun`, `Rain`, etc.), so the lowercase flag was silently ignored with no error, dropping Heat Wave from 508-600 to a wrong 336-400 and Solar Beam from 120 BP to a wrong 60 BP against Scizor/Milotic | Caught proactively by comparing `--weather Sun` vs `--weather sun` output side-by-side this session; confirmed root cause in `tools/damage-calc/vendor/damage_MASTER.js` line ~1723 (Solar Beam weather-string allowlist) and its other `===`/`.indexOf` weather checks |
 | 2026-08-19 | Added process-lesson case study: while recommending a Team Preview lead pairing, claimed "Solar Beam / Weather Ball: both resisted" for Milotic by grouping the two moves as "the sun-setter's special options" without checking each move's type separately — Weather Ball is Fire-type in Sun (correctly resisted), but Solar Beam is plain Grass-type, Milotic's one real weakness, already correctly logged as "weak" in this same session's own audit table three messages earlier. The correct number (132-156 vs. 170 HP) was already in context; the failure was re-deriving a matchup claim from a vague shared-attacker pattern instead of checking it, and not cross-referencing a conclusion already reached earlier in the same conversation | User correction; re-verified via `tools/damage-calc/cli.js` for all four move/defender pairs before restating the corrected lead recommendation |
 | 2026-08-19 | Added "item/moveset/ability/SP are fixed at team-build time, not swappable per-opponent at Team Preview" bullet to "Team-finalization checks" — suggested Sinistcha carry Occa Berry into a Charizard-Y matchup and Colbur Berry into a sand-Tyranitar matchup as if it could flex per-game; Team Preview only selects which 4 of 6 to bring, it doesn't let a held item change between games. Any item recommendation needs to be framed as one permanent trade-off, not a situational swap | User correction ("i cant swap items in team preview, dont make that mistake again") |
+| 2026-09-04 | Added process-lesson case study: `tools/damage-calc/cli.js` does not auto-evolve a Mega just because its Mega Stone is held — passing `--defender Staraptor --defender-item Staraptorite` silently computed base Staraptor (Normal/Flying, Intimidate), not Mega Staraptor (Fighting/Flying, ability fixed to Contrary). This produced a real wrong claim to the user that Ceruledge's Ghost-type moves deal 0 to Staraptor (true only for the base form nobody actually fields); the real Mega Staraptor takes normal neutral damage instead. Must pass the exact `"Mega <Species>"` string as `--defender`/`--attacker` for any Mega-capable Pokémon, not the base name plus its stone | Caught while re-deriving Mega Staraptor's real fixed ability for a user follow-up; confirmed via `POKEDEX_CHAMPIONS["Mega Staraptor"]` (Fighting/Flying, ab: "Contrary") and a direct cli.js re-run with the corrected species string (Poltergeist: 0 → 97-115) |
+| 2026-09-04 | Added process-lesson case study + new `methodology.md` section ("A Pokémon's value isn't always damage") after judging Whimsicott, a real Focus-Sash/Prankster support pick, by % HP lost to top threats the same way an attacker candidate was judged — factually correct numbers, wrong metric for a Pokémon designed to take exactly one hit regardless of overkill. Also added cross-references from the vgc-team-building and vgc-threat-evaluation skills | User correction ("damage isn't always a pokemon's value... look into what they offer"); Whimsicott's real Pikalytics set (Tailwind 98.5%, Focus Sash 75.5%, Prankster 99.4%) confirmed this session |
+| 2026-09-07 | Added process-lesson case study: claimed Rillaboom doesn't resist Electric while flagging a false "gap" in a Milotic/Rillaboom/Incineroar core — Grass resists Electric per the type chart (now `node tools/dex/cli.js type`), so Rillaboom actually already covers Milotic's Electric weakness. Same recurring failure mode as this section's other type-chart entries: stated a matchup from recall instead of opening the reference file, on a matchup that felt obvious enough not to check | User correction ("how do you keep messing up your resistances. rillaboom resists electric") |
+| 2026-09-07 | Added process-lesson case study: claimed Mega Raichu Y's real ability is Lightning Rod (93.7% usage) and No Guard is a rare tech — backwards. `POKEDEX_CHAMPIONS["Mega Raichu Y"].ab` is fixed to `"No Guard"`; the 93.7%/2.7% split was pre-Mega base Raichu's own ability selection, not the Mega's. Fourth recurrence of the "usage-stat ability breakdown shows pre-Mega selection" trap, and this exact Pokémon was already named in `mechanics.md` before the mistake was made. User asked what should change structurally — added CLAUDE.md rule 13 mandating a vendor-data/reference-file check before stating any Mega's ability | User correction; `tools/damage-calc/vendor/pokedex.js` direct read (`POKEDEX_CHAMPIONS["Mega Raichu Y"]`: `ab: "No Guard"`, no alternative) |
+| 2026-09-07 | Softened the "don't default to old EV terminology" bullet to add a user-requested standing method: proportionally scale an inherited EV spread's ratio onto the 66-point SP budget as a starting point (not a fixed conversion factor) when no real current-game SP allocation is available — see `methodology.md`'s new "Converting an inherited EV spread" bullet for the exact steps | User instruction, given while reviewing a Milotic Coil/Hypnosis set quoted in EV terms (252/104/88/64) |
+| 2026-09-07 | Restructured for scannability: added a Contents list and a Quick checklist at the top, and moved the 220-line "Process-lesson case studies" section plus two long data-source narratives to `docs/case-studies.md`. No trap was removed — the rules stayed, the incident narratives left the decision-time hot path. Type-chart and Mega-ability traps now point at `tools/dex/cli.js` instead of a markdown file | docs/specs/2026-09-07-repo-reorganization.md |

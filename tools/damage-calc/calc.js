@@ -177,7 +177,7 @@ function buildPokemon(rawInput, natures) {
     // reads `.ivs[stat]` (`attackSource.ivs[attackStat] < 31 ? ...`) even
     // under the SPs display mode — a leftover from the pre-Champions
     // EV/IV system this vendored engine was originally written for.
-    // Champions has no IV concept (see reference/vgc_current_regulation.md);
+    // Champions has no IV concept (see reference/regulation.md);
     // 31 (the old system's max/"perfect" value) is used here purely so this
     // cosmetic string reads as "no IV penalty" rather than crashing on
     // `undefined[stat]` — again, this never reaches the actual computed
@@ -392,7 +392,7 @@ function runDamageCalc(input) {
   // total" without having to parse the free-text description string.
   //
   // DOC NOTE for DC Task 8 (documentation updates, not yet run as of this
-  // fix): when reference/vgc_damage_calc.md is written/updated to document
+  // fix): when reference/damage-calc.md is written/updated to document
   // this tool's output shape, it MUST call out that `min`/`max` is a
   // per-hit value (not a move total) for `isVariableMultiHit: true` moves —
   // do not let that doc silently imply min/max is always the full move

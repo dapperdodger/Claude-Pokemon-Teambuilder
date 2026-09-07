@@ -3,92 +3,152 @@
 Reference workflow for high-quality VGC (Pokémon Champions, official doubles
 format) team-building help — built to force verification against current
 sources instead of letting the model coast on stale training data, and to
-support both ladder/tournament prep and building around user-chosen favorite
+support both ladder/tournament prep and building around user-chosen favourite
 Pokémon rather than copy-pasting top-usage squads.
 
-This repo is the **sole source of truth** for this project — reference
-files, behavioral rules, and built teams all live here with real version
+This repo is the **sole source of truth** for this project — reference files,
+behavioural rules, tools, and built teams all live here with real version
 history via git.
 
-## How to use this repo
+## How it's organised
 
-Start any team-building session by reading `CLAUDE.md` (behavioral rules)
-and `reference/vgc_current_regulation.md` (is the regulation info still
-current?). The behavioral rules in `CLAUDE.md` require re-verifying volatile
-facts via live web search rather than trusting these files indefinitely —
-each reference file's `## Changelog` section and "Last verified" stamp (where
-present) show how fresh its content is.
+The repo is layered by *what kind of thing* each piece is, because the layers
+have different failure modes:
+
+| Layer | What it is | Why |
+|---|---|---|
+| `tools/` | Executable lookups over vendored game data | Deterministic facts should be **queried, not recalled or read**. Type matchups and Mega abilities were the two most-repeated errors in this repo's history; both are now tool calls. |
+| `.claude/hooks/` | Enforcement | Instructions are context, not configuration. What must actually happen gets a hook. |
+| `CLAUDE.md` | Always-on gates and a routing table | Loaded every session, so it stays short. |
+| `.claude/skills/` | Procedures that load on task shape | Only enter context when they're relevant. |
+| `.claude/rules/` | Path-scoped instructions | Load only when matching files are touched. |
+| `reference/` | Domain knowledge, read on demand | Each file leads with a TOC; the checklist comes before the prose. |
+| `docs/case-studies.md` | Why the rules exist | Rationale and history, deliberately **out** of the decision-time path. |
+
+The design reasoning behind this layout — including the recurrence data that
+motivated it — is in
+[`docs/specs/2026-09-07-repo-reorganization.md`](docs/specs/2026-09-07-repo-reorganization.md).
+
+## Tools
+
+### `tools/dex/` — the query layer
+
+Stable facts, answered in one command against the vendored Champions data.
+Prints JSON.
+
+```bash
+node tools/dex/cli.js mon "Mega Raichu Y"       # types, base stats, FIXED ability
+node tools/dex/cli.js type Electric --vs Grass  # 0.5 — resisted
+node tools/dex/cli.js type Fire --vs Rock,Flying # multiplies both halves
+node tools/dex/cli.js move "Rock Slide"
+node tools/dex/cli.js legal --item "Choice Band"
+```
+
+`mon` reports `abilityIsMegaFixed` and, for a Mega, the `baseFormeAbility` —
+which is what a usage-stat page's percentages actually show. That distinction
+is the single most-repeated factual error in this repo's history.
+
+Scope fence: **stable facts only**. Nothing meta-dependent (usage, common
+sets, threat rankings) belongs here — those go stale and must come from a
+live lookup.
+
+### `tools/damage-calc/` — damage and SP optimisation
+
+Vendors the real NCP-VGC-Damage-Calculator engine; see
+[`VENDOR_MANIFEST.md`](tools/damage-calc/VENDOR_MANIFEST.md) for provenance.
+`cli.js` for rolls and speed breakpoints, `optimize-bulk-cli.js` for the
+minimum HP/Def/SpD that survives a named attack. Needs Node.js.
+
+```bash
+npm test   # 90 tests across both tools and the hooks
+```
 
 ## Reference files
 
 | File | Contents |
 |---|---|
-| [`reference/vgc_current_regulation.md`](reference/vgc_current_regulation.md) | Active regulation set, dates, active mechanics, roster-vs-legality rules, usage snapshot. **Most volatile file — check first.** |
-| [`reference/vgc_common_pitfalls.md`](reference/vgc_common_pitfalls.md) | Domain-specific gotchas: ladder vs. tournament data, co-occurrence vs. synergy, doubles-specific traps, past correction case studies. |
-| [`reference/vgc_type_chart_reference.md`](reference/vgc_type_chart_reference.md) | Full 18×18 Gen 6+ type effectiveness chart. |
-| [`reference/vgc_ability_move_mechanics.md`](reference/vgc_ability_move_mechanics.md) | Ability/move mechanics not captured by typing alone (Trick Room priority, Armor Tail, speed calculation, etc.). |
-| [`reference/vgc_teambuilding_methodology.md`](reference/vgc_teambuilding_methodology.md) | Process rules for evaluating matchups — typing alone isn't enough to call something a counter. |
-| [`reference/vgc_team_refining_mode.md`](reference/vgc_team_refining_mode.md) | Narrower workflow for refining an already-mostly-built team: move verification + full SP-spread optimization against current threats, not full teambuilding. |
-| [`reference/vgc_damage_calc.md`](reference/vgc_damage_calc.md) | Local damage-calculator CLI (tools/damage-calc/) plus formula fundamentals for manual sanity-checks. |
+| [`reference/regulation.md`](reference/regulation.md) | Active regulation, dates, active mechanics, SP stat system, roster-vs-legality rules. **Most volatile — check first.** Carries the `Last verified` / `Regulation ends` stamps the staleness hook reads. |
+| [`reference/pitfalls.md`](reference/pitfalls.md) | Trap checklist, scannable. Data-source traps, weather, doubles-specific traps, build assumptions, team-finalization checks. |
+| [`reference/methodology.md`](reference/methodology.md) | Process rules: how to evaluate a matchup, how to solve an SP spread, when damage isn't the right lens, live meta lookup. |
+| [`reference/mechanics.md`](reference/mechanics.md) | Priority, speed modifiers, item mechanics, Mega ability changes — things typing alone doesn't capture. |
+| [`reference/damage-calc.md`](reference/damage-calc.md) | Damage-calc CLI usage, flags, and its real caveats. |
+| [`reference/team-refining.md`](reference/team-refining.md) | The narrower refine-an-existing-team workflow. |
+
+The 18×18 type chart markdown was **removed** — `tools/dex/cli.js type`
+replaces it. All 324 cells were confirmed identical to the vendored chart
+before deletion, and that hand-verified chart is preserved as a test
+(`tools/dex/tests/type-chart-invariant.test.js`) so a future re-vendor can't
+silently change type effectiveness.
 
 ## Skills
 
-[`.claude/skills/`](.claude/skills/) holds project skills that surface the
-relevant reference files and behavioral rules automatically when a session
-matches their trigger, instead of relying on the rules being recalled from
-`CLAUDE.md` alone. Each skill is a thin trigger/checklist layer — the
-reference files above remain the actual source of truth; skills point at
-them rather than duplicating their content.
+[`.claude/skills/`](.claude/skills/) holds project skills that load when a
+session matches their trigger. Each is a self-contained procedure that links
+one hop out to reference files — never a chain through several of them.
 
 | Skill | Triggers on |
 |---|---|
-| [`vgc-team-building`](.claude/skills/vgc-team-building/SKILL.md) | Building a new team, extending a partial one, or building around a named favorite Pokémon. |
-| [`vgc-team-refining`](.claude/skills/vgc-team-refining/SKILL.md) | An already-mostly-decided team (species/item/ability locked in) needing move verification + SP-spread optimization only. |
-| [`vgc-threat-evaluation`](.claude/skills/vgc-threat-evaluation/SKILL.md) | Evaluating whether something counters/answers/beats something else — used standalone or invoked from the two skills above. |
-| [`vgc-meta-lookup`](.claude/skills/vgc-meta-lookup/SKILL.md) | "What's the meta / what's popular" with no specific Pokémon or team named yet — used standalone or invoked from the team-building/refining skills for their own meta scans. |
+| [`vgc-team-building`](.claude/skills/vgc-team-building/SKILL.md) | Building a new team, extending a partial one, or building around a named favourite. |
+| [`vgc-team-refining`](.claude/skills/vgc-team-refining/SKILL.md) | An already-decided team needing move verification + SP optimisation only. |
+| [`vgc-threat-evaluation`](.claude/skills/vgc-threat-evaluation/SKILL.md) | "Does X counter/answer/beat Y" — used standalone or from the two above. |
+| [`vgc-meta-lookup`](.claude/skills/vgc-meta-lookup/SKILL.md) | "What's the meta" with no specific Pokémon or team named yet. |
+
+## Hooks
+
+[`.claude/hooks/`](.claude/hooks/) — registered in
+[`.claude/settings.json`](.claude/settings.json).
+
+| Hook | Event | Does |
+|---|---|---|
+| `check_regulation_staleness.sh` | SessionStart | Warns if `regulation.md` is >14 days unverified or its end date has passed. |
+| `check_damage_calc_vendor_staleness.sh` | SessionStart | Warns if the vendored calculator is behind upstream. |
+| `check_sp_spread_optimization.js` | PostToolUse (Write/Edit) | Flags team-file SP spreads that are round-numbered with no breakpoint reasoning. |
+| `verify-mega-ability.js` | PostToolUse (WebFetch/WebSearch) | When a fetched page shows a Mega alongside ability percentages, injects the real fixed ability from the local dex. Fails open. |
 
 ## Teams
 
-[`teams/`](teams/) holds actual built teams — one file per team, using
-[`teams/_TEMPLATE.md`](teams/_TEMPLATE.md), capturing not just the roster
-but the reasoning per pick and what was deliberately left out.
+[`teams/`](teams/) holds built teams, one file per team, using
+[`teams/_TEMPLATE.md`](teams/_TEMPLATE.md) — the roster plus the reasoning per
+pick and what was deliberately left out.
+
+Two standing rules, enforced by [`.claude/rules/teams.md`](.claude/rules/teams.md):
+nothing gets written here until the user explicitly says to save, and saved
+teams are **historical records, never a meta source**.
 
 ## Using this repo for your own teambuilding
 
-This setup isn't tied to any one person's roster — the `CLAUDE.md` rules and
-`reference/` files are general VGC knowledge (type chart, mechanics, current
-regulation, methodology), and `teams/` is just where built teams accumulate.
-To use it for your own teambuilding:
+The `CLAUDE.md` rules, `reference/` files and `tools/` are general VGC
+material; `teams/` is where one person's builds accumulate.
 
-1. Clone the repo and open it in Claude Code — `CLAUDE.md` is picked up
-   automatically and governs every session, no setup needed.
-2. Start fresh in `teams/` (or clear out the existing files) — those are
-   one person's specific builds, not shared reference material.
-3. `reference/vgc_current_regulation.md` decays fast (it has a "Last
-   verified" stamp for this reason) — expect Claude to re-verify it live
-   each session rather than trust it indefinitely, per `CLAUDE.md` rule 5.
-4. `tools/damage-calc/` needs Node.js installed to run damage-calc/SP-spread
-   calculations locally; see `tools/damage-calc/VENDOR_MANIFEST.md` for
-   where its vendored data comes from.
+1. Clone and open in Claude Code — `CLAUDE.md` is picked up automatically.
+2. Clear out `teams/` — those are someone else's specific builds.
+3. Install Node.js so `tools/` works, then run `npm test` to confirm.
+4. Expect `reference/regulation.md` to be re-verified live each session; it
+   decays fast, which is why it carries a dated stamp and a staleness hook.
 5. Tell Claude which Pokémon you want to build around, or that you're
-   prepping for ladder/a specific tournament — rule 2 in `CLAUDE.md` means
-   it won't default to just handing you the top-usage squad.
-
-## Design history
-
-`docs/superpowers/specs/` and `docs/superpowers/plans/` contain the design
-spec and implementation plan for how this repo evolved.
+   prepping for ladder — it won't default to the top-usage squad.
 
 ## Maintenance notes
 
-- **File size**: none of the `reference/` files are bloated yet (largest is
-  ~270 lines as of 2026-07-17), but if one grows past ~300-400 lines or
-  starts covering two clearly distinct topics, split it and add a pointer
-  from the other files/README rather than letting it keep growing. This
-  keeps context load down for sessions that only need part of the domain.
-- **Changelogs vs. git history**: each file's `## Changelog` section is
-  deliberately not redundant with `git log` — it's a fast, in-file "when was
-  this last verified/corrected and why" signal (used by CLAUDE.md rule 5's
-  staleness check) that doesn't require leaving the file to check. Keep this
-  even though full history lives in git; the two serve different purposes
-  (at-a-glance decay signal vs. complete audit trail).
+- **Keep facts queryable, not written down.** If a new fact is deterministic
+  and lives in the vendored data, add it to `tools/dex/` rather than to a
+  reference file. Prose about a fact has repeatedly lost to recall; a command
+  hasn't.
+- **File size**: `reference/` files should stay under ~300 lines and lead with
+  a TOC. If one grows past that or covers two distinct topics, split it and
+  move the narrative to `docs/case-studies.md` rather than letting it grow.
+- **Rule vs. story**: a rule belongs in `reference/` or `CLAUDE.md`; the
+  incident behind it belongs in `docs/case-studies.md`. Keeping the story out
+  of the hot path is deliberate — it's what let the checklist get short enough
+  to actually run.
+- **Changelogs vs. git history**: each file's `## Changelog` is a fast, in-file
+  "when was this last verified and why" signal that doesn't require leaving the
+  file. Keep it even though full history lives in git; the two serve different
+  purposes.
+- **One home per fact.** If a rule needs restating in a second place, link
+  instead. Four copies of a rule are weaker than one, not stronger.
+
+## Design history
+
+[`docs/specs/`](docs/specs/) and `docs/superpowers/` contain the design specs
+and implementation plans for how this repo evolved.

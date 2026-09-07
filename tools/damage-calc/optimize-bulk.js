@@ -17,8 +17,8 @@
 // A brute-force search over the full (bounded, small) integer grid is the
 // only reliable way to get this right per-Pokemon, per-threat.
 //
-// This directly supports reference/vgc_teambuilding_methodology.md's "SP
-// spread allocation" section and is what scripts/check_sp_spread_optimization.js
+// This directly supports reference/methodology.md's "SP
+// spread allocation" section and is what .claude/hooks/check_sp_spread_optimization.js
 // expects team files to actually have been run through before a round
 // (0/2/32) HP/Def/SpD spread is presented as justified.
 
@@ -48,7 +48,7 @@ function assertNoMultiHitThreats(threats, callerName) {
   const multiHit = threats.filter((t) => isMultiHitMove(t.move.name));
   if (multiHit.length > 0) {
     throw new Error(
-      `Multi-hit move(s) not supported by ${callerName} (per-hit-only damage, see vgc_damage_calc.md): ${multiHit.map((t) => t.move.name).join(', ')}. Evaluate these separately.`
+      `Multi-hit move(s) not supported by ${callerName} (per-hit-only damage, see damage-calc.md): ${multiHit.map((t) => t.move.name).join(', ')}. Evaluate these separately.`
     );
   }
 }
@@ -222,7 +222,7 @@ function findMinimalBulkSpread({ defender, fixedSp = {}, budget, threats, capPer
 // below) rather than a flat majority vote, though it's still an
 // approximation of true survival
 // probability — usage stats are ladder-derived (ladder ≠ tournament, see
-// vgc_common_pitfalls.md) and don't account for this team's own bring-6-
+// pitfalls.md) and don't account for this team's own bring-6-
 // pick-4 exposure (a threat this Pokemon is never brought against
 // shouldn't count against it at all, regardless of its usage weight).
 //
@@ -252,7 +252,7 @@ function findMinimalBulkSpread({ defender, fixedSp = {}, budget, threats, capPer
 // NOTE: excludes true multi-hit moves (isVariableMultiHit) from the input
 // threat list — this tool's per-combo damage check assumes `result.max` is
 // the whole hit's damage, which is only valid for single-hit moves (see
-// vgc_damage_calc.md's multi-hit caveat). Multi-hit threats (Dual Wingbeat,
+// damage-calc.md's multi-hit caveat). Multi-hit threats (Dual Wingbeat,
 // Icicle Spear, etc.) still need the same manual "per-hit x realistic hit
 // count" reasoning documented elsewhere in this session's work.
 function rankSpreadsByOverallSurvival({ defender, fixedSp = {}, budget, threats, capPerStat = DEFAULT_CAP }) {

@@ -6,25 +6,82 @@ description: Use when evaluating whether a specific Pokémon, moveset, or team c
 # VGC Threat Evaluation
 
 ## Overview
-Typing alone doesn't make something a counter — the type chart only covers a Pokémon's own STAB and defensive typing, not what coverage moves it's actually running. A real matchup call needs both typing AND actual current moveset.
+Typing alone doesn't make something a counter. The type chart covers only a
+Pokémon's own STAB and defensive typing, not the coverage moves its real set
+is running. A matchup call needs both — and the typing half is a tool call,
+not a recall.
 
 ## When to use
 - Calling a Pokémon a "counter," "check," or "answer" to something
 - Asked "what beats X" or "does X counter Y"
 - Reasoning about a threat's coverage before it's confirmed via live data
-- Invoked from vgc-team-building or vgc-team-refining whenever a counter claim comes up mid-task
+- Invoked from vgc-team-building or vgc-team-refining whenever a counter
+  claim comes up mid-task
 
 ## The two checks (both required)
-1. **Typing** — raw effectiveness in both directions, from `reference/vgc_type_chart_reference.md`. For dual types, multiply BOTH halves' effectiveness together — a single immunity half overrides the other (2 × 0 = 0), don't reason from one half alone. Check attacking-type row vs. defending-type column, not the mirrored cell: Ground *moves* have no effect on Flying *types*, but Flying moves hit Ground types normally — direction matters.
-2. **Actual moveset** — what coverage moves the Pokémon is really running in the current meta (Pikalytics per-mon page — see `reference/vgc_teambuilding_methodology.md`'s "Live meta lookup" section). A Pokémon can be a real answer to something despite bad on-paper typing (via a coverage move), or a bad answer despite good typing (if it isn't actually running the relevant move).
+
+**1. Typing — query it, never recall it.**
+
+```bash
+node tools/dex/cli.js type <AttackingType> --vs <Def1[,Def2]>
+```
+
+Pass **both** of a dual type's halves in one call; the tool multiplies them
+and applies the rule that an immune half zeroes the product. Reasoning from
+one half is a documented recurring error, and so is reading the direction
+backwards — the tool takes the attacking type first, so the direction is
+structural rather than something to keep straight.
+
+For the defender's own typing and stats, and for any Mega:
+
+```bash
+node tools/dex/cli.js mon "Mega <Species>"
+```
+
+A Mega's `ability` from this tool is its **fixed battle ability**. The
+`baseFormeAbility` field is what usage pages report — never cite that as what
+it fights with. Some Megas also retype (Mega Staraptor is Fighting/Flying,
+not the base Normal/Flying), which changes the matchup independently of the
+ability.
+
+**2. Actual moveset — pull it live.**
+What coverage is this Pokémon really running in the current meta (Pikalytics
+per-mon page)? A Pokémon can be a real answer despite bad on-paper typing via
+a coverage move, or a bad answer despite good typing if it isn't running the
+relevant move. Non-Mega Pokémon have 2-3 legal abilities — check the real
+preset for the set in question, not the dex default.
 
 ## Verify the number, don't hand-calculate
-Run `tools/damage-calc/cli.js` for the actual roll. Pass the real `--weather` flag for the matchup — including the *opponent's* weather, not just your own side's — omitting it has produced swings of 30-50% in past sessions. Don't manually apply a 0.75x spread-move reduction; the CLI already bakes it in.
+
+```bash
+node tools/damage-calc/cli.js --attacker … --defender … --move … --weather Sun
+```
+
+- `--weather` is **case-sensitive and silently no-ops on a mismatch**. Pass
+  the exact capitalised string, and pass the *opponent's* weather when they
+  are the ones setting it — omitting it has produced 30-50% swings.
+- Don't apply a 0.75x spread-move reduction yourself; the CLI already has it.
+- For a multi-hit move, `min`/`max` is one hit. Check `isVariableMultiHit`.
+
+## Not every "does X answer Y" is a damage question
+
+A redirector, screens-setter or Trick Room setter is countered by denying its
+*action* — Taunt, faster priority, a target it can't legally hit — not by
+out-damaging it. A Focus Sash support pick is built to take exactly one hit,
+so 150% and 300% are the same outcome for it; the real question is whether
+its action goes off. Don't lead with a damage comparison for a support
+Pokémon on either side of the matchup.
 
 ## Common mistakes
-- Multiplying only one half of a dual-type's defensive typing
-- Reading a type-immunity direction backwards (attacking row vs. defending column)
-- Treating "commonly seen together" usage stats as proof of synergy or of a coverage move being run
-- Skipping the weather flag when the *opponent* sets the weather, not you
+- Answering a type matchup from recall because it "feels obvious" — that
+  feeling is the failure mode; every logged instance felt obvious
+- Reasoning from one half of a dual type
+- Citing a Mega's pre-Mega ability from a usage-percentage split
+- Treating co-occurrence stats as proof a coverage move is being run
+- Skipping the weather flag when the *opponent* sets the weather
 
-See `reference/vgc_type_chart_reference.md` (chart), `reference/vgc_teambuilding_methodology.md` (live lookup), `reference/vgc_common_pitfalls.md` (Tinkaton/Poison and Garchomp/Staraptor direction-error case studies, weather cases).
+## References
+- `reference/methodology.md` — the reasoning process, live-lookup detail
+- `reference/pitfalls.md` — the trap checklist
+- `reference/mechanics.md` — priority, speed modifiers, item mechanics
+- `docs/case-studies.md` — the incidents these rules came from

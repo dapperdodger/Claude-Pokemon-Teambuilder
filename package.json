@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test \"tools/damage-calc/tests/*.test.js\" \"tools/dex/tests/*.test.js\" \".claude/hooks/tests/*.test.js\""
   },
   "repository": {
     "type": "git",
