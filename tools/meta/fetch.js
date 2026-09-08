@@ -19,8 +19,10 @@ function get(url, opts = {}) {
   } catch (err) {
     throw new Error(`curl failed for ${url}: ${err.message}`);
   }
-  // Headers are separated from the body by a blank line; a redirect can produce
-  // more than one header block, so take the last.
+  // Headers are separated from the body by a blank line. Since curl is invoked
+  // without -L, it never follows redirects and there is exactly one header block.
+  // We take parts[0] (the first and only block). If -L is added in future,
+  // this must change to parts[parts.length - 1] to extract the final response.
   const parts = raw.split(/\r?\n\r?\n/);
   const body = parts.slice(1).join('\n\n');
   const headers = parts[0];
