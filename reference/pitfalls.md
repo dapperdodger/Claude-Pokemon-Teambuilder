@@ -234,15 +234,23 @@ because a single source often describes both without saying which it means.
   comes from hidden information is priced differently by venue, so ask which
   the team is for *before* evaluating that kind of tech.
 - **But check what is actually hidden before crediting surprise value at
-  all.** The first correction here over-corrected in the other direction: it
-  treated ladder as broadly hidden-information play, when in fact all six
-  species are public in both venues, and held items — Mega Stones
-  included — appear to be public on ladder too. What ladder actually hides is
-  abilities, moves and spreads. The two-Mega plan's "they can't tell which
-  Mega arrives" premise fails on ladder as well; its real value is pick
-  pressure, which is a different and weaker argument. Resolved 2026-09-08
-  from third-party consensus (still no official source) — see
-  `vgc-format.md`'s Team Preview table, which marks the confidence.
+  all.** All six species are public in both venues, so no plan gets value
+  from hiding *what you brought*. Ladder additionally hides abilities, moves
+  and spreads. Whether it hides **held items** is unresolved — see the next
+  bullet, and `vgc-format.md`'s Team Preview table.
+- **Third failure on this one topic, and this time it was a confidence
+  inflation rather than a scope drop.** Having twice got the ladder/tournament
+  split wrong, the file then swung the other way and marked "held items are
+  visible on ladder" as **[consensus]** — on the strength of a *single*
+  third-party guide plus search summaries derived from that same guide.
+  Repetition is not independent agreement, and that guide also describes open
+  team lists on the same page, so its item line may have been about
+  tournaments all along. The user, who plays the ladder, reports items are not
+  visible. Reverted to **[unresolved]** on 2026-09-08. **Lesson: a marking of
+  "consensus" requires sources that are actually independent — count the
+  sources, and check whether the later ones are quoting the first.** An
+  over-correction is still an error; being burned by under-confidence is not a
+  licence to overshoot in the other direction.
 
 ## Build assumption trap
 
@@ -393,3 +401,4 @@ checking whether a new mistake repeats an old one.
 | 2026-09-08 | Resolved the item-visibility question this file had left open, and recorded that its own 2026-09-07 correction over-corrected: ladder is not broadly hidden-information play. All six species are public in both venues and held items (Mega Stones included) appear to be public on ladder too — what ladder hides is abilities, moves and spreads. The two-Mega plan's "they can't predict which Mega" premise therefore fails on ladder as well, leaving only the weaker pick-pressure argument | champdex.com/guides/team-preview and corroborating Champions resources; marked **[consensus]** in `vgc-format.md` as no official source was found |
 | 2026-09-08 | Added "a shell loop that greps a CLI's JSON is a data source, and a silent one" after auditing the loop used to build three defensive profiles. `2>&1 \| grep \| head` discards the CLI's error text *and* its non-zero exit, so a misspelled type printed a blank row while the pipeline exited 0 — indistinguishable from a real "nothing notable" result, the same shape as a missed immunity. Fixed at the source rather than by documenting the workaround: `dex type --vs-mon <Species>` now returns all 18 types in one call | Direct reproduction this session (`Watr` -> blank row, pipeline exit 0, while the CLI itself exits 1); `tools/dex/tests/defensive-profile.test.js` |
 | 2026-09-08 | Added "a constraint every good team already builds around is not a discovery". Had been surfacing the one-Mega-per-battle limit as a premise-breaking objection to registering two Mega Stones — a legal, standard configuration used by four of M-B's top six archetypes by team count (~66% weighted). The limit is real and the base-forme drop-off is real; presenting them as a reason the plan does not work was not. Verified rather than conceded: Pikalytics M-B S3 team-usage pulled this session | User correction; pikalytics.com/team-usage and /pokedex (format label confirmed "Regulation Set M-B S3"); rule and data now in `reference/vgc-format.md` |
+| 2026-09-08 | Reverted the item-visibility "resolution" from earlier the same day. The 2026-09-08 row above promoted "held items are visible on ladder" from unresolved to **[consensus]** on one third-party guide plus search summaries quoting that same guide — repetition counted as independent agreement. That guide also discusses open team lists on the same page, so its item line may describe tournaments, which would make this the third instance of the same scope drop. User (who plays the ladder) reports items are not visible; Serebii's Ranked Battle pages say nothing about Team Preview contents; no official source exists either way. Back to **[unresolved]** in `vgc-format.md`, with a standing rule not to assert it in either direction | User correction; re-checked champdex.com/guides/team-preview, serebii.net/pokemonchampions/rankedbattle.shtml and /preview/, plus searches that returned only the same single source |

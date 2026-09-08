@@ -43,13 +43,22 @@ carries one of:
 
 - **[official]** — from the Play! Pokémon VGC Tournament Handbook or
   pokemon.com. State it flatly.
-- **[consensus]** — multiple independent third-party sources agree, no
+- **[consensus]** — multiple **independent** third-party sources agree, no
   official confirmation found. Usable, but say "as far as I can confirm"
   when it is load-bearing for a decision.
 - **[unresolved]** — genuinely not settled. Say so rather than picking a side.
 
-Promoting a **[consensus]** line to **[official]** requires an actual official
-source, not repetition.
+**Every promotion needs new evidence, not repetition.** [consensus] →
+[official] requires an actual official source. [unresolved] → [consensus]
+requires sources that are genuinely independent — so **count them, and check
+whether the later ones are quoting the first**. A search summary derived from
+a page you already read is that page again, not a second source. This rule
+exists because ladder item visibility was promoted to [consensus] on one
+guide echoed by its own search summaries, and had to be reverted the same day.
+
+An **[unresolved]** entry is a finished answer, not a gap to fill with the
+most plausible option. Being wrong in one direction is not a reason to lean
+the other way — the ladder/tournament entries below have now erred in both.
 
 ## Team construction
 
@@ -134,10 +143,12 @@ contradictory — the second Mega is typically the **flex slot**, not part of
 the core, which is precisely how a bring-4 lever is supposed to look.
 
 **So treat it as an option with trade-offs, the way you would any other slot.**
-The honest costs are that the unbrought Mega's base forme is usually much
-weaker, and that its stone is visible at Team Preview in either venue, so it
-buys pick pressure rather than surprise. Say that once if it is relevant to
-the specific build, then move on. Do **not** present the one-Mega-per-battle
+The honest cost is that the unbrought Mega's base forme is usually much
+weaker, so the slot only pays off in the games where you bring it. Whether the
+stone itself is visible at Team Preview is **unresolved on ladder** and
+certain under tournament OTS — so how much surprise the second stone buys
+depends on the venue. Say that once if it is relevant to the specific build,
+then move on. Do **not** present the one-Mega-per-battle
 limit as though it breaks a two-Mega plan — it is the ordinary condition
 every team in the table above is built under.
 
@@ -148,28 +159,48 @@ This is the table that decides whether any "surprise factor" argument holds.
 | Information | Ranked ladder | Tournament (Open Team Sheets) |
 |---|---|---|
 | All six species (and forms) | Visible **[official]** | Visible **[official]** |
-| Held items, incl. Mega Stones | Visible **[consensus]** | Visible **[official]** |
+| **Held items, incl. Mega Stones** | **[unresolved]** — see below | Visible **[official]** |
 | Abilities | **Hidden** **[consensus]** | Visible **[official]** |
 | Moves | **Hidden** **[consensus]** | Visible **[official]** |
 | Stat Alignment (nature) | **Hidden** **[consensus]** | Visible **[official]** |
 | Stat Point spread / final stats | **Hidden** | **Hidden** **[official]** |
 
-Two consequences worth carrying into every conversation:
+Two things are settled and worth carrying into every conversation:
 
-1. **Nothing about your six is hidden at Team Preview except numbers, moves
-   and abilities — and in a tournament, not even those.** The species are
-   always public. Any plan whose value comes from the opponent not knowing
-   *what you brought* is worth nothing in either venue.
+1. **The six species are always public, in both venues.** Any plan whose
+   value comes from the opponent not knowing *what you brought* is worth
+   nothing anywhere.
 2. **SP spreads are private everywhere**, including under Open Team Sheets.
    An unexpected bulk or Speed investment is the one genuinely hidden
    variable that survives into official tournament play.
 
-The ladder rows are **[consensus]**: multiple Champions strategy resources
-state that Team Preview shows every Pokémon's held item — including Mega
-Stones, which confirms the Mega slot — while abilities, movesets and spreads
-stay hidden. No official Pokémon Company source confirming the in-game
-Team Preview display was found. Treat the shape as reliable and say so with
-the hedge attached when it decides something.
+### Ladder item visibility is unresolved — don't assert it either way
+
+**Do not state that held items are visible on the ladder.** This file briefly
+did, marked **[consensus]**, and that marking was wrong:
+
+- The evidence was **one** third-party strategy guide plus search summaries
+  derived from that same guide — repetition, not independent agreement. The
+  confidence rules at the top of this file exist to prevent exactly that.
+- **That guide is scope-ambiguous in the specific way this repo keeps getting
+  burned by.** Its Team Preview page also says open team lists mean you see
+  the whole six — i.e. parts of it describe the *tournament* OTS context, so
+  its item-visibility line may never have been about ladder at all. That is
+  the third instance of the same scope-drop.
+- Serebii's Ranked Battle pages describe ranks, regulations and clocks but
+  say nothing about Team Preview contents. No official source found.
+- **The user, who plays the ladder, reports items are not visible** — better
+  evidence than a fan guide, though stated as belief rather than certainty.
+- The structural argument points the same way: Open Team Sheets exist as a
+  tournament convention *because* the game does not reveal items and moves.
+  If ladder Team Preview showed items, OTS would be largely redundant on that
+  axis.
+
+So: treat it as genuinely open. When it is load-bearing — pricing the surprise
+value of a tech item, or whether a second Mega Stone telegraphs anything — say
+it is unresolved and ask, rather than picking the convenient side. Settling it
+needs an official rules source or a direct in-game observation, not another
+strategy site.
 
 ## Open Team Sheets are a tournament convention, not a game mode
 
@@ -276,3 +307,4 @@ required.
 | 2026-09-08 | Created. Evergreen VGC doubles rules previously existed only inside `pitfalls.md`, where they were framed as past mistakes and so were only reachable by recalling the mistake — twice they were stated wrongly in conversation while the correct answer sat in that file. Every rule here re-verified against the Play! Pokémon handbook (rev. 1 Sep 2026) rather than moved across on trust, which upgraded several from recall to quoted-official and exposed one repo error (regulation cadence, corrected in `regulation.md`) | Play! Pokémon VGC Tournament Handbook rev. 2026-09-01; victoryroad.pro; serebii.net; champdex.com |
 | 2026-09-08 | Recorded the ladder Team Preview contents that `pitfalls.md` had left explicitly unresolved: third-party consensus is that held items **are** visible on ladder (Mega Stones included) while abilities, moves and spreads are not. Marked **[consensus]**, not promoted to fact — no official source found. This materially narrows what "surprise value" can mean on ladder: the hidden variables are abilities, moves and SP, never which Pokémon or which items | champdex.com/guides/team-preview and corroborating Champions strategy resources; no official confirmation located |
 | 2026-09-08 | Added the two-Megas section and removed a bullet added earlier the same day that wrongly listed "carry both Mega Stones and pick whichever Mega the matchup wants" alongside genuinely impossible advice like per-matchup item flexing. The two are opposites: item flexing is not permitted, while choosing which Mega to bring is a bring-4 decision and one of the format's few real per-matchup levers. Recorded the one-Mega-per-battle limit as the ordinary condition such teams are built under, with M-B usage showing four of the top six archetypes registering two | User correction; Pikalytics M-B S3 `/team-usage` and `/pokedex` Common Team Cores, format label verified; one-per-battle rule corroborated across Champions resources, absent from the Play! Pokemon handbook (in-game mechanic, not a tournament clause) |
+| 2026-09-08 | Reverted ladder held-item visibility from **[consensus]** back to **[unresolved]**, and replaced the table row with an explicit "don't assert it either way" section. The [consensus] marking rested on one third-party guide echoed by search summaries, and that guide mixes ladder and tournament-OTS description on the same page. User reports items are not visible on ladder; the structural argument agrees, since OTS exists as a tournament convention precisely because the game does not reveal items and moves. Also softened the two-Megas section, which had asserted the stone is visible "in either venue" | User correction; champdex.com/guides/team-preview re-read, serebii.net Champions ranked-battle and preview pages (silent on Team Preview contents), no official source located |

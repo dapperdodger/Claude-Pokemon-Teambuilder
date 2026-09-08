@@ -21,9 +21,9 @@ them is the wrong answer. Full detail and sourcing in
   per matchup; present it as a permanent trade-off instead.
 - **Team Preview always shows the opponent all six species.** No plan gets
   value from hiding *what you brought*.
-- **On the in-game ladder, held items are visible too** (Mega Stones
-  included), while abilities, moves and spreads are hidden. Well-attested but
-  not officially confirmed — hedge when it decides something.
+- **Whether the ladder's Team Preview shows held items is UNRESOLVED — never
+  assert it either way.** Abilities, moves and spreads are hidden there. If
+  item visibility decides something, say it's unresolved and ask.
 - **Open Team Sheets are a tournament convention, not a game mode.** The
   ladder has no OTS option. Under OTS the opponent gets ability, item, moves
   and Stat Alignment — **never the stats**.
