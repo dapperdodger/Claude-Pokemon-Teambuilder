@@ -15,6 +15,10 @@ A narrower job than `vgc-team-building`. The user provides a mostly-complete six
 - Don't override the user's species/item/ability choices.
 
 ## Process
+0. **Validate the input first.** `node tools/dex/cli.js team <file>` if the
+   team is in a file — an illegal roster (duplicate item, SP over budget, a
+   Mega listed with its pre-Mega ability) makes every downstream number
+   meaningless. Report those before optimising anything.
 1. **Move legality + meta-relevance**, per Pokémon per listed move — legal this regulation (`reference/regulation.md`), and actually run on real current sets (not just legal-but-obscure). Flag mismatches; don't auto-swap, report and let the user decide.
 2. **Threat sourcing** — default to live top-usage threats (roughly top 10-15) weighted by usage share, or use threats the user names directly. Use the **vgc-meta-lookup** skill to derive that list from all three Pikalytics surfaces (not per-mon usage rank alone), and the **vgc-threat-evaluation** skill for any individual counter/matchup call.
 3. **Verify every stated fact with the dex CLI, not recall** — a listed

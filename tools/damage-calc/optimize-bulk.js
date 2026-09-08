@@ -217,7 +217,7 @@ function findMinimalBulkSpread({ defender, fixedSp = {}, budget, threats, capPer
 // The principled weight is P(this exact attacker+move is what you actually
 // face) ≈ (real team-usage % of the attacker) × (real moveset-usage % of
 // that move on that attacker) — both real, live-verifiable numbers per
-// CLAUDE.md rule 3, not invented. This turns the ranking into an expected-
+// CLAUDE.md's live-meta requirement, not invented. This turns the ranking into an expected-
 // value calculation (maximize weighted expected remaining HP, see SCORING
 // below) rather than a flat majority vote, though it's still an
 // approximation of true survival

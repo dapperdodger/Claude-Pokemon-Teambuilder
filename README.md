@@ -42,7 +42,16 @@ node tools/dex/cli.js type Electric --vs Grass  # 0.5 — resisted
 node tools/dex/cli.js type Fire --vs Rock,Flying # multiplies both halves
 node tools/dex/cli.js move "Rock Slide"
 node tools/dex/cli.js legal --item "Choice Band"
+node tools/dex/cli.js team teams/my-team.md     # validate a team file
+node tools/dex/cli.js team --all                # validate every saved team
 ```
+
+`team` checks the things that are mechanically decidable and had been prose
+checklists: duplicate items (hard illegal), the 66-point SP budget and
+32-per-stat cap, roster/item/ability legality, whether a Mega is listed with
+its **fixed** ability rather than its pre-Mega one, and whether the team's
+regulation is still the current one. It exits non-zero on an error, and says
+explicitly what it did *not* check.
 
 `mon` reports `abilityIsMegaFixed` and, for a Mega, the `baseFormeAbility` —
 which is what a usage-stat page's percentages actually show. That distinction
@@ -56,18 +65,22 @@ live lookup.
 
 Vendors the real NCP-VGC-Damage-Calculator engine; see
 [`VENDOR_MANIFEST.md`](tools/damage-calc/VENDOR_MANIFEST.md) for provenance.
-`cli.js` for rolls and speed breakpoints, `optimize-bulk-cli.js` for the
-minimum HP/Def/SpD that survives a named attack. Needs Node.js.
+`cli.js` for a single roll or a speed breakpoint, `sweep-cli.js --file` to run
+many matchups in one invocation (checking one move against ten threats used to
+be ten separate calls), and `optimize-bulk-cli.js` for the minimum HP/Def/SpD
+that survives a named attack. Needs Node.js.
 
 ```bash
-npm test   # 90 tests across both tools and the hooks
+npm test   # 144 tests across the tools and the hooks
 ```
 
 ## Reference files
 
 | File | Contents |
 |---|---|
-| [`reference/regulation.md`](reference/regulation.md) | Active regulation, dates, active mechanics, SP stat system, roster-vs-legality rules. **Most volatile — check first.** Carries the `Last verified` / `Regulation ends` stamps the staleness hook reads. |
+| [`reference/regulation.md`](reference/regulation.md) | **The current cycle only** — dates, active mechanics, unverified new mechanics, what's incoming. Replaced wholesale at each rollover. Carries the four stamps the phase hook and team validator read. |
+| [`reference/champions-format.md`](reference/champions-format.md) | What does **not** change between regulations: Stat Points system and formulas, platform context, roster-vs-legality discipline, and exactly what the local vendored data does and does not cover. |
+| [`reference/regulations/`](reference/regulations/) | Archived past regulations, so old team files stay interpretable. |
 | [`reference/pitfalls.md`](reference/pitfalls.md) | Trap checklist, scannable. Data-source traps, weather, doubles-specific traps, build assumptions, team-finalization checks. |
 | [`reference/methodology.md`](reference/methodology.md) | Process rules: how to evaluate a matchup, how to solve an SP spread, when damage isn't the right lens, live meta lookup. |
 | [`reference/mechanics.md`](reference/mechanics.md) | Priority, speed modifiers, item mechanics, Mega ability changes — things typing alone doesn't capture. |
@@ -91,7 +104,9 @@ one hop out to reference files — never a chain through several of them.
 | [`vgc-team-building`](.claude/skills/vgc-team-building/SKILL.md) | Building a new team, extending a partial one, or building around a named favourite. |
 | [`vgc-team-refining`](.claude/skills/vgc-team-refining/SKILL.md) | An already-decided team needing move verification + SP optimisation only. |
 | [`vgc-threat-evaluation`](.claude/skills/vgc-threat-evaluation/SKILL.md) | "Does X counter/answer/beat Y" — used standalone or from the two above. |
-| [`vgc-meta-lookup`](.claude/skills/vgc-meta-lookup/SKILL.md) | "What's the meta" with no specific Pokémon or team named yet. |
+| [`vgc-team-audit`](.claude/skills/vgc-team-audit/SKILL.md) | "What does my team lose to", "is this legal", "which four do I bring". |
+| [`vgc-meta-lookup`](.claude/skills/vgc-meta-lookup/SKILL.md) | "What's the meta" with no specific Pokémon or team named yet — including what to do early in a regulation when there is no data. |
+| [`vgc-regulation-transition`](.claude/skills/vgc-regulation-transition/SKILL.md) | A regulation ended or is about to. The rollover runbook. |
 
 ## Hooks
 
@@ -100,10 +115,16 @@ one hop out to reference files — never a chain through several of them.
 
 | Hook | Event | Does |
 |---|---|---|
-| `check_regulation_staleness.sh` | SessionStart | Warns if `regulation.md` is >14 days unverified or its end date has passed. |
-| `check_damage_calc_vendor_staleness.sh` | SessionStart | Warns if the vendored calculator is behind upstream. |
+| `regulation-phase.js` | SessionStart | Reports which **phase** the regulation is in — EARLY / FORMING / SETTLED / ROLLOVER IMMINENT / ENDED — and names team files built for a different regulation. |
+| `vendor-staleness.js` | SessionStart | Warns if the vendored calculator is behind upstream, **and reports when it could not check** rather than looking healthy. |
 | `check_sp_spread_optimization.js` | PostToolUse (Write/Edit) | Flags team-file SP spreads that are round-numbered with no breakpoint reasoning. |
+| `validate-team-file.js` | PostToolUse (Write/Edit) | Runs the team validator whenever a file under `teams/` is written. Reports, doesn't block. |
 | `verify-mega-ability.js` | PostToolUse (WebFetch/WebSearch) | When a fetched page shows a Mega alongside ability percentages, injects the real fixed ability from the local dex. Fails open. |
+
+Every hook fails open, and every one **says so when it cannot run**. A guard
+that exits quietly on failure is indistinguishable from a guard that passed —
+that exact bug left the regulation end-date check and the vendor check dead
+for weeks each.
 
 ## Teams
 
@@ -127,6 +148,23 @@ material; `teams/` is where one person's builds accumulate.
    decays fast, which is why it carries a dated stamp and a staleness hook.
 5. Tell Claude which Pokémon you want to build around, or that you're
    prepping for ladder — it won't default to the top-usage squad.
+
+## Regulation changes
+
+Regulations turn over roughly every 3-4 months. That is a **scheduled
+lifecycle event with a runbook**, not an incident:
+
+- `reference/regulation.md` describes only the current cycle and is replaced
+  wholesale; anything invariant lives in `reference/champions-format.md`, so a
+  rollover swaps one small file.
+- The [`vgc-regulation-transition`](.claude/skills/vgc-regulation-transition/SKILL.md)
+  skill is the checklist: verify live, archive the old cycle, rewrite the
+  current one, record unverified new mechanics, **re-vendor the roster data**,
+  flag teams built for the old regulation, and set expectations.
+- The phase hook warns a week ahead of a rollover and refuses to be quiet
+  after one.
+- Early in a cycle there is no usage data. That is a normal phase with its own
+  documented approach, not a data problem to work around.
 
 ## Maintenance notes
 

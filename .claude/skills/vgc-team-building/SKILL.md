@@ -25,7 +25,7 @@ Copy this checklist and work it in order:
 - [ ] 4. Fill slots — 3-5 candidates per gap, user picks
 - [ ] 5. Verify every counter claim (vgc-threat-evaluation)
 - [ ] 6. Solve SP spreads for the minimum, via the CLIs
-- [ ] 7. Pitfalls gate
+- [ ] 7. Pitfalls gate + validator
 - [ ] 8. Ask before saving
 ```
 
@@ -49,6 +49,13 @@ their trade-offs and let the user choose.** Verify each first (roster and
 legality, real current moveset) so the comparison is grounded. Researching one
 option and presenting it as the answer is the documented failure here.
 
+**4b. Verify the learnset before committing to a role.** Learnsets are not in
+the local data at all — nothing in `tools/` can tell you whether a Pokémon can
+learn a move. If a pick's whole job depends on a specific move (a sweeper's
+boosting move, a support's Tailwind/Trick Room, a coverage answer), check the
+species' Champions learnset live *before* building the plan around it. A whole
+team premise has been built on an unlearnable move before.
+
 **5. Verify every counter claim** with the **vgc-threat-evaluation** skill.
 Type matchups come from `node tools/dex/cli.js type <Type> --vs <A[,B]>`, and
 any Mega's ability and typing from `node tools/dex/cli.js mon "Mega <Species>"`
@@ -66,9 +73,18 @@ any Mega's ability and typing from `node tools/dex/cli.js mon "Mega <Species>"`
   double-targeting risk), not how much punishment it absorbs.
 
 **7. Pitfalls gate before finalising.** Run `reference/pitfalls.md`'s Quick
-checklist. The recurring misses: duplicate items across the six (hard
-illegal), assuming Tera is active, assuming a "generic" spread/ability/item
-without checking the real preset, ladder usage ≠ tournament results.
+checklist for the judgement-shaped traps (assuming Tera is active, assuming a
+"generic" spread/ability/item, ladder usage ≠ tournament results). Everything
+mechanically checkable is now a command instead — once the six exist in a
+file, run:
+
+```bash
+node tools/dex/cli.js team teams/<file>.md
+```
+
+That catches duplicate items (hard illegal), SP budget and cap violations,
+roster/item/ability legality, and any Mega listed with its pre-Mega ability.
+It exits non-zero on an error. It does **not** check move legality.
 
 **8. Ask before saving.** **Do not `Write` or `Edit` anything in `teams/`
 until the user explicitly says to save it.** A fully discussed loadout is not
@@ -80,8 +96,8 @@ per iteration.
 ## Common mistakes
 - Writing to `teams/` because a loadout felt finished — wait to be told
 - Presenting one researched candidate for a gap instead of a comparison
-- Building around a move or ability the Pokémon doesn't actually have this
-  game (verify the learnset before committing to a role)
+- Building around a move the Pokémon cannot learn — verify the learnset live,
+  it is not in the local data
 - Treating an empty Pikalytics "Best Moves" panel as a low-usage signal — it's
   a rendering artifact; check the curated Champions Teams section
 - Forgetting the opponent's weather when it's their side setting it

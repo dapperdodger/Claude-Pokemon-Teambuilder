@@ -203,7 +203,8 @@ a genuine judgment call — before finalizing and saving to `teams/`. Treat
 just document after the fact for them to read.
 
 This doesn't mean asking permission for every lookup or calc — the research
-and verification legwork (rules 3, 6, 7, 10) is still something to just go
+and verification legwork (live meta lookup, roster/legality, threat
+evaluation, the pitfalls checklist) is still something to just go
 do. It means not treating "build a team" as license to disappear and come
 back with a finished, saved six.
 
@@ -211,8 +212,9 @@ back with a finished, saved six.
 point — present 3-5 real candidates, don't lock in one.** "We need
 something that resists X" or "we need speed control" or "we need an answer
 to [named threat]" is a gap with more than one legitimate answer. Verify
-each candidate via live data first (roster/legality per rule 6, real
-current moveset per rule 3) so the comparison is grounded, then hand over
+each candidate via live data first (roster/legality per
+`reference/champions-format.md`, real current moveset via a live lookup) so
+the comparison is grounded, then hand over
 the trade-offs and let the user choose — the same collaborative-checkpoint
 principle as the strategic archetype itself, applied to an individual slot
 instead of the whole six. Real example (2026-09-07): asked for a Flying
@@ -224,7 +226,7 @@ should get to weigh.
 
 ## Live meta lookup: Pikalytics per-Pokémon pages
 
-CLAUDE.md rule 3 requires live verification before any moveset/build
+CLAUDE.md requires live verification before any moveset/build
 suggestion — this is the concrete "how" for Pikalytics specifically. This
 section is also packaged as the `vgc-meta-lookup` skill (`.claude/skills/vgc-meta-lookup/`)
 for standalone "what's the meta" questions with no specific Pokémon/team
@@ -309,3 +311,5 @@ actually win, topteams gives concrete real builds to test against.
 | 2026-07-17 | Added "three Pikalytics surfaces together" note under Live meta lookup — `/topteams` (concrete real teams), `/team-usage` (full six-mon archetypes ranked by win rate/W-L-D), and `/pokedex`'s "Common Team Cores" section (2/3/4-mon groupings by team count) each answer a different question about "the meta," and a general meta/counter-the-meta question needs all three, not just `/topteams`. User flagged that team-usage and cores were missing from the existing process | User correction; confirmed page contents via WebFetch on pikalytics.com/team-usage and pikalytics.com/pokedex this session |
 | 2026-08-19 | Added a pointer from "Live meta lookup" to the new `vgc-meta-lookup` skill, which packages this section's process for standalone meta questions (previously only reachable via `vgc-team-building`/`vgc-team-refining`, so a bare "what's popular right now" question with no team on the table wouldn't reliably trigger this section's process) | Skill-triggering audit this session (tested vgc-team-building/vgc-team-refining/vgc-threat-evaluation against realistic phrasing, found the standalone-meta-question gap) |
 | 2026-09-07 | Added a Contents list. Type-matchup steps now point at `node tools/dex/cli.js type` (the markdown type chart was deleted after all 324 cells were confirmed identical to the vendored chart, which is now guarded by `tools/dex/tests/type-chart-invariant.test.js`). Hook paths updated for the move to `.claude/hooks/` | docs/specs/2026-09-07-repo-reorganization.md |
+| 2026-09-07 | Replaced dangling `CLAUDE.md rule N` cross-references with named pointers — CLAUDE.md stopped being a numbered rule list in the reorganization and every number became dead. Named pointers survive restructuring; numbers do not | docs/specs/2026-09-07-workflow-audit.md |
+| 2026-09-07 | Live meta lookup now requires verifying the fetched page's own format label names the current regulation, not just picking a slug — a previous regulation's slug keeps returning complete, correctly-labelled data instead of failing, so a stale slug is silently wrong rather than obviously broken | Live Pikalytics fetches this session; see reference/regulation.md's "Live usage data" section |

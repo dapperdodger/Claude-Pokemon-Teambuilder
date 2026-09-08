@@ -18,6 +18,8 @@ const USAGE = `Usage:
   node tools/dex/cli.js move <Move>              bp, type, category, spread/priority flags
   node tools/dex/cli.js legal --item <Item>      Champions item-pool legality
   node tools/dex/cli.js legal --ability <Ability>
+  node tools/dex/cli.js team <file.md>           validate a team file
+  node tools/dex/cli.js team --all               validate every file in teams/
 
 Examples:
   node tools/dex/cli.js mon "Mega Raichu Y"
@@ -68,6 +70,33 @@ function main() {
       const name = argv[1];
       if (!name) return fail('move: a move name is required, e.g. move "Rock Slide"');
       return ok(dex.move(name));
+    }
+
+    if (command === 'team') {
+      const team = require('./team');
+      const fs = require('node:fs');
+      const path = require('node:path');
+      let files;
+      if (argv.includes('--all')) {
+        const dir = path.join(__dirname, '..', '..', 'teams');
+        files = fs.readdirSync(dir)
+          .filter((f) => f.endsWith('.md') && f !== '_TEMPLATE.md' && f !== 'README.md')
+          .map((f) => path.join(dir, f));
+      } else {
+        if (!argv[1]) return fail('team: a file path is required, e.g. team teams/my-team.md (or --all)');
+        files = [argv[1]];
+      }
+      const results = files.map((f) => team.validateTeamFile(f));
+      const errorCount = results.reduce((a, r) => a + r.errors.length, 0);
+      const payload = {
+        activeRegulation: team.currentRegulation(),
+        files: results.length,
+        errors: errorCount,
+        warnings: results.reduce((a, r) => a + r.warnings.length, 0),
+        results,
+      };
+      ok(payload);
+      process.exit(errorCount > 0 ? 1 : 0);
     }
 
     if (command === 'legal') {

@@ -204,7 +204,8 @@ only happens after a user catches a mistake:
   ability selection for a fixed-ability Mega, never the real in-battle
   ability, no matter how authoritative the source looks. Caught by the user
   directly, who also asked what should change structurally to stop this
-  recurring — see `CLAUDE.md` rule 13, added the same session.
+  recurring — this is what CLAUDE.md's "never state these from recall" lookup
+  table and `tools/dex` were later built to make structurally impossible.
 - **Claimed Rillaboom (pure Grass) doesn't resist Electric while evaluating a
   Milotic/Rillaboom/Incineroar core** — stated "neither Rillaboom nor
   Incineroar resists Electric" as a real gap in the core, when

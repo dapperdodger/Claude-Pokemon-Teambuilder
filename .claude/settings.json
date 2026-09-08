@@ -5,8 +5,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/check_regulation_staleness.sh 2>/dev/null || true",
-            "statusMessage": "Checking regulation staleness..."
+            "command": "node .claude/hooks/regulation-phase.js 2>/dev/null || true",
+            "statusMessage": "Checking regulation phase..."
           }
         ]
       },
@@ -14,8 +14,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/check_damage_calc_vendor_staleness.sh 2>/dev/null || true",
-            "statusMessage": "Checking damage calculator vendor staleness..."
+            "command": "node .claude/hooks/vendor-staleness.js 2>/dev/null || true",
+            "statusMessage": "Checking vendored data freshness..."
           }
         ]
       }
@@ -28,6 +28,11 @@
             "type": "command",
             "command": "node .claude/hooks/check_sp_spread_optimization.js",
             "statusMessage": "Checking SP spread optimization..."
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/validate-team-file.js 2>/dev/null || true",
+            "statusMessage": "Validating team file..."
           }
         ]
       },

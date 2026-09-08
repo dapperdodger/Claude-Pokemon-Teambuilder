@@ -28,7 +28,8 @@ team construction.
 - Species, item, and ability are fixed inputs — not re-evaluated.
 - Move legality check (does this Pokémon learn this move, is it available
   this regulation — see `reference/regulation.md`, and
-  `CLAUDE.md` rules 6/7).
+  `reference/champions-format.md`'s roster-vs-legality checks and the
+  `vgc-threat-evaluation` skill).
 - Move meta-relevance check (is it actually run on current sets, or
   legal-but-obscure).
 - Full SP spread recommendation: speed breakpoints, offensive breakpoints,
@@ -43,8 +44,9 @@ full teambuilding):
 - Overriding the user's species/item/ability choices.
 
 **Still bound by standing `CLAUDE.md` rules**: live-search verification
-(rule 3), roster-availability-vs-legality (rule 6), common-pitfalls check
-(rule 10, see `reference/pitfalls.md`) — this mode is a
+(live meta lookup), roster-availability-vs-legality
+(`reference/champions-format.md`), the common-pitfalls check
+(`reference/pitfalls.md`) — this mode is a
 narrower entry point into the same rulebook, not an exception to it.
 
 ## Input format
@@ -120,3 +122,4 @@ Per Pokémon, the report includes:
 | Date | Change | Source |
 |---|---|---|
 | 2026-07-17 | Initial version | `docs/superpowers/specs/2026-07-17-team-refining-mode-design.md` |
+| 2026-09-07 | Replaced dangling `CLAUDE.md rules 3/6/7/10` references with named pointers to the relevant files and skills | docs/specs/2026-09-07-workflow-audit.md |
