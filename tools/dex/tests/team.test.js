@@ -131,7 +131,7 @@ test('a team with no regulation stamp warns', () => {
 // --- structure --------------------------------------------------------------
 
 test('a roster short of six warns rather than erroring (builds in progress)', () => {
-  const res = run([OK, Object.assign({}, OK, { mon: 'Gholdengo', item: 'Metal Coat', ability: 'Good as Gold' })]);
+  const res = run([OK, Object.assign({}, OK, { mon: 'Gholdengo', item: 'Metal Coat', ability: 'Good as Gold', moves: 'Make It Rain / Protect' })]);
   assert.equal(res.errors.length, 0, errorsOf(res));
   assert.match(warningsOf(res), /Roster has 2 Pokemon, expected 6/);
 });
@@ -143,12 +143,35 @@ test('a file with no "## The six" section errors', () => {
 
 // --- honest about its own limits -------------------------------------------
 
-test('the result states that move legality was NOT checked', () => {
+test('a species fully covered by the vendored learnset table has no move-legality notChecked entry', () => {
   const res = run([OK]);
-  assert.ok(res.notChecked.some((n) => /learnset/i.test(n)), JSON.stringify(res.notChecked));
+  assert.ok(!res.notChecked.some((n) => /learnset/i.test(n)), JSON.stringify(res.notChecked));
 });
 
 test('a fully valid single-Pokemon roster produces no errors', () => {
   const res = run([OK]);
   assert.equal(res.errors.length, 0, errorsOf(res));
+});
+
+// --- move legality (Task 5) --------------------------------------------------
+
+test('an unlearnable move is a hard error', () => {
+  const res = run([{ mon: 'Altaria', item: 'Leftovers', ability: 'Cloud Nine', nature: 'Calm', sp: '32 HP / 32 SpD / 2 Def', moves: 'Calm Mind / Protect / Tailwind / Roost' }]);
+  assert.ok(
+    res.errors.some((e) => /Calm Mind/.test(e) && /cannot learn/i.test(e)),
+    errorsOf(res)
+  );
+});
+
+test('a legal move produces no move-legality error', () => {
+  const res = run([{ mon: 'Altaria', item: 'Leftovers', ability: 'Cloud Nine', nature: 'Calm', sp: '32 HP / 32 SpD / 2 Def', moves: 'Will-O-Wisp / Protect / Tailwind / Roost' }]);
+  assert.ok(!res.errors.some((e) => /cannot learn/i.test(e)), errorsOf(res));
+});
+
+test('notChecked no longer claims move legality is unchecked', () => {
+  const res = run([{ mon: 'Altaria', item: 'Leftovers', ability: 'Cloud Nine', nature: 'Calm', sp: '32 HP / 32 SpD / 2 Def', moves: 'Will-O-Wisp / Protect / Tailwind / Roost' }]);
+  assert.ok(
+    !(res.notChecked || []).some((n) => /learnsets are not in the vendored data/.test(n)),
+    'the hardcoded learnset caveat should be gone'
+  );
 });

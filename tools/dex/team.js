@@ -8,9 +8,11 @@
 // slipped through more than once. Everything checked here is deterministic,
 // so it should not depend on remembering to look.
 //
-// Scope fence: this checks what the local data can prove. It deliberately
-// does NOT check move legality (learnsets are not in the vendored data at all
-// — see reference/champions-format.md) or whether a set is any good.
+// Scope fence: this checks what the local data can prove. Move legality IS
+// now checked, against the vendored learnset table (tools/dex/VENDOR_MANIFEST.md)
+// — but only for species that table covers; anything else is reported as
+// unchecked rather than silently passed. It still does not judge whether a set
+// is any good.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -132,6 +134,7 @@ function validateTeamText(text, opts = {}) {
 
   const itemsHeld = [];
   let megaCount = 0;
+  const learnsetUnknown = new Set();
 
   for (const row of six) {
     const label = row.species || row.raw;
@@ -225,6 +228,18 @@ function validateTeamText(text, opts = {}) {
         errors.push(`${label}: move "${mv}" is not in the Champions move list. Check spelling.`);
       }
     }
+
+    // Move legality. A species the learnset table does not cover yields
+    // "unknown" — recorded as unchecked, never reported as illegal.
+    for (const mv of row.moves) {
+      if (!v.MOVES_CHAMPIONS[mv]) continue; // already reported as a spelling error above
+      const verdict = dex.learnset(battleName || row.species, mv);
+      if (verdict.verdict === 'illegal') {
+        errors.push(`${label}: cannot learn "${mv}" in Champions. ${verdict.note}`);
+      } else if (verdict.verdict === 'unknown') {
+        learnsetUnknown.add(row.species);
+      }
+    }
   }
 
   // --- duplicate items (hard illegal) --------------------------------------
@@ -243,9 +258,12 @@ function validateTeamText(text, opts = {}) {
     warnings.push(`${megaCount} Mega stones on one team. Bringing more than one is a real strategy (only one can Mega Evolve per battle), but confirm the current regulation allows it — see reference/regulation.md's Unverified mechanics table.`);
   }
 
-  // Learnsets are absent from the vendored data, so move *legality* cannot be
-  // checked here. Say so rather than letting a clean result imply it was.
-  const notChecked = ['move legality (learnsets are not in the vendored data — verify live)'];
+  // Move legality is checked above for every species the vendored learnset
+  // table covers. Only genuinely-uncovered species are reported here, so a
+  // clean result now means moves really were checked.
+  const notChecked = learnsetUnknown.size
+    ? [`move legality for: ${[...learnsetUnknown].join(', ')} (not in the vendored learnset table — verify live, and see tools/dex/VENDOR_MANIFEST.md)`]
+    : [];
 
   return { errors, warnings, checked: six.length, notChecked };
 }
