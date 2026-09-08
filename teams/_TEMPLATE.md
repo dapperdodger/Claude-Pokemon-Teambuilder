@@ -52,9 +52,13 @@ node tools/dex/cli.js team teams/<this-file>.md
 ```
 
 That checks duplicate items, SP budget and caps, roster/item/ability
-legality, Mega abilities, and whether the team's regulation is still current.
-It does **not** check move legality — learnsets are not in the local data, so
-verify those live (see `reference/champions-format.md`).
+legality, **move legality**, Mega abilities, and whether the team's regulation
+is still current.
+
+Before calling a clean result clean, read the `notChecked` field: it lists any
+species the vendored learnset table does not cover, and those still need a
+live check. Absence from that table is never evidence a move is illegal — see
+`reference/champions-format.md`.
 
 ## Why these six
 
