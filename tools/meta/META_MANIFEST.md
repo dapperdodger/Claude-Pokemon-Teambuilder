@@ -13,8 +13,21 @@ The API's `Data Date` field is a **global constant** — every format reports
 `dateModified` is page-render time, not data time. The ETag is the only real
 change-detection signal available.
 
+## Currency
+
+`formats.js` classifies each format's currency into one of three states
+(see `reference/meta-lookup.md` for the full explanation):
+
+- `regulation` — the label carries a regulation token; current iff it
+  matches `reference/regulation.md`'s active one.
+- `rolling` — a rolling window over current play, from a curated list
+  (`ROLLING_WINDOW_FORMATS` in `formats.js`). Always current.
+- `unknown` — cannot be determined. Never current, and never inferred from
+  the absence of a regulation token — a format only becomes `rolling` when
+  named in that list by hand, after being confirmed live.
+
 ## Formats
 
-| Format code | Regulation | Usage | Win rate | Record | ETag | Last checked |
-|---|---|---|---|---|---|---|
-| _(populated by `meta formats --write`)_ | | | | | | |
+| Format code | Regulation | Usage | Win rate | Record | ETag | Last checked | Currency |
+|---|---|---|---|---|---|---|---|
+| `battledataregmbs3` | M-B | false | true | true | W/"459e-RBQlRZysoWXer8KGrQ0pAg" | 2026-09-08 | regulation |

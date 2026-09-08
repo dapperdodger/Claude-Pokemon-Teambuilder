@@ -50,3 +50,18 @@ test('meta usage --format on the empty dataset exits non-zero', { skip: !ONLINE 
   assert.ok(r, 'the alphabetical filler must not exit 0');
   assert.equal(r.status, 1);
 });
+
+// REGRESSION (currency-taxonomy rewrite): championstournaments has no
+// regulation token because it's a rolling window over current play, current
+// by construction. It used to get slapped with the "previous regulation"
+// warning that belongs to a genuinely stale regulation-tagged format — the
+// exact bug this task fixes. Pin the live behavior so it can't regress back.
+test('REGRESSION: meta usage --format championstournaments is rolling/current and carries no previous-regulation warning', { skip: !ONLINE }, () => {
+  const out = run('usage', '--format', 'championstournaments');
+  assert.equal(out.currency, 'rolling');
+  assert.equal(out.current, true);
+  assert.ok(
+    !out.warnings.some((w) => /NOT the current one/i.test(w)),
+    `must not carry the regulation-mismatch warning: ${JSON.stringify(out.warnings)}`
+  );
+});

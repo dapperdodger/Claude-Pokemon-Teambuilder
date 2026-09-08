@@ -29,6 +29,19 @@ function activeRegulation() {
   }
 }
 
+// Same stamp block as activeRegulation(), read separately (mirrors
+// stampedSlug() below) so callers that only need one or the other don't pay
+// for parsing both.
+function activeRegulationStart() {
+  try {
+    const p = path.join(repoRoot(), 'reference', 'regulation.md');
+    const m = fs.readFileSync(p, 'utf8').match(/^\*\*Regulation starts: (\d{4}-\d{2}-\d{2})\*\*/m);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
 // Champions regulations only. A VGC-2025/Scarlet-Violet format is not a
 // Champions regulation at all and must not be stamped as one.
 function regulationOf(label, code) {
@@ -36,6 +49,71 @@ function regulationOf(label, code) {
   if (!isChampions) return null;
   const m = String(label).match(/\bReg(?:ulation)?(?:\s+Set)?\s+([A-Z]-[A-Z0-9]+)\b/i);
   return m ? m[1].toUpperCase() : null;
+}
+
+// --- Currency taxonomy -----------------------------------------------------
+// A format's data is current for one of two structurally different reasons,
+// and treating them as one binary ("has a regulation token that matches" /
+// "everything else") is what produced the bug this rewrite fixes: it slapped
+// a "previous regulation" warning on `championstournaments`, which has no
+// regulation token because it doesn't need one — it's a rolling window over
+// whatever's currently played, current by construction.
+//
+//   regulation — label carries a regulation token (e.g. "Reg M-B"). current
+//                 iff that token equals reference/regulation.md's active one.
+//   rolling    — a rolling window over current play. ALWAYS current.
+//   unknown    — cannot be determined. Never current. The safe default.
+//
+// Curated list, not inferred from the absence of a token. `championspreview`
+// also has no regulation token, and Pikalytics itself flags it as pre-launch
+// preview data — NOT current — so "no token => rolling" would misclassify
+// actively suspect data as current. A format is "rolling" only when named
+// here deliberately, after being confirmed the same way `championstournaments`
+// was confirmed (its own index page states the window explicitly — see
+// tools/meta/tests/fixtures/tournaments-index.md's Format Notes).
+//
+// A newly-appearing token-less format therefore lands in `unknown` on
+// purpose: that is a person's decision to make, not something for this code
+// to guess at. Add to this list only after verifying the format really is a
+// rolling window over current play, and cite the evidence in a changelog row.
+const ROLLING_WINDOW_FORMATS = new Set(['championstournaments']);
+
+// Upstream's own stated approximation (tournaments-index.md's Format Notes:
+// "Built from approximately the last 2 weeks of qualifying tournaments above
+// a minimum size threshold for relevance"). This is prose, not a documented
+// contract — Pikalytics could change the window without updating anything
+// this tool reads structurally. Treat it as an estimate to revisit if that
+// wording ever changes, not a guaranteed cutoff.
+const ROLLING_WINDOW_DAYS = 14;
+
+function classifyCurrency(code, regulation, active) {
+  if (regulation) {
+    return { currency: 'regulation', current: Boolean(active && regulation === active) };
+  }
+  if (ROLLING_WINDOW_FORMATS.has(String(code).toLowerCase())) {
+    return { currency: 'rolling', current: true };
+  }
+  return { currency: 'unknown', current: false };
+}
+
+// Pure — takes explicit dates so it is testable without depending on the
+// real clock. A test pinned to "today" silently stops testing anything the
+// moment today moves; injected dates keep testing the same scenario forever.
+//
+// Direction of the comparison, spelled out because it inverts easily: the
+// straddle exists when the window's own start (today - windowDays) is
+// EARLIER than the regulation's start date — i.e. the window reaches back
+// past the rollover boundary into the previous regulation. `regulationStart`
+// is the ACTIVE regulation's start date (reference/regulation.md), not the
+// rolling format's own — a rolling format has no regulation of its own to
+// have a start date for.
+function windowStraddlesRollover(regulationStartISO, now, windowDays = ROLLING_WINDOW_DAYS) {
+  if (!regulationStartISO) return false;
+  const regStart = new Date(`${regulationStartISO}T00:00:00Z`);
+  const today = now instanceof Date ? now : new Date(`${now}T00:00:00Z`);
+  if (Number.isNaN(regStart.getTime()) || Number.isNaN(today.getTime())) return false;
+  const windowStart = new Date(today.getTime() - windowDays * 24 * 60 * 60 * 1000);
+  return windowStart < regStart;
 }
 
 function detectCapabilities(indexText) {
@@ -55,7 +133,7 @@ function detectCapabilities(indexText) {
 // that the same way a stale Pikalytics slug is caught elsewhere in this
 // tool — silently trusting whatever came back is how that class of bug
 // slips through.
-function describe(indexText, expectedCode) {
+function describe(indexText, expectedCode, opts = {}) {
   const info = parse.parseFormatInfo(indexText);
   const rows = parse.parseUsageTable(indexText);
   // An empty/unparseable response (a 404 body, a changed upstream heading)
@@ -82,11 +160,36 @@ function describe(indexText, expectedCode) {
   validate.assertNotFiller(rows, info.code);
   const regulation = regulationOf(info.label, info.code);
   const active = activeRegulation();
+  const { currency, current } = classifyCurrency(info.code, regulation, active);
+
+  // A rolling window is current by construction, but it can still straddle a
+  // regulation rollover: for roughly ROLLING_WINDOW_DAYS after a new
+  // regulation starts, the window's own reach-back still overlaps the
+  // previous one, so the data is genuinely current AND genuinely mixed — a
+  // third state distinct from both "fine" and "stale".
+  let straddle = null;
+  if (currency === 'rolling') {
+    const regulationStart = activeRegulationStart();
+    const now = opts.now || new Date();
+    if (windowStraddlesRollover(regulationStart, now, ROLLING_WINDOW_DAYS)) {
+      const regStartDate = new Date(`${regulationStart}T00:00:00Z`);
+      const clearsOn = new Date(regStartDate.getTime() + ROLLING_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+      straddle = {
+        regulation: active,
+        regulationStart,
+        windowDays: ROLLING_WINDOW_DAYS,
+        clearsOn: clearsOn.toISOString().slice(0, 10),
+      };
+    }
+  }
+
   return {
     code: info.code,
     label: info.label,
     regulation,
-    current: Boolean(regulation && active && regulation === active),
+    currency,
+    current,
+    straddle,
     capabilities: detectCapabilities(indexText),
   };
 }
@@ -135,12 +238,17 @@ function readManifestRow(src, code) {
     if (!line.trim().startsWith('|')) continue;
     if (!line.includes(codeCell)) continue;
     const cells = line.split('|').map((c) => c.trim());
-    // | Format code | Regulation | Usage | Win rate | Record | ETag | Last checked |
+    // | Format code | Regulation | Usage | Win rate | Record | ETag | Last checked | Currency |
+    // Currency is appended LAST, after the original seven columns, so a row
+    // written before this taxonomy existed still parses (currency comes back
+    // null, same as any other never-populated cell) instead of shifting
+    // every existing index.
     return {
       code: cells[1] ? cells[1].replace(/`/g, '') : null,
       regulation: cells[2] || null,
       etag: cells[6] || null,
       checked: cells[7] || null,
+      currency: cells[8] || null,
     };
   }
   return null;
@@ -242,7 +350,7 @@ function report(fetchmod, opts = {}) {
   const out = { ...d, etag: idx.etag, checked: new Date().toISOString().slice(0, 10) };
   if (opts.write) {
     const p = path.join(__dirname, 'META_MANIFEST.md');
-    const row = `| \`${d.code}\` | ${d.regulation} | ${d.capabilities.usage} | ${d.capabilities.winRate} | ${d.capabilities.record} | ${idx.etag} | ${out.checked} |`;
+    const row = `| \`${d.code}\` | ${d.regulation} | ${d.capabilities.usage} | ${d.capabilities.winRate} | ${d.capabilities.record} | ${idx.etag} | ${out.checked} | ${d.currency} |`;
     const src = fs.readFileSync(p, 'utf8');
     const { text: next, action } = upsertManifestRow(src, d.code, row);
     fs.writeFileSync(p, next);
@@ -252,6 +360,7 @@ function report(fetchmod, opts = {}) {
 }
 
 module.exports = {
-  activeRegulation, regulationOf, detectCapabilities, describe,
+  activeRegulation, activeRegulationStart, regulationOf, detectCapabilities, describe,
   defaultFormatCode, report, check, upsertManifestRow, readManifestRow,
+  classifyCurrency, windowStraddlesRollover, ROLLING_WINDOW_FORMATS, ROLLING_WINDOW_DAYS,
 };

@@ -68,6 +68,7 @@ function main() {
       });
       out.species = name;
       out.regulation = describe.regulation;
+      out.currency = describe.currency;
       out.current = describe.current;
       return ok(out);
     }

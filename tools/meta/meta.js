@@ -5,11 +5,43 @@ const validate = require('./validate');
 const NO_USAGE = 'this format\'s upstream carries no usage weighting — use a tournament or Showdown format for usage';
 const TEAMMATES_BUG = 'upstream renders this section as undefined% for every format';
 
-// Shared with usageFromText so an off-regulation lookup reads identically no
+// Shared with usageFromText so a not-current lookup reads identically no
 // matter which command surfaced it — one phrasing, not two that can drift.
+// Wording depends on WHY the format isn't current: an `unknown`-currency
+// format has no regulation to name, so calling it "a previous regulation"
+// would be stating something not established — its provenance is genuinely
+// unknown, not confirmed to be old.
 function offRegulationWarning(d) {
+  if (d.currency === 'unknown') {
+    return `Format "${d.code}" has no regulation stamp and is not on the curated list of ` +
+      `rolling-window formats (tools/meta/formats.js's ROLLING_WINDOW_FORMATS) — its ` +
+      `provenance is genuinely unknown. This is not evidence the data is stale, mixed, or ` +
+      `up to date; verify what this format actually covers before citing a number from it.`;
+  }
   return `Format "${d.code}" is regulation ${d.regulation || 'unknown'}, which is NOT the current one. ` +
     `Reading a previous regulation deliberately is fine; doing it unknowingly is not.`;
+}
+
+// A rolling format is current by construction but can still straddle a
+// regulation rollover: for roughly its window length after a new regulation
+// starts, the window still reaches back into the previous one, so results
+// are genuinely current AND genuinely mixed.
+function straddleWarning(d) {
+  const s = d.straddle;
+  return `Format "${d.code}" is a rolling ~${s.windowDays}-day tournament window that currently ` +
+    `straddles the regulation rollover: it reaches back before ${s.regulation} started ` +
+    `(${s.regulationStart}), so results mix ${s.regulation} with the previous regulation. ` +
+    `Expect it to clear of the old regulation's data around ${s.clearsOn}.`;
+}
+
+// Both currency-driven warnings, in one call, so mon/usage/any future caller
+// stay identical by construction rather than by two call sites happening to
+// agree.
+function currencyWarnings(d) {
+  const warnings = [];
+  if (!d.current) warnings.push(offRegulationWarning(d));
+  if (d.straddle) warnings.push(straddleWarning(d));
+  return warnings;
 }
 
 function percentList(text, heading, reason) {
@@ -41,7 +73,7 @@ function monFromText(text, opts) {
 
   const items = percentList(text, 'Common Items', 'not reported for this entry');
   const warnings = [];
-  if (opts.describe && !opts.describe.current) warnings.push(offRegulationWarning(opts.describe));
+  if (opts.describe) warnings.push(...currencyWarnings(opts.describe));
 
   const out = {
     format: opts.formatCode,
@@ -77,13 +109,13 @@ function usageFromText(text, opts) {
   const d = opts.describe;
   const rows = parse.parseUsageTable(text);
   validate.assertNotFiller(rows, d.code);
-  const warnings = [];
-  if (!d.current) warnings.push(offRegulationWarning(d));
+  const warnings = currencyWarnings(d);
   if (!d.capabilities.usage) warnings.push(NO_USAGE);
 
   return {
     format: d.code,
     regulation: d.regulation,
+    currency: d.currency,
     current: d.current,
     warnings,
     rows: rows.map((r) => ({

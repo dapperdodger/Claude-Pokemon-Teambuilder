@@ -12,6 +12,7 @@ right now" — that's the `vgc-meta-lookup` skill's job, using this tool.
 ## Contents
 
 - [Command surface](#command-surface)
+- [Currency: three ways a format can be current (or not)](#currency-three-ways-a-format-can-be-current-or-not)
 - [Which upstream carries which metric](#which-upstream-carries-which-metric)
 - [Usage is reported per population, never blended](#usage-is-reported-per-population-never-blended)
 - [Freshness: Data Date is fake, the ETag is real](#freshness-data-date-is-fake-the-etag-is-real)
@@ -32,9 +33,9 @@ node tools/meta/cli.js check                  slug agreement and ETag drift
 CLI uses the `**Pikalytics slug:**` stamped in `reference/regulation.md`
 (the same stamp `vgc-meta-lookup` used to eyeball by hand).
 
-**`formats`** — reports the default format's label, regulation, whether it's
-the *current* regulation, and its detected capabilities. `--write` upserts a
-row into `tools/meta/META_MANIFEST.md`.
+**`formats`** — reports the default format's label, regulation, currency
+classification, whether it's *current*, and its detected capabilities.
+`--write` upserts a row into `tools/meta/META_MANIFEST.md`.
 
 ```bash
 $ node tools/meta/cli.js formats
@@ -42,7 +43,9 @@ $ node tools/meta/cli.js formats
   "code": "battledataregmbs3",
   "label": "Pokemon Champions VGC 2026 Reg M-B S3 Ranked Battle Data",
   "regulation": "M-B",
+  "currency": "regulation",
   "current": true,
+  "straddle": null,
   "capabilities": { "usage": false, "winRate": true, "record": true },
   "etag": "W/\"459e-RBQlRZysoWXer8KGrQ0pAg\"",
   "checked": "2026-09-08"
@@ -59,7 +62,7 @@ measured" must stay distinguishable — see `tools/meta/validate.js`).
 ```bash
 $ node tools/meta/cli.js usage
 {
-  "format": "battledataregmbs3", "regulation": "M-B", "current": true,
+  "format": "battledataregmbs3", "regulation": "M-B", "currency": "regulation", "current": true,
   "warnings": ["this format's upstream carries no usage weighting — use a tournament or Showdown format for usage"],
   "rows": [
     { "rank": 1, "species": "Garchomp", "usage": { "value": null, "reason": "..." },
@@ -69,6 +72,19 @@ $ node tools/meta/cli.js usage
 }
 ```
 (live output, this session — ladder format, so `usage` is `null` on every row)
+
+```bash
+$ node tools/meta/cli.js usage --format championstournaments
+{
+  "format": "championstournaments", "regulation": null, "currency": "rolling", "current": true,
+  "warnings": [],
+  "rows": [ ... ]
+}
+```
+(live output, this session, 2026-09-08 — `regulation` is `null` because a
+rolling window carries no regulation token, but `current` is still `true`
+and `warnings` is empty: this is the exact case that used to get a wrong
+"previous regulation" warning, see the section below)
 
 **`mon <Species> [--format <code>]`** — one Pokémon's usage, win rate,
 record, and `{name, percent}` lists for moves/abilities/items/teammates.
@@ -96,6 +112,80 @@ has never been written with `formats --write`; `"unchanged"`; or `"changed"`
 — upstream has moved since the pin). See
 ["What `check` verifies"](#what-check-verifies-that-the-other-commands-dont)
 below for why this matters and what it does *not* cover.
+
+## Currency: three ways a format can be current (or not)
+
+`current` used to be a straight comparison — does the format's own
+regulation token match `reference/regulation.md`'s active one? That binary
+put a "previous regulation" warning on `championstournaments`, the single
+best usage source this tool has: it carries no regulation token at all, not
+because its data is stale, but because it's a **rolling ~2-week window over
+whatever's currently played** — current by construction, not by comparison.
+Slapping a staleness warning on the tool's best source trains a reader to
+distrust correct data, so `currency` now names *why* a format is (or isn't)
+current, as one of three states:
+
+| `currency` | Meaning | `current` |
+|---|---|---|
+| `regulation` | The label carries a regulation token (e.g. "Reg M-B") | `true` iff the token matches the active regulation |
+| `rolling` | A rolling window over current play | **always `true`** |
+| `unknown` | Cannot be determined | `false` |
+
+**`rolling` is a curated list, never inferred from a missing token.**
+`tools/meta/formats.js`'s `ROLLING_WINDOW_FORMATS` names exactly which
+formats qualify — today, only `championstournaments`. A format with no
+regulation token that is *not* on that list stays `unknown`, deliberately:
+`championspreview` also carries no token, but Pikalytics itself flags it as
+pre-launch preview data (not current), so "no token ⇒ rolling" would
+misclassify actively suspect data as current. A newly-appearing token-less
+format therefore surfaces as `unknown` on purpose, so a person adds it to
+the list after confirming it live — the same way `championstournaments` was
+confirmed — rather than the code guessing.
+
+**`unknown` gets a warning worded as unknown provenance, not as staleness.**
+Saying "this is a previous regulation" about a format nothing establishes as
+one is stating something not known. The `unknown` warning says exactly
+that — provenance unverified, not confirmed current or stale — and tells
+the reader to verify before citing a number from it.
+
+### The rollover straddle
+
+A rolling window spans whatever's actually been played recently, which means
+it can span *across* a regulation rollover: for roughly the window's own
+length (`ROLLING_WINDOW_DAYS` in `formats.js`, currently 14 — upstream's own
+stated approximation, see `tools/meta/tests/fixtures/tournaments-index.md`'s
+Format Notes) after a new regulation starts, the window still reaches back
+into tournaments run under the *previous* one. That data is genuinely
+current — it's the real recent window — **and** genuinely mixed. That's a
+third state, distinct from both "fine" and "stale", and it gets its own
+warning rather than being silent (mixed and unremarked is worse than mixed
+and labeled) or reusing the previous-regulation wording (the data isn't from
+a previous regulation, it's *also* from a previous regulation).
+
+`describe()` computes this by comparing the window's own reach-back
+(today − `ROLLING_WINDOW_DAYS`) against the active regulation's own start
+date (`reference/regulation.md`'s `**Regulation starts:**` stamp, read via
+`activeRegulationStart()`) — if the window start falls *before* the
+regulation's start, the straddle is live. A `rolling` format's `describe()`
+output carries a `straddle` object (`{ regulation, regulationStart,
+windowDays, clearsOn }`) when this is true, `null` otherwise, and the
+resulting warning names the regulation being mixed in and roughly when the
+window clears it:
+
+```
+Format "championstournaments" is a rolling ~14-day tournament window that
+currently straddles the regulation rollover: it reaches back before M-C
+started (2026-09-09), so results mix M-C with the previous regulation.
+Expect it to clear of the old regulation's data around 2026-09-23.
+```
+
+This does **not** fire today (2026-09-08): M-B started 2026-06-17, nearly
+three months ago, far outside any 14-day window. It's expected to fire for
+roughly two weeks starting the day M-C launches (2026-09-09) — the
+`windowStraddlesRollover` pure function and its direction (`today −
+windowDays` earlier than `regulationStart`) are pinned with injected dates
+in `tools/meta/tests/formats.test.js`, not the real clock, so the test stays
+meaningful regardless of when it runs.
 
 ## Which upstream carries which metric
 
@@ -234,6 +324,7 @@ exactly this reason.
 
 | Date | Change | Source |
 |---|---|---|
+| 2026-09-08 | Design correction: `current` was a straight regulation-token comparison, which put a "previous regulation is NOT the current one" warning on `championstournaments` — the tool's best usage source, wrongly flagged, because it has no regulation token (it's a rolling ~2-week window over current play, current by construction, not something with a token to compare). Replaced with a three-way `currency` taxonomy (`regulation`/`rolling`/`unknown`) classified by a curated list (`ROLLING_WINDOW_FORMATS` in `formats.js`) rather than inferred from a missing token — `championspreview` also has no token but Pikalytics flags it as not-current pre-launch data, so a heuristic would have misclassified it as rolling. Added rollover-straddle detection: a rolling window can span a regulation change (confirmed live 2026-09-08: M-B ends 2026-09-09, tomorrow, and the ~2-week tournament window will then contain both M-B and M-C data), which is a third state — genuinely current AND genuinely mixed — distinct from both "fine" and "stale", with its own warning naming the mixed regulation and roughly when the window clears. `unknown`-currency formats keep a warning too, reworded to state genuinely unknown provenance rather than falsely claiming "a previous regulation." Verified live: `node tools/meta/cli.js usage --format championstournaments` now reports `currency: "rolling", current: true, warnings: []`; `battledataregmbs3` (regulation-tagged, matches active) and `gen9championsvgc2026regmabo3` (genuinely off-regulation) are unchanged | `tools/meta/{formats.js,meta.js,cli.js,META_MANIFEST.md}` and test cases in `tools/meta/tests/{formats.test.js,meta.test.js,cli.test.js}`; live `node tools/meta/cli.js usage --format championstournaments` this session |
 | 2026-09-08 | FIX 8 regression: format-code comparison is now case-insensitive. The index page echoes the requested code as-is; the per-Pokemon page normalizes to lowercase. Both now accept case-variant codes while still detecting genuinely different codes (redirects, aliases). Updated documentation to clarify that the page-format match check has strong force on the per-Pokemon page (independent normalization) and weaker force on the index page (echoes). | `tools/meta/{meta.js,formats.js}` and test cases in `tools/meta/tests/{meta.test.js,formats.test.js}` |
 | 2026-09-08 | Created file, documenting `tools/meta`'s command surface, the per-upstream metrics table, the per-population/no-blending rule, ETag-vs-Data-Date freshness, the Mega naming convention, and the `check`-only regulation-verification gap | `tools/meta/{cli.js,formats.js,meta.js,megas.js,fetch.js,validate.js,META_MANIFEST.md}`; `tools/meta/tests/fixtures/{ranked-raichu.md,ranked-raichu-mega-y.md,tournaments-garchomp.md,tournaments-index.md,filler-index.md}`; live `node tools/meta/cli.js` runs this session (`formats`, `usage`, `mon "Garchomp" --format championstournaments`, `mon "Staraptor-Mega"`, `check`) |
 | 2026-09-08 | Final whole-branch review fix wave: `check` and `report` now check HTTP status before parsing (a failed fetch used to parse as an all-null PASS); `check` now actually reads `META_MANIFEST.md` back and reports `pinnedEtag`/`etagStatus` (`unpinned`/`unchanged`/`changed`) — the ETag-drift capability this doc already claimed, now real instead of write-only; `mon`/`usage`/`formats`/`check` all assert the fetched page's own declared format code against what was requested; a Mega whose stub page slips past `megas.js`'s name matching now fails loudly instead of reporting `undefined%` fields as ordinary missing data; Mega name matching is case-insensitive | `tools/meta/{formats.js,meta.js,megas.js,validate.js,cli.js}` and their test files, this session's review-response task |

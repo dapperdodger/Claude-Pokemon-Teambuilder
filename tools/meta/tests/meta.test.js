@@ -194,3 +194,86 @@ test('REGRESSION: genuinely different format code is still rejected (mon page)',
     /requested format|declares format/i
   );
 });
+
+// --- Currency-taxonomy warnings ---------------------------------------------
+// Replaces the old "off-regulation" binary. A rolling format must never get
+// the previous-regulation warning (that was the bug this task fixes); an
+// unknown-provenance format gets a warning too, but worded as genuinely
+// unknown rather than "a previous regulation" — nothing established that.
+
+test('REGRESSION: usageFromText on a rolling+current format (championstournaments-shaped) carries NO off-regulation warning', () => {
+  const caps = formats.detectCapabilities(fx('tournaments-index.md'));
+  const describeInfo = {
+    code: 'championstournaments', label: 'l', regulation: null, currency: 'rolling', current: true,
+    straddle: null, capabilities: caps,
+  };
+  const out = meta.usageFromText(fx('tournaments-index.md'), { describe: describeInfo });
+  assert.deepEqual(out.warnings, [], 'a rolling window is current by construction — no warning at all here');
+  assert.equal(out.currency, 'rolling');
+});
+
+test('REGRESSION: monFromText on a rolling+current format carries NO off-regulation warning', () => {
+  const caps = formats.detectCapabilities(fx('tournaments-index.md'));
+  const describeInfo = {
+    code: 'championstournaments', label: 'l', regulation: null, currency: 'rolling', current: true,
+    straddle: null, capabilities: caps,
+  };
+  const out = meta.monFromText(fx('ranked-raichu.md'), {
+    formatCode: 'battledataregmbs3', capabilities: rankedCaps(), describe: describeInfo,
+  });
+  assert.deepEqual(out.warnings, []);
+});
+
+test('REGRESSION: an unknown-currency format is warned as genuinely unknown provenance, not "a previous regulation"', () => {
+  const describeInfo = {
+    code: 'some-brand-new-format', label: 'l', regulation: null, currency: 'unknown', current: false,
+    straddle: null, capabilities: rankedCaps(),
+  };
+  const out = meta.usageFromText(fx('ranked-index.md'), { describe: describeInfo });
+  // ranked-index.md's upstream also carries no usage weighting, so a second,
+  // unrelated NO_USAGE warning is expected too — isolate the currency one.
+  const currencyWarning = out.warnings.find((w) => /provenance|previous regulation/i.test(w));
+  assert.ok(currencyWarning);
+  assert.match(currencyWarning, /unknown/i);
+  assert.doesNotMatch(currencyWarning, /previous regulation/i);
+});
+
+test('a genuinely off-regulation format keeps the ORIGINAL "previous regulation" wording', () => {
+  const describeInfo = {
+    code: 'gen9championsvgc2026regmabo3', label: 'l', regulation: 'M-A', currency: 'regulation', current: false,
+    straddle: null, capabilities: rankedCaps(),
+  };
+  const out = meta.usageFromText(fx('ranked-index.md'), { describe: describeInfo });
+  const currencyWarning = out.warnings.find((w) => /previous regulation/i.test(w));
+  assert.ok(currencyWarning);
+});
+
+test('REGRESSION: a straddling rolling format gets a distinct mixed-regulation warning, in addition to being current', () => {
+  const caps = formats.detectCapabilities(fx('tournaments-index.md'));
+  const describeInfo = {
+    code: 'championstournaments', label: 'l', regulation: null, currency: 'rolling', current: true,
+    straddle: { regulation: 'M-C', regulationStart: '2026-09-09', windowDays: 14, clearsOn: '2026-09-23' },
+    capabilities: caps,
+  };
+  const out = meta.usageFromText(fx('tournaments-index.md'), { describe: describeInfo });
+  assert.equal(out.warnings.length, 1, 'straddle is the only warning — current+rolling suppresses the off-regulation one');
+  assert.match(out.warnings[0], /mix/i);
+  assert.match(out.warnings[0], /M-C/);
+  assert.match(out.warnings[0], /2026-09-09/);
+  assert.match(out.warnings[0], /2026-09-23/);
+  assert.doesNotMatch(out.warnings[0], /NOT the current one/);
+});
+
+test('mon and usage use identical straddle wording for the same describe input', () => {
+  const caps = formats.detectCapabilities(fx('tournaments-index.md'));
+  const describeInfo = {
+    code: 'championstournaments', label: 'l', regulation: null, currency: 'rolling', current: true,
+    straddle: { regulation: 'M-C', regulationStart: '2026-09-09', windowDays: 14, clearsOn: '2026-09-23' },
+    capabilities: caps,
+  };
+  const usageOut = meta.usageFromText(fx('tournaments-index.md'), { describe: describeInfo });
+  const monOut = meta.monFromText(fx('ranked-raichu.md'), {
+    formatCode: 'battledataregmbs3', capabilities: rankedCaps(), describe: describeInfo,
+  });
+  assert.deepEqual(monOut.warnings, usageOut.warnings);
+});

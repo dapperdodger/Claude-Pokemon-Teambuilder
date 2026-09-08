@@ -38,6 +38,153 @@ test('describe() stamps the regulation and marks currency', () => {
   assert.equal(typeof d.current, 'boolean');
 });
 
+// --- Three-way currency taxonomy -------------------------------------------
+// Replaces the old binary (regulation matches / doesn't). `formats.js`'s own
+// design comment explains why: a format can be current for two structurally
+// different reasons (a matching regulation token, or being a rolling window
+// by construction), and collapsing those into one boolean is what put a
+// "previous regulation" warning on `championstournaments` — data that was
+// actually current the whole time.
+
+test('classifyCurrency: a matching regulation token is current', () => {
+  assert.deepEqual(formats.classifyCurrency('somecode', 'M-B', 'M-B'), { currency: 'regulation', current: true });
+});
+
+test('classifyCurrency: a mismatched regulation token is regulation-currency but NOT current', () => {
+  assert.deepEqual(formats.classifyCurrency('somecode', 'M-A', 'M-B'), { currency: 'regulation', current: false });
+});
+
+test('classifyCurrency: a regulation-tagged format with no known active regulation is not current', () => {
+  assert.deepEqual(formats.classifyCurrency('somecode', 'M-B', null), { currency: 'regulation', current: false });
+});
+
+test('REGRESSION: a curated rolling-window format is ALWAYS current despite carrying no regulation token', () => {
+  assert.deepEqual(
+    formats.classifyCurrency('championstournaments', null, 'M-B'),
+    { currency: 'rolling', current: true }
+  );
+  // Regulation shown as mismatched/unknown must not matter — rolling is
+  // current by construction, not by comparison to an active regulation.
+  assert.deepEqual(
+    formats.classifyCurrency('championstournaments', null, null),
+    { currency: 'rolling', current: true }
+  );
+});
+
+test('classifyCurrency: the rolling-format list is matched case-insensitively', () => {
+  assert.equal(formats.classifyCurrency('ChampionsTournaments', null, 'M-B').currency, 'rolling');
+  assert.equal(formats.classifyCurrency('CHAMPIONSTOURNAMENTS', null, 'M-B').currency, 'rolling');
+});
+
+test('REGRESSION: a token-less format NOT on the curated list is unknown, never inferred as rolling', () => {
+  // championspreview also carries no regulation token, but Pikalytics itself
+  // flags it as pre-launch preview data — genuinely not current. Inferring
+  // "no token => rolling" from the code text alone (rather than a curated
+  // list) would misclassify actively suspect data as current.
+  assert.deepEqual(
+    formats.classifyCurrency('championspreview', null, 'M-B'),
+    { currency: 'unknown', current: false }
+  );
+  assert.deepEqual(
+    formats.classifyCurrency('some-brand-new-format', null, 'M-B'),
+    { currency: 'unknown', current: false }
+  );
+});
+
+test('REGRESSION: describe() classifies championstournaments as rolling and current with no regulation token', () => {
+  const d = formats.describe(fx('tournaments-index.md'));
+  assert.equal(d.code, 'championstournaments');
+  assert.equal(d.regulation, null);
+  assert.equal(d.currency, 'rolling');
+  assert.equal(d.current, true);
+});
+
+test('describe() classifies the ladder format as regulation-currency', () => {
+  const d = formats.describe(fx('ranked-index.md'));
+  assert.equal(d.currency, 'regulation');
+});
+
+test('REGRESSION: an off-regulation format (e.g. gen9championsvgc2026regmabo3-shaped data) still reports NOT current', () => {
+  // Reuses the ranked fixture (regulation M-B) but simulates a mismatched
+  // active regulation the way a genuinely previous-regulation format would
+  // be flagged — describe() itself always compares against the REAL active
+  // regulation, so this exercises classifyCurrency directly for the case
+  // describe() cannot simulate without a second fixture.
+  const out = formats.classifyCurrency('gen9championsvgc2026regmabo3', 'M-A', formats.activeRegulation());
+  assert.equal(out.currency, 'regulation');
+  assert.equal(out.current, false, 'a genuinely previous regulation must never read as current');
+});
+
+// --- Rolling-window rollover straddle --------------------------------------
+// windowStraddlesRollover is pure — explicit regulation-start and "now"
+// dates in, boolean out — specifically so this is pinned rather than tied to
+// the real clock: a test that reads today's date would silently start or
+// stop passing as time moves, which is worse than no test at all.
+
+test('windowStraddlesRollover: false when the window stays entirely within the regulation (well after it started)', () => {
+  // Regulation started 2026-06-17; "today" is nearly 3 months later, so the
+  // window (14 days back from today) never reaches back to the start date.
+  assert.equal(formats.windowStraddlesRollover('2026-06-17', '2026-09-08', 14), false);
+});
+
+test('REGRESSION: windowStraddlesRollover is true when the window reaches back before the regulation started', () => {
+  // Regulation starts 2026-09-09 (the M-C rollover date). Six days later,
+  // the window's own start (2026-09-15 - 14d = 2026-09-01) is EARLIER than
+  // the regulation's start (2026-09-09) — the window still reaches back
+  // into the previous regulation.
+  assert.equal(formats.windowStraddlesRollover('2026-09-09', '2026-09-15', 14), true);
+});
+
+test('windowStraddlesRollover: clears exactly windowDays after the regulation start', () => {
+  // today = regStart + windowDays: windowStart == regStart exactly, and the
+  // comparison is strict ("<"), so this is the first day the straddle is
+  // gone, matching "clears roughly windowDays after regulationStart".
+  assert.equal(formats.windowStraddlesRollover('2026-09-09', '2026-09-23', 14), false);
+  // One day earlier, the straddle is still active.
+  assert.equal(formats.windowStraddlesRollover('2026-09-09', '2026-09-22', 14), true);
+});
+
+test('windowStraddlesRollover: same-day rollover straddles (window reaches back into yesterday, the old regulation)', () => {
+  assert.equal(formats.windowStraddlesRollover('2026-09-09', '2026-09-09', 14), true);
+});
+
+test('windowStraddlesRollover: false with no regulation-start date, rather than throwing', () => {
+  assert.equal(formats.windowStraddlesRollover(null, '2026-09-15', 14), false);
+});
+
+test('windowStraddlesRollover: accepts a real Date object for "now", not just an ISO string', () => {
+  assert.equal(formats.windowStraddlesRollover('2026-09-09', new Date('2026-09-15T00:00:00Z'), 14), true);
+});
+
+test('REGRESSION: describe() surfaces a straddle warning-worthy object when the real regulation just started (injected `now`)', () => {
+  // Uses the REAL stamped regulation-start from reference/regulation.md, but
+  // injects `now` as a fixed offset from that stamp rather than reading the
+  // system clock — so this test's pass/fail does not depend on what day it
+  // is when the suite runs, only on regulation.md's start stamp existing.
+  const regStart = formats.activeRegulationStart();
+  assert.ok(regStart, 'reference/regulation.md must have a **Regulation starts:** stamp for this test to mean anything');
+  const threeDaysIn = new Date(new Date(`${regStart}T00:00:00Z`).getTime() + 3 * 24 * 60 * 60 * 1000);
+  const d = formats.describe(fx('tournaments-index.md'), undefined, { now: threeDaysIn });
+  assert.ok(d.straddle, 'a rolling format queried 3 days after the regulation started must straddle');
+  assert.equal(d.straddle.regulationStart, regStart);
+  assert.equal(d.straddle.windowDays, formats.ROLLING_WINDOW_DAYS);
+  assert.equal(d.currency, 'rolling');
+  assert.equal(d.current, true, 'a straddling rolling format is still current — mixed is not the same as stale');
+});
+
+test('describe() reports no straddle for a rolling format when `now` is well past the window', () => {
+  const regStart = formats.activeRegulationStart();
+  assert.ok(regStart);
+  const wellPast = new Date(new Date(`${regStart}T00:00:00Z`).getTime() + 60 * 24 * 60 * 60 * 1000);
+  const d = formats.describe(fx('tournaments-index.md'), undefined, { now: wellPast });
+  assert.equal(d.straddle, null);
+});
+
+test('describe() never sets straddle on a non-rolling format, regardless of `now`', () => {
+  const d = formats.describe(fx('ranked-index.md'), undefined, { now: new Date('2026-06-18T00:00:00Z') });
+  assert.equal(d.straddle, null);
+});
+
 test('describe() refuses the empty-dataset format', () => {
   assert.throws(() => formats.describe(fx('filler-index.md')), /empty dataset|alphabetical/i);
 });
@@ -225,6 +372,26 @@ test('readManifestRow: finds the pinned row for a written format code', () => {
 
 test('readManifestRow: returns null for a format that has never been pinned', () => {
   assert.equal(formats.readManifestRow(MANIFEST_TEMPLATE, 'codeA'), null);
+});
+
+// Currency is appended as the LAST column (after Last checked) rather than
+// inserted after Regulation, specifically so a row written before this
+// taxonomy existed still parses: etag/checked keep their original indices,
+// and a legacy 7-column row simply comes back with currency: null.
+test('REGRESSION: readManifestRow reads back the currency column (appended last)', () => {
+  const row = '| `championstournaments` | | true | true | true | "etag1" | 2026-09-08 | rolling |';
+  const { text } = formats.upsertManifestRow(MANIFEST_TEMPLATE, 'championstournaments', row);
+  const found = formats.readManifestRow(text, 'championstournaments');
+  assert.equal(found.etag, '"etag1"');
+  assert.equal(found.checked, '2026-09-08');
+  assert.equal(found.currency, 'rolling');
+});
+
+test('readManifestRow: a pre-taxonomy 7-column row reads back currency as null, not a crash', () => {
+  const row = '| `codeA` | M-B | true | true | true | "etag1" | 2026-09-01 |';
+  const { text } = formats.upsertManifestRow(MANIFEST_TEMPLATE, 'codeA', row);
+  const found = formats.readManifestRow(text, 'codeA');
+  assert.equal(found.currency, null);
 });
 
 function writeTempManifest(text) {
