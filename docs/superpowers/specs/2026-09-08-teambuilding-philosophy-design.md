@@ -480,15 +480,48 @@ same as it being good.
 
 ## Sequencing
 
-1. `reference/sources/` + the four working reference files. No behaviour change
-   yet, so this phase is reviewable on its own.
-2. `dex find` + tests.
-3. `meta speed-tiers` / `distribution` + `--write` + the staleness check +
-   tests.
-4. Skill rewrites — building, refining, audit, meta-lookup — and the new
-   `vgc-post-game` skill.
-5. `CLAUDE.md`, `README.md`, the regulation-transition step, and a
-   `## Changelog` row on every touched reference file citing these notes.
+The re-vendor is folded in as a **hard gate**, not a later chore: `dex find`
+is only as trustworthy as the move pools behind it, and shipping it against an
+M-B pin would mean shipping a tool that warns about itself from its first
+invocation.
+
+**Phase 1 — reference layer.** `reference/sources/` plus the four working
+reference files. Regulation-agnostic by construction, so it does not wait on
+the rollover and is reviewable entirely on its own.
+
+**Phase 2 — the rollover gate.** Runs on or after 2026-09-09, via the
+`vgc-regulation-transition` skill. Blocks phases 3-6 (5 and 6 transitively, via phase 3).
+
+- Verify M-C's actual rules and update `reference/regulation.md`; archive M-B
+  to `reference/regulations/`.
+- **Re-vendor both datasets, not one.** `tools/dex/vendor/learnsets.js` (move
+  pools) and `tools/damage-calc/vendor/` (roster, moves, items, abilities) come
+  from different upstreams with independent pins. Re-vendoring either alone
+  breaks the cross-vendor invariant: a newer roster leaves new species with no
+  move pool, and newer learnsets can drop species the older roster still lists.
+  The staleness hook already reports damage-calc as behind upstream today.
+- Update the Commit **and** Regulation fields in both manifests.
+- `npm test`. `learnset-coverage-invariant.test.js` is the gate that proves the
+  two vendors agree — a failure here is a real finding, not a broken test.
+
+**Phase 3 — `dex find`** + tests. Gated on phase 2, so its first run is
+against current move pools.
+
+**Phase 4 — `meta speed-tiers` / `distribution`** + `--write` + the staleness
+check + tests. Also gated on phase 2: the Pikalytics format slug changes at the
+rollover, and `format-knowledge.md`'s first generated contents should be M-C
+rather than a file that is stale the moment it is written.
+
+**Phase 5 — skills.** Rewrites of building, refining, audit and meta-lookup,
+plus the new `vgc-post-game` skill. After phase 3, because a skill instructing
+`dex find` before that command exists is a broken instruction.
+
+**Phase 6 — wiring.** `CLAUDE.md`, `README.md`, the regeneration step in
+`vgc-regulation-transition`, and a `## Changelog` row on every touched
+reference file citing these notes.
+
+**What can start today:** phase 1 only. Phases 3-6 are downstream of a
+regulation that does not exist yet.
 
 ## Testing
 
@@ -500,23 +533,40 @@ same as it being good.
 - `meta speed-tiers` / `distribution`: computation against fixtures, using the
   existing `tools/meta/tests/fixtures/` pattern.
 - Staleness: absent file, stale file, regulation-mismatched file, current file.
+- Phase 2 re-vendor: `npm test` must be green with
+  `learnset-coverage-invariant.test.js` passing against the **new** roster and
+  the **new** learnset table together. That test is the cross-vendor gate, so
+  a failure means the two pins disagree — re-vendor the lagging one rather
+  than relaxing the assertion.
 - Reference files: no test harness — they get changelog rows and a live sweep
   of every example through the CLIs.
 
 ## Regulation timing
 
-M-B ends 2026-09-09, one day after this spec. Principles outlive regulations,
-so the work is not blocked. But `format-knowledge.md`'s first generated
-contents are M-B and will be stale immediately — which is the correct
-behaviour to build and to observe, since the staleness check should fire on
-exactly that rollover. Regeneration is wired into `vgc-regulation-transition`
-for that reason.
+M-B ends 2026-09-09, one day after this spec. This is the reason the sequencing
+above has a gate in the middle rather than running straight through.
+
+Principles outlive regulations, so phase 1 is genuinely unblocked — archetypes,
+roles, speed control and evaluation criteria do not change when the regulation
+does. Everything that touches *data* does: move pools get cut, the roster
+moves, and the Pikalytics format slug increments.
+
+The earlier draft of this spec proposed building against M-B and letting the
+staleness warning fire immediately afterward. That is defensible for a tool
+answering one deliberate question, and wrong for one that generates candidate
+sets — the warning would be correct on every single invocation from day one,
+which is how warnings get ignored. Hence the gate.
+
+One consequence worth stating: **the M-C re-vendor is now on this project's
+critical path**, not adjacent to it. If the rollover slips, phases 3-6 slip
+with it. Phase 1 is unaffected either way.
 
 ## Out of scope
 
-- Re-vendoring the damage-calc data (the staleness hook currently reports it
-  behind upstream). That belongs to the M-C rollover.
-- The `mechanics.md` Rillaboom/Grassy Surge inconsistency noted above.
+- The `mechanics.md` Rillaboom/Grassy Surge inconsistency noted above. (Phase 2
+  may resolve it incidentally — if Rillaboom enters the M-C roster on
+  re-vendor, the example becomes valid; if it does not, the example is wrong
+  and gets fixed separately. Either way it is not a goal of this work.)
 - Pokepaste import/export. The notes mention it as a useful interchange format;
   no workflow here needs it yet. Recorded, not built.
 - Any change to `check_sp_spread_optimization.js`. Reading it confirmed it
