@@ -30,3 +30,24 @@ test('parseFormatInfo reads the index header', () => {
   assert.match(f.label, /M-B S3/);
   assert.equal(f.dataDate, '2026-05');
 });
+
+test('parsePercentList reads the item distribution, Mega stones included', () => {
+  const items = parse.parsePercentList(fx('ranked-raichu.md'), 'Common Items');
+  assert.equal(items[0].name, 'Raichunite Y');
+  assert.equal(items[0].percentRaw, '60.5%');
+  assert.equal(items[1].name, 'Raichunite X');
+  assert.equal(items[1].percentRaw, '18.2%');
+  assert.ok(items.length >= 5);
+});
+
+test('parsePercentList preserves undefined% rather than dropping the row', () => {
+  // Dropping it would make a broken section look like an empty one.
+  const mates = parse.parsePercentList(fx('ranked-raichu.md'), 'Common Teammates');
+  assert.ok(mates.length > 0);
+  assert.ok(mates.every((m) => m.percentRaw === 'undefined%'));
+});
+
+test('parsePercentList returns an empty array for an absent section', () => {
+  // Floette-Eternal legitimately has no Featured Teams; absence is not an error.
+  assert.deepEqual(parse.parsePercentList(fx('ranked-raichu.md'), 'No Such Section'), []);
+});

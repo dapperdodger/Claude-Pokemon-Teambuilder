@@ -44,4 +44,24 @@ function parseFormatInfo(text) {
   };
 }
 
-module.exports = { parseQuickInfo, parseFormatInfo };
+// Sections are "## <heading>" followed by "- **Name**: 12.3%" bullets.
+function sectionBody(text, heading) {
+  const re = new RegExp(`^##\\s+${heading}\\s*$`, 'm');
+  const m = text.match(re);
+  if (!m) return null;
+  const after = text.slice(m.index + m[0].length);
+  return after.split(/^##\s+/m)[0];
+}
+
+function parsePercentList(text, heading) {
+  const body = sectionBody(text, heading);
+  if (body === null) return [];
+  const out = [];
+  for (const line of body.split('\n')) {
+    const m = line.match(/^-\s*\*\*(.+?)\*\*:\s*(.+?)\s*$/);
+    if (m) out.push({ name: m[1], percentRaw: m[2] });
+  }
+  return out;
+}
+
+module.exports = { parseQuickInfo, parseFormatInfo, sectionBody, parsePercentList };
