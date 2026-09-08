@@ -26,6 +26,7 @@ priority — are in `reference/mechanics.md`, not here.
 - [Confidence marking](#confidence-marking)
 - [Team construction](#team-construction)
 - [The team is locked; only the four you bring is a choice](#the-team-is-locked-only-the-four-you-bring-is-a-choice)
+- [Two Megas on a six is standard practice — do not flag it](#two-megas-on-a-six-is-standard-practice--do-not-flag-it)
 - [What the opponent knows before the first move](#what-the-opponent-knows-before-the-first-move)
 - [Open Team Sheets are a tournament convention, not a game mode](#open-team-sheets-are-a-tournament-convention-not-a-game-mode)
 - [Ladder and tournament differ in rules, not just data](#ladder-and-tournament-differ-in-rules-not-just-data)
@@ -91,16 +92,54 @@ So these are not real recommendations, and should never be phrased as though
 they were:
 
 - ❌ "Run Occa Berry into Fire matchups and Colbur Berry into Dark ones."
-- ❌ "Carry both Mega Stones and pick whichever Mega the matchup wants."
-  — legal (they are different items, so no Item Clause problem), but the
-  *stones* are both on the team permanently; only which Pokémon you bring
-  flexes.
 - ❌ "Swap this move in against Trick Room teams."
+
+Note what is *not* on that list: registering two Mega Stones and choosing
+which Mega to bring per matchup. That is a bring-4 decision, which is exactly
+the thing the format does let you flex — see the next section.
 
 A choice between two items is a **permanent trade-off** — which threat is more
 likely and more costly across the whole field — and must be presented that
 way. Bring-6-pick-4 flexibility is real and worth building around; it just
 operates on *Pokémon*, never on their contents.
+
+## Two Megas on a six is standard practice — do not flag it
+
+**Only one Pokémon may Mega Evolve per battle**, team-wide, no matter how many
+Mega Stones the six carry; if the Mega faints, no second one may evolve.
+**[consensus]** — universally reported across Champions resources and
+described as an official clause, though it is enforced in-game rather than by
+the tournament handbook, which does not mention Mega Evolution at all.
+
+**That limit is a reason to build two Megas, not a reason not to.** Different
+stones are different items, so the Item Clause is satisfied; you register
+both and choose which to bring in Team Preview. It is one of the few genuine
+per-matchup levers the format offers, and the field uses it heavily.
+
+Pikalytics M-B S3 tournament team usage, top six archetypes by team count —
+**four of the six register two Megas**, about 66% weighted by team count:
+
+| Archetype (abbreviated) | Megas registered | Teams | Win rate |
+|---|---|---|---|
+| Tyranitar-Mega / Staraptor-Mega / Excadrill / Milotic / Sinistcha / Gholdengo | 2 | 572 | 52.77% |
+| Garchomp / Kingambit / Whimsicott / Basculegion / Floette-E / Charizard-Mega-Y | 1 | 381 | 57.46% |
+| Charizard-Mega-Y / Grimmsnarl / Pelipper / Archaludon / Basculegion / Venusaur | 1 | 377 | 48.64% |
+| Aerodactyl-Mega / Charizard-Mega-Y / Farigiraf / Kingambit / Sylveon / Garchomp | 2 | 353 | 50.69% |
+| Staraptor-Mega / Delphox-Mega / Garchomp / Whimsicott / Glimmora / Kingambit | 2 | 288 | 53.37% |
+| Blastoise-Mega / Delphox-Mega / Sneasler / Kingambit / Incineroar / Sinistcha | 2 | 253 | 53.72% |
+
+The *Common Team Cores* data adds the nuance: two Megas rarely appear together
+in the recurring 2- and 3-Pokémon cores. That is consistent rather than
+contradictory — the second Mega is typically the **flex slot**, not part of
+the core, which is precisely how a bring-4 lever is supposed to look.
+
+**So treat it as an option with trade-offs, the way you would any other slot.**
+The honest costs are that the unbrought Mega's base forme is usually much
+weaker, and that its stone is visible at Team Preview in either venue, so it
+buys pick pressure rather than surprise. Say that once if it is relevant to
+the specific build, then move on. Do **not** present the one-Mega-per-battle
+limit as though it breaks a two-Mega plan — it is the ordinary condition
+every team in the table above is built under.
 
 ## What the opponent knows before the first move
 
@@ -236,3 +275,4 @@ required.
 |---|---|---|
 | 2026-09-08 | Created. Evergreen VGC doubles rules previously existed only inside `pitfalls.md`, where they were framed as past mistakes and so were only reachable by recalling the mistake — twice they were stated wrongly in conversation while the correct answer sat in that file. Every rule here re-verified against the Play! Pokémon handbook (rev. 1 Sep 2026) rather than moved across on trust, which upgraded several from recall to quoted-official and exposed one repo error (regulation cadence, corrected in `regulation.md`) | Play! Pokémon VGC Tournament Handbook rev. 2026-09-01; victoryroad.pro; serebii.net; champdex.com |
 | 2026-09-08 | Recorded the ladder Team Preview contents that `pitfalls.md` had left explicitly unresolved: third-party consensus is that held items **are** visible on ladder (Mega Stones included) while abilities, moves and spreads are not. Marked **[consensus]**, not promoted to fact — no official source found. This materially narrows what "surprise value" can mean on ladder: the hidden variables are abilities, moves and SP, never which Pokémon or which items | champdex.com/guides/team-preview and corroborating Champions strategy resources; no official confirmation located |
+| 2026-09-08 | Added the two-Megas section and removed a bullet added earlier the same day that wrongly listed "carry both Mega Stones and pick whichever Mega the matchup wants" alongside genuinely impossible advice like per-matchup item flexing. The two are opposites: item flexing is not permitted, while choosing which Mega to bring is a bring-4 decision and one of the format's few real per-matchup levers. Recorded the one-Mega-per-battle limit as the ordinary condition such teams are built under, with M-B usage showing four of the top six archetypes registering two | User correction; Pikalytics M-B S3 `/team-usage` and `/pokedex` Common Team Cores, format label verified; one-per-battle rule corroborated across Champions resources, absent from the Play! Pokemon handbook (in-game mechanic, not a tournament clause) |

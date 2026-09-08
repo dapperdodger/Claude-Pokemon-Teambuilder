@@ -32,6 +32,10 @@ them is the wrong answer. Full detail and sourcing in
   error twice.
 - **SP spreads are private in every venue**, OTS included — the one genuinely
   hidden variable left.
+- **Only one Pokémon Mega Evolves per battle — and registering two Mega
+  Stones anyway is standard, not a flaw.** Four of M-B's top six archetypes
+  by team count do it. Treat the second Mega as the bring-4 flex slot it is;
+  never present the one-per-battle limit as though it breaks the plan.
 - **Ladder is best-of-one; tournament top cut is best-of-three.** A Bo3 team
   needs a viable *second* four, because the opponent re-picks after game one.
 - **All battles are Level 50.** Hidden Abilities are legal; **Battle Bond is

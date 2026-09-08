@@ -59,6 +59,7 @@ Scan this. Follow a link only where the answer isn't already obviously fine.
 - [ ] Non-Mega ability: 2-3 legal options exist; the one the *set* runs may differ from the dex default
 - [ ] An ability-boosted move still compared against higher-base-power unboosted alternatives
 - [ ] No EV terminology, and no assumed EV→SP conversion factor
+- [ ] A legal, widely-used tactic **not** presented as a flaw you found — check usage before "the thing that breaks your premise" → [Build assumptions](#build-assumption-trap)
 
 **Before calling a team finished**
 - [ ] **No duplicate items across the six** — hard rule (`vgc-format.md`), has been missed twice → [Team-finalization](#team-finalization-checks)
@@ -245,6 +246,20 @@ because a single source often describes both without saying which it means.
 
 ## Build assumption trap
 
+- **A constraint every good team already builds around is not a discovery —
+  check usage before calling something a broken premise.** Repeatedly framed
+  "only one Mega Evolves per battle" as *the thing that breaks* a plan to
+  register two Mega Stones, complete with a base-forme stat table showing what
+  the unbrought Mega "loses". The limit is real; the framing was wrong. Two
+  Megas is **standard practice** — four of M-B's top six archetypes by team
+  count register two, ~66% weighted by team count — because the second Mega is
+  the bring-4 flex slot, and choosing which to bring is one of the few genuine
+  per-matchup levers the format has. The tell was writing an emphatic
+  "the thing that breaks the premise" heading about a legal, common
+  configuration **without checking how often the field does it**, which is one
+  Pikalytics fetch. Rule: before presenting a tactic as flawed, confirm it is
+  actually rare. If it's common, the interesting question is what the players
+  using it know that you don't. → `vgc-format.md`'s two-Megas section
 - **Don't assume a "generic" Stat Point (SP)/item/ability spread.** A
   Pokémon's typing and base stats don't tell you its actual competitive
   set. Check the current meta's actual common spread (item, ability, SP
@@ -377,3 +392,4 @@ checking whether a new mistake repeats an old one.
 | 2026-09-08 | Inverted this file's relationship with the format rules it had accumulated. The Item Clause, the fixed-at-registration rule and the ladder/tournament split were stored here as incidents, so each was only reachable by first recalling the mistake attached to it — and all three answer questions asked at the *start* of a conversation, when nothing triggers a read of this file. Repeating the OTS error on 2026-09-08, one day after documenting it here, made the storage location the actual defect. Rules moved to the new `reference/vgc-format.md` and summarised in `CLAUDE.md`; these sections keep the incident and point at the rule. Added a "what this file is not" contract at the top so future entries get sorted rule-vs-mistake on the way in | User observation that the file was being used backwards; `reference/vgc-format.md` |
 | 2026-09-08 | Resolved the item-visibility question this file had left open, and recorded that its own 2026-09-07 correction over-corrected: ladder is not broadly hidden-information play. All six species are public in both venues and held items (Mega Stones included) appear to be public on ladder too — what ladder hides is abilities, moves and spreads. The two-Mega plan's "they can't predict which Mega" premise therefore fails on ladder as well, leaving only the weaker pick-pressure argument | champdex.com/guides/team-preview and corroborating Champions resources; marked **[consensus]** in `vgc-format.md` as no official source was found |
 | 2026-09-08 | Added "a shell loop that greps a CLI's JSON is a data source, and a silent one" after auditing the loop used to build three defensive profiles. `2>&1 \| grep \| head` discards the CLI's error text *and* its non-zero exit, so a misspelled type printed a blank row while the pipeline exited 0 — indistinguishable from a real "nothing notable" result, the same shape as a missed immunity. Fixed at the source rather than by documenting the workaround: `dex type --vs-mon <Species>` now returns all 18 types in one call | Direct reproduction this session (`Watr` -> blank row, pipeline exit 0, while the CLI itself exits 1); `tools/dex/tests/defensive-profile.test.js` |
+| 2026-09-08 | Added "a constraint every good team already builds around is not a discovery". Had been surfacing the one-Mega-per-battle limit as a premise-breaking objection to registering two Mega Stones — a legal, standard configuration used by four of M-B's top six archetypes by team count (~66% weighted). The limit is real and the base-forme drop-off is real; presenting them as a reason the plan does not work was not. Verified rather than conceded: Pikalytics M-B S3 team-usage pulled this session | User correction; pikalytics.com/team-usage and /pokedex (format label confirmed "Regulation Set M-B S3"); rule and data now in `reference/vgc-format.md` |
