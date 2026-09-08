@@ -80,3 +80,50 @@ test('an unknown species is unknown, never illegal', () => {
   assert.notEqual(r.verdict, 'illegal');
   assert.match(r.note, /verify live/i);
 });
+
+// ---------------------------------------------------------------------------
+// Regression: the vendored learnset table contains bare placeholder entries —
+// `{}` with no `.learnset` key at all — for 5 ids: vivillonfancy,
+// vivillonpokeball, gourgeistsuper, polteageistantique, sinistchamasterpiece.
+// `{}` is truthy, so a plain presence check (`if (learnsets[id])`) treats a
+// placeholder as a hit and `learnset()` then crashes on
+// `Object.keys(undefined)`. gourgeistsuper is the special one here: it is the
+// ONLY one of the five that is a real, currently Champions-legal roster
+// species (Gourgeist-Super), so this is not a theoretical edge case — it is
+// reachable from a real species name. Do not "simplify" the resolver's
+// hasUsableLearnset guard back down to a bare truthiness check; that
+// reintroduces this crash.
+// ---------------------------------------------------------------------------
+test('regression: Gourgeist-Super falls through the empty placeholder entry to the base species', () => {
+  const r = dex.learnset('Gourgeist-Super');
+  assert.equal(r.resolvedId, 'gourgeist');
+});
+
+test('regression: Gourgeist-Super move legality does not throw', () => {
+  const r = dex.learnset('Gourgeist-Super', 'Trick');
+  assert.ok(r.verdict === 'legal' || r.verdict === 'illegal' || r.verdict === 'unknown');
+});
+
+test('no roster species causes learnset() to throw', () => {
+  const { getVendor } = require('../../damage-calc/load-vendor');
+  const roster = getVendor().POKEDEX_CHAMPIONS;
+  for (const species of Object.keys(roster)) {
+    let r;
+    assert.doesNotThrow(() => {
+      r = dex.learnset(species);
+    }, `learnset("${species}") threw`);
+    assert.ok(
+      r.resolvedId === null || (Array.isArray(r.moves) && typeof r.moveCount === 'number'),
+      `learnset("${species}") returned an invalid shape: ${JSON.stringify(r)}`
+    );
+
+    let withMove;
+    assert.doesNotThrow(() => {
+      withMove = dex.learnset(species, 'Tackle');
+    }, `learnset("${species}", "Tackle") threw`);
+    assert.ok(
+      ['legal', 'illegal', 'unknown'].includes(withMove.verdict),
+      `learnset("${species}", "Tackle") returned an invalid verdict: ${JSON.stringify(withMove)}`
+    );
+  }
+});

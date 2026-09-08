@@ -186,6 +186,18 @@ function toId(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+// A table entry only counts as a hit if it actually carries a usable
+// `.learnset` object. The vendored table contains bare placeholder entries —
+// `{}` with no `.learnset` key at all — for at least 5 ids (vivillonfancy,
+// vivillonpokeball, gourgeistsuper, polteageistantique, sinistchamasterpiece).
+// `{}` is truthy, so a plain `learnsets[id]` truthiness check treats those as
+// hits and `learnset()` then crashes on `Object.keys(undefined)`. One of the
+// five — gourgeistsuper — is a real, currently Champions-legal roster
+// species, so this is not a theoretical edge case.
+function hasUsableLearnset(learnsets, id) {
+  return Boolean(learnsets[id] && learnsets[id].learnset);
+}
+
 // Map a roster display name onto its learnset key.
 //
 // This walks the vendored `formes` data rather than stripping a "Mega "
@@ -198,12 +210,14 @@ function resolveLearnsetId(v, species) {
 
   // A Mega has no learnset of its own; it uses its base form's.
   const base = isMegaForme(species) ? (baseFormeOf(v, species) || species) : species;
-  if (learnsets[toId(base)]) return toId(base);
+  if (hasUsableLearnset(learnsets, toId(base))) return toId(base);
 
   // Cosmetic and battle formes (Gourgeist-Small, Palafin-Hero) share the
-  // base species' entry.
+  // base species' entry. This same guard is what makes Gourgeist-Super
+  // resolve here (to "gourgeist") instead of stopping at the empty
+  // "gourgeistsuper" placeholder above.
   const stem = base.split('-')[0];
-  if (learnsets[toId(stem)]) return toId(stem);
+  if (hasUsableLearnset(learnsets, toId(stem))) return toId(stem);
 
   return null;
 }
