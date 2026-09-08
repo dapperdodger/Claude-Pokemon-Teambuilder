@@ -303,23 +303,57 @@ everywhere else in this repo `SP` means Stat Points. The CLI therefore exposes
 `--min-spe` / `--max-spe` and never `--min-sp`, and the output renames the
 stat keys to the unambiguous long forms.
 
-**Partial-coverage contract — the critical constraint.** The vendored learnset
-table does not cover every species. A naive `--learns` filter would silently
-omit uncovered species and return a confidently incomplete candidate list —
-precisely the failure this repo exists to prevent, and worse than the recall
-it replaces, because a derived-looking list invites more trust. So any
-learnset-dependent query returns:
+#### Coverage is not the risk — measured 2026-09-08
 
-```json
-{ "results": [], "checked": 214, "notInLearnsetTable": ["...", "..."] }
-```
+An earlier draft of this spec called partial learnset coverage "the critical
+constraint" for `find`. That was wrong, and measuring it says so: **all 315
+Champions roster entries resolve to a usable learnset entry. Coverage is
+100%, with zero uncovered species** (240 base species, 75 Mega formes
+resolving to their base forms).
 
-and prints a non-silenceable note when `notInLearnsetTable` is non-empty,
-mirroring `dex team`'s existing `notChecked` field. Absence from the table is
-never evidence a move is illegal.
+It is also already guarded. `tools/dex/tests/learnset-coverage-invariant.test.js`
+exists, is named by `VENDOR_MANIFEST.md`'s re-vendoring step 5 as the gate to
+run, and asserts *usability* rather than mere resolution — it was written
+specifically because five vendored entries are bare `{}` placeholders and one
+of them (`gourgeistsuper`) is a live roster species that a weaker assertion
+let through. It also pins the ten species that resolve via the stem fallback,
+so a new forme silently inheriting the wrong move pool fails the build. All
+three invariants pass as of this spec.
 
-Results are only as current as the vendored roster, which the existing
-staleness hook already reports on.
+So the `notInLearnsetTable` contract stays — it is nearly free, and it is what
+keeps the 100% *observed* rather than assumed — but it is a cheap guard on a
+currently-empty set, not the design's load-bearing constraint.
+
+#### Staleness is the risk
+
+The real exposure for `find --learns` is the opposite shape: not omission, but
+**confident false positives from a stale pin**.
+
+`VENDOR_MANIFEST.md` states it directly — learnsets are regulation-variant,
+regulations *cut* move pools as well as adding them (+2019/-353 lines at the
+M-B rollover), and the upstream mod is updated **in place**, so a stale pin
+"serves complete, normal-looking, wrong data rather than failing." The pin is
+currently stamped `M-B`, and **M-B ends tomorrow**.
+
+That matters far more for `find` than for `learnset`. A single `learnset`
+query is a deliberate check on one species the user already named. `find`
+generates the candidate *set* — so a stale pool doesn't produce one wrong
+answer, it seeds every downstream slot decision with species that may no
+longer learn the move the slot exists for. The failure is invisible in exactly
+the way the notes' recall-based candidate generation was.
+
+Mitigation, reusing machinery that already exists:
+
+- Any `--learns` query stamps its output with the learnset pin:
+  `"learnsetPin": { "commit": "cc17bb78…", "regulation": "M-B" }`.
+- When that regulation does not match `reference/regulation.md`'s active one,
+  `find` prints a loud warning that the candidate list may contain species
+  whose move pools the current regulation has cut, and points at the
+  re-vendoring section. The existing `vendor-staleness.js` hook reports the
+  same drift at session start; this puts it at the point of use.
+- The roster half is already covered: re-vendoring `POKEDEX_CHAMPIONS` without
+  re-vendoring learnsets makes the invariant test fail loudly rather than
+  quietly, which is the case that motivated that test.
 
 ### `node tools/meta/cli.js speed-tiers` and `distribution`
 
@@ -460,7 +494,8 @@ same as it being good.
 
 - `dex find`: filter correctness per filter and in combination; the
   `notInLearnsetTable` contract, including that a species absent from the table
-  is reported rather than dropped silently; `--min-spe` reads base Speed and
+  is reported rather than dropped silently; that a `--learns` query stamps the
+  learnset pin and warns on a regulation mismatch; `--min-spe` reads base Speed and
   not Stat Points.
 - `meta speed-tiers` / `distribution`: computation against fixtures, using the
   existing `tools/meta/tests/fixtures/` pattern.
