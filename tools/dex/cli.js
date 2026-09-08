@@ -77,6 +77,9 @@ function main() {
     if (command === 'learnset') {
       const name = argv[1];
       if (!name) return fail('learnset: a species name is required, e.g. learnset "Mega Altaria" --move "Calm Mind"');
+      if (argv.includes('--move') && flagValue(argv, '--move') === undefined) {
+        return fail('learnset: --move requires a value, e.g. learnset "Altaria" --move "Calm Mind"');
+      }
       const mv = flagValue(argv, '--move');
       return ok(dex.learnset(name, mv));
     }

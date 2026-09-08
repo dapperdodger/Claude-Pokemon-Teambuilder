@@ -82,6 +82,28 @@ test('an unknown species is unknown, never illegal', () => {
 });
 
 // ---------------------------------------------------------------------------
+// A move axis "unknown" verdict: a move absent from the ENTIRE vendored
+// table (not just this species) must not be reported as illegal, because
+// that would read as "no Pokemon can learn this" when the real explanation
+// is that the move is newer than the learnset pin. Struggle is verified
+// (above, via load-learnsets) to appear in no learnset entry at all.
+// ---------------------------------------------------------------------------
+test('a move absent from the whole vendored table is unknown, never illegal', () => {
+  const r = dex.learnset('Altaria', 'Struggle');
+  assert.equal(r.verdict, 'unknown');
+  assert.notEqual(r.verdict, 'illegal');
+  assert.match(r.note, /not appear in ANY entry/i);
+});
+
+test('a move present elsewhere but missing for THIS species is still illegal', () => {
+  // Flagship regression case: Mega Altaria + Calm Mind must remain illegal.
+  // Calm Mind is a real, widely-learnable move (present in the table), so
+  // the "unknown" carve-out above must not swallow this case.
+  const r = dex.learnset('Mega Altaria', 'Calm Mind');
+  assert.equal(r.verdict, 'illegal');
+});
+
+// ---------------------------------------------------------------------------
 // Regression: the vendored learnset table contains bare placeholder entries —
 // `{}` with no `.learnset` key at all — for 5 ids: vivillonfancy,
 // vivillonpokeball, gourgeistsuper, polteageistantique, sinistchamasterpiece.
@@ -153,4 +175,8 @@ test('CLI: learnset without --move lists moves', () => {
 
 test('CLI: learnset with no species is an error', () => {
   assert.throws(() => execFileSync(process.execPath, [CLI, 'learnset'], { encoding: 'utf8', stdio: 'pipe' }));
+});
+
+test('CLI: learnset with --move and no value is an error, not a silent fall-through to list mode', () => {
+  assert.throws(() => execFileSync(process.execPath, [CLI, 'learnset', 'Incineroar', '--move'], { encoding: 'utf8', stdio: 'pipe' }));
 });

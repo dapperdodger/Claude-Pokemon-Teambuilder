@@ -168,6 +168,15 @@ test('a legal move produces no move-legality error', () => {
   assert.ok(!res.errors.some((e) => /cannot learn/i.test(e)), errorsOf(res));
 });
 
+test('an unlearnable-move error states "cannot learn" only once, not duplicated from verdict.note', () => {
+  const res = run([{ mon: 'Altaria', item: 'Leftovers', ability: 'Cloud Nine', nature: 'Calm', sp: '32 HP / 32 SpD / 2 Def', moves: 'Calm Mind / Protect / Tailwind / Roost' }]);
+  const err = res.errors.find((e) => /Calm Mind/.test(e) && /cannot learn/i.test(e));
+  assert.ok(err, errorsOf(res));
+  const occurrences = (err.match(/cannot learn/gi) || []).length;
+  assert.equal(occurrences, 1, `expected "cannot learn" exactly once, got: ${err}`);
+  assert.match(err, /Do not build a role around it/);
+});
+
 test('notChecked no longer claims move legality is unchecked', () => {
   const res = run([{ mon: 'Altaria', item: 'Leftovers', ability: 'Cloud Nine', nature: 'Calm', sp: '32 HP / 32 SpD / 2 Def', moves: 'Will-O-Wisp / Protect / Tailwind / Roost' }]);
   assert.ok(

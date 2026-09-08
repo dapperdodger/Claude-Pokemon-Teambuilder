@@ -235,7 +235,7 @@ function validateTeamText(text, opts = {}) {
       if (!v.MOVES_CHAMPIONS[mv]) continue; // already reported as a spelling error above
       const verdict = dex.learnset(battleName || row.species, mv);
       if (verdict.verdict === 'illegal') {
-        errors.push(`${label}: cannot learn "${mv}" in Champions. ${verdict.note}`);
+        errors.push(`${label}: cannot learn "${mv}" in Champions. Do not build a role around it.`);
       } else if (verdict.verdict === 'unknown') {
         learnsetUnknown.add(row.species);
       }

@@ -17,6 +17,27 @@
 const { getVendor } = require('../damage-calc/load-vendor');
 const { getLearnsets } = require('./load-learnsets');
 
+// The union of every move id appearing anywhere in the vendored learnset
+// table, across every species. Computed lazily and cached: a move id not in
+// this union has never been seen by the whole vendored snapshot, which means
+// it is most likely newer than the learnset pin (e.g. a new regulation's
+// move, added to the roster vendor before the learnset vendor catches up) —
+// not that every species in Champions is unable to learn it. That distinction
+// is the difference between "unknown" and "illegal" on the move axis.
+let allVendoredMoveIdsCache = null;
+function allVendoredMoveIds() {
+  if (!allVendoredMoveIdsCache) {
+    const learnsets = getLearnsets();
+    const all = new Set();
+    for (const entry of Object.values(learnsets)) {
+      if (!entry || !entry.learnset) continue;
+      for (const moveId of Object.keys(entry.learnset)) all.add(moveId);
+    }
+    allVendoredMoveIdsCache = all;
+  }
+  return allVendoredMoveIdsCache;
+}
+
 // The 18 real types. The vendored chart also carries Typeless/???/Stellar,
 // which are engine-internal and not answerable questions about a matchup.
 const TYPES = [
@@ -261,7 +282,24 @@ function learnset(species, moveName) {
     };
   }
 
-  const known = moves.includes(toId(moveName));
+  const moveId = toId(moveName);
+  const known = moves.includes(moveId);
+
+  if (!known && !allVendoredMoveIds().has(moveId)) {
+    return {
+      species,
+      resolvedId: id,
+      move: moveName,
+      verdict: 'unknown',
+      moveCount: moves.length,
+      note:
+        `"${moveName}" does not appear in ANY entry of the vendored Champions learnset table — not just this ` +
+        'species. This is NOT evidence the move is illegal for this species; it means the move itself is likely ' +
+        'newer than the learnset pin (e.g. added by a regulation this vendor has not caught up to). Verify live, ' +
+        'and check whether tools/dex/VENDOR_MANIFEST.md needs re-vendoring.',
+    };
+  }
+
   return {
     species,
     resolvedId: id,
