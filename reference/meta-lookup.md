@@ -215,9 +215,11 @@ or `"changed"` (upstream has moved since the pin — the manifest is stale;
 re-run `formats --write` before treating cited data as fresh). All three
 require both a status-checked fetch (a non-200 fetch now throws rather than
 letting a 404 body parse into a false PASS — see `tools/meta/formats.test.js`)
-and a real page-format match (the fetched page's own declared format code
-must equal the one requested, catching a redirect or alias serving different
-data).
+and a format-code verification. The per-Pokemon page independently normalizes
+its declared format code and verifies it against the requested code (case-insensitive),
+catching a redirect or alias serving different data. The index page echoes the
+requested code back as-is, so this check has less force there; both pages
+accept case-variant codes.
 
 This is a real, un-closed gap, not a rounding error: if `regulation.md` gets
 hand-edited carelessly at a rollover and `check` is never run afterward,
@@ -232,5 +234,6 @@ exactly this reason.
 
 | Date | Change | Source |
 |---|---|---|
+| 2026-09-08 | FIX 8 regression: format-code comparison is now case-insensitive. The index page echoes the requested code as-is; the per-Pokemon page normalizes to lowercase. Both now accept case-variant codes while still detecting genuinely different codes (redirects, aliases). Updated documentation to clarify that the page-format match check has strong force on the per-Pokemon page (independent normalization) and weaker force on the index page (echoes). | `tools/meta/{meta.js,formats.js}` and test cases in `tools/meta/tests/{meta.test.js,formats.test.js}` |
 | 2026-09-08 | Created file, documenting `tools/meta`'s command surface, the per-upstream metrics table, the per-population/no-blending rule, ETag-vs-Data-Date freshness, the Mega naming convention, and the `check`-only regulation-verification gap | `tools/meta/{cli.js,formats.js,meta.js,megas.js,fetch.js,validate.js,META_MANIFEST.md}`; `tools/meta/tests/fixtures/{ranked-raichu.md,ranked-raichu-mega-y.md,tournaments-garchomp.md,tournaments-index.md,filler-index.md}`; live `node tools/meta/cli.js` runs this session (`formats`, `usage`, `mon "Garchomp" --format championstournaments`, `mon "Staraptor-Mega"`, `check`) |
 | 2026-09-08 | Final whole-branch review fix wave: `check` and `report` now check HTTP status before parsing (a failed fetch used to parse as an all-null PASS); `check` now actually reads `META_MANIFEST.md` back and reports `pinnedEtag`/`etagStatus` (`unpinned`/`unchanged`/`changed`) — the ETag-drift capability this doc already claimed, now real instead of write-only; `mon`/`usage`/`formats`/`check` all assert the fetched page's own declared format code against what was requested; a Mega whose stub page slips past `megas.js`'s name matching now fails loudly instead of reporting `undefined%` fields as ordinary missing data; Mega name matching is case-insensitive | `tools/meta/{formats.js,meta.js,megas.js,validate.js,cli.js}` and their test files, this session's review-response task |

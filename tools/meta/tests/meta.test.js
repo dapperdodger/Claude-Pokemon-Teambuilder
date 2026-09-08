@@ -170,3 +170,27 @@ test('FIX 7: usageFromText happy path — current true, capabilities.usage true,
   assert.equal(out.rows[0].winRate.reason, null);
   assert.equal(out.rows[0].record, '13129-12414-39');
 });
+
+// FIX 8: case-variant format codes must be accepted (index echoes requested
+// casing; mon page normalizes to lowercase), but genuinely different codes
+// must still be rejected.
+test('REGRESSION: case-variant format code is accepted (index)', () => {
+  assert.doesNotThrow(() => meta.usageFromText(fx('ranked-index.md'), {
+    describe: formats.describe(fx('ranked-index.md'), 'BattleDataRegMBS3'),
+  }));
+});
+
+test('REGRESSION: case-variant format code is accepted (mon page)', () => {
+  assert.doesNotThrow(() => meta.monFromText(fx('ranked-raichu.md'), {
+    formatCode: 'BattleDataRegMBS3', capabilities: rankedCaps(),
+  }));
+});
+
+test('REGRESSION: genuinely different format code is still rejected (mon page)', () => {
+  assert.throws(
+    () => meta.monFromText(fx('ranked-raichu.md'), {
+      formatCode: 'someotherformat', capabilities: rankedCaps(),
+    }),
+    /requested format|declares format/i
+  );
+});

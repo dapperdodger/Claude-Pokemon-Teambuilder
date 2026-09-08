@@ -83,6 +83,21 @@ test('describe() accepts a matching expectedCode', () => {
   assert.doesNotThrow(() => formats.describe(fx('ranked-index.md'), 'battledataregmbs3'));
 });
 
+// FIX 8: case-variant format codes must be accepted (index echoes requested
+// casing; mon page normalizes to lowercase), but genuinely different codes
+// must still be rejected.
+test('REGRESSION: describe() accepts case-variant format code', () => {
+  assert.doesNotThrow(() => formats.describe(fx('ranked-index.md'), 'BattleDataRegMBS3'));
+  assert.doesNotThrow(() => formats.describe(fx('ranked-index.md'), 'BATTLEDATAREGMBS3'));
+});
+
+test('REGRESSION: describe() still rejects genuinely different format code', () => {
+  assert.throws(
+    () => formats.describe(fx('ranked-index.md'), 'some-other-format-code'),
+    /requested format|declares format/i
+  );
+});
+
 // REGRESSION: formats.report({write: true}) used to replace only the one-time
 // placeholder row. A second --write for the SAME format code found no match,
 // left the file byte-identical, and still reported `written` as success —

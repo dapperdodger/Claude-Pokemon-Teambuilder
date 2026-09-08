@@ -73,7 +73,7 @@ function describe(indexText, expectedCode) {
       `every metric column in them is a sentinel.`
     );
   }
-  if (expectedCode && info.code !== expectedCode) {
+  if (expectedCode && info.code.toLowerCase() !== expectedCode.toLowerCase()) {
     throw new Error(
       `Requested format "${expectedCode}" but the fetched index page declares format ` +
       `"${info.code}" — possible redirect or server-side alias serving different data.`

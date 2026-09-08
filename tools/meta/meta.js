@@ -27,8 +27,9 @@ function monFromText(text, opts) {
   // catches a redirect or a server-side alias silently serving a different
   // format, the same failure class as a stale Pikalytics slug. Only checked
   // when both sides are known; costs no extra request since Quick Info is
-  // already being parsed.
-  if (opts.formatCode && q.formatCode && q.formatCode !== opts.formatCode) {
+  // already being parsed. Comparison is case-insensitive since the page may
+  // normalize casing independently of the request.
+  if (opts.formatCode && q.formatCode && q.formatCode.toLowerCase() !== opts.formatCode.toLowerCase()) {
     throw new Error(
       `Requested format "${opts.formatCode}" but the fetched page declares format ` +
       `"${q.formatCode}" — possible redirect or server-side alias serving different data.`
