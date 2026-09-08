@@ -62,8 +62,8 @@ function main() {
     return;
   }
 
-  const { errors, warnings } = result;
-  if (errors.length === 0 && warnings.length === 0) return;
+  const { errors, warnings, notChecked } = result;
+  if (errors.length === 0 && warnings.length === 0 && (!notChecked || notChecked.length === 0)) return;
 
   const name = normalised.split('/').pop();
   const lines = [`TEAM VALIDATION — ${name}`];
@@ -72,7 +72,9 @@ function main() {
   if (errors.length) {
     lines.push('Fix the ERROR lines before presenting this team as finished — each one is a rule violation, not a preference.');
   }
-  lines.push('Not checked: move legality (learnsets are not in the local data — verify live).');
+  if (notChecked && notChecked.length) {
+    for (const n of notChecked) lines.push(`Not checked: ${n}`);
+  }
 
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {

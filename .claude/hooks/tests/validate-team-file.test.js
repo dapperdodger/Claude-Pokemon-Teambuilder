@@ -64,9 +64,29 @@ test('reports a team built for a past regulation as a warning', () => {
   });
 });
 
-test('always states that move legality was not checked', () => {
+test('surfaces genuine notChecked entries from result.notChecked', () => {
+  // Struggle passes the "is this a real Champions move" spelling check but
+  // appears in no learnset entry at all (Fix 2's whole-table union), so
+  // dex.learnset() returns 'unknown' for it and team.js records it in
+  // notChecked. The hook must surface that real unknown, not a hardcoded
+  // falsehood.
+  const struggler = Object.assign({}, CHOMP, { moves: 'Struggle / Protect' });
+  withTempTeam(teamBody([struggler]), (full) => {
+    const ctx = run(full);
+    assert.match(ctx, /Not checked: move legality for: Garchomp/);
+  });
+});
+
+test('says nothing about move legality when nothing is unchecked', () => {
+  // CHOMP's moves (Earthquake / Protect) are both fully resolvable against
+  // the vendored learnset table, and the Staraptorite item error is
+  // unrelated to move legality — so notChecked should be empty and the hook
+  // must not claim otherwise, and must not print the old hardcoded line
+  // that falsely says move legality is never checked.
   withTempTeam(teamBody([Object.assign({}, CHOMP, { item: 'Staraptorite' })]), (full) => {
-    assert.match(run(full), /Not checked: move legality/);
+    const ctx = run(full);
+    assert.doesNotMatch(ctx, /Not checked: move legality/);
+    assert.doesNotMatch(ctx, /learnsets are not in the local data/);
   });
 });
 
