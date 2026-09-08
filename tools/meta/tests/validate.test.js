@@ -56,3 +56,28 @@ test('a real tournament table passes the filler guard', () => {
   const rows = parse.parseUsageTable(fx('tournaments-index.md'));
   assert.doesNotThrow(() => validate.assertNotFiller(rows, 'championstournaments'));
 });
+
+test('alphabetical ordering with real metrics passes the filler guard', () => {
+  // This pins the AND condition: real data in alphabetical order must NOT throw.
+  // A small format could legitimately return too few Pokemon to violate alphabetical
+  // order by chance, but rejecting real data would be worse than the bug this guard
+  // exists to catch. The condition requires BOTH alphabetical AND sentinels, so a
+  // violation of either must pass.
+  const rows = [
+    { rank: 1, species: 'Abomasnow', usageRaw: '35.59%', winRateRaw: '51.397%', recordRaw: '100-50' },
+    { rank: 2, species: 'Blaziken', usageRaw: '28.12%', winRateRaw: '50.123%', recordRaw: '90-60' },
+    { rank: 3, species: 'Charizard', usageRaw: '22.44%', winRateRaw: '48.567%', recordRaw: '80-70' },
+  ];
+  assert.doesNotThrow(() => validate.assertNotFiller(rows, 'test-format-alphabetical-real'));
+});
+
+test('non-alphabetical ordering with all sentinel metrics passes the filler guard', () => {
+  // This pins the second half of the AND: real usage order (not alphabetical) with
+  // all sentinels must also NOT throw, because one condition being false is enough.
+  const rows = [
+    { rank: 1, species: 'Kingambit', usageRaw: 'N/A%', winRateRaw: 'N/A%', recordRaw: 'N/A' },
+    { rank: 2, species: 'Abomasnow', usageRaw: 'N/A%', winRateRaw: 'N/A%', recordRaw: 'N/A' },
+    { rank: 3, species: 'Blaziken', usageRaw: 'N/A%', winRateRaw: 'N/A%', recordRaw: 'N/A' },
+  ];
+  assert.doesNotThrow(() => validate.assertNotFiller(rows, 'test-format-non-alphabetical-sentinels'));
+});
