@@ -81,43 +81,67 @@ function activeRegulation() {
   }
 }
 
-async function checkVendor(v, active) {
-  if (!fs.existsSync(v.manifest)) {
-    return `VENDOR CHECK NOT RUNNING — ${v.manifestRel} not found. This is not a clean bill of health.`;
-  }
-  const pin = parsePin(fs.readFileSync(v.manifest, 'utf8'));
-  if (!pin.sha) {
-    return `VENDOR CHECK NOT RUNNING — could not read a "Commit: \`<sha>\`" line from ${v.manifestRel}. Restore that line.`;
-  }
-
-  const notes = [];
-
-  // Regulation drift is the more dangerous of the two checks: a pin taken
-  // under a previous regulation keeps serving complete, normal-looking data
-  // rather than failing, exactly like a stale Pikalytics slug.
-  if (pin.regulation && active && pin.regulation !== active) {
-    notes.push(
-      `REGULATION DRIFT — ${v.manifestRel} is pinned to regulation ${pin.regulation}, but the active regulation is ${active}. ` +
+// Pure: decides whether a pinned regulation has drifted from the active one.
+// Kept separate from checkVendor so the one behaviour that actually matters
+// here — the drift decision — can be exercised directly in tests without
+// touching the filesystem or network.
+function driftNote(manifestRel, pinRegulation, active) {
+  if (pinRegulation && active && pinRegulation !== active) {
+    return (
+      `REGULATION DRIFT — ${manifestRel} is pinned to regulation ${pinRegulation}, but the active regulation is ${active}. ` +
       'Move pools change at a regulation boundary (species are added AND existing pools are cut), so this data can report a move ' +
       'as legal that the current regulation removed. Re-vendor before trusting any legality answer.'
     );
   }
+  return null;
+}
 
-  const upstream = await fetchUpstreamSha(v.api);
-  if (!upstream) {
-    notes.push(
-      `VENDOR CHECK COULD NOT REACH UPSTREAM for ${v.manifestRel} — no network, or an unexpected API response. This is NOT a clean ` +
-      `bill of health; the vendored commit is ${pin.sha}. Compare manually against ${v.commits}.`
-    );
-  } else if (pin.sha !== upstream) {
-    notes.push(
-      `${v.label} is behind upstream.\nVendored: ${pin.sha}\nUpstream: ${upstream}\n` +
-      `Re-vendor per ${v.manifestRel}'s 'Re-vendoring' section if the gap looks significant. ` +
-      'If a regulation has just rolled over, re-vendoring is a required step of the vgc-regulation-transition skill, not optional.'
-    );
+// `fetchSha` is injectable (defaults to the real network fetcher) so tests
+// can exercise the full drift decision — including the surrounding
+// missing-manifest / missing-pin / unexpected-throw handling — without any
+// network call.
+async function checkVendor(v, active, fetchSha = fetchUpstreamSha) {
+  try {
+    if (!fs.existsSync(v.manifest)) {
+      return `VENDOR CHECK NOT RUNNING — ${v.manifestRel} not found. This is not a clean bill of health.`;
+    }
+    const pin = parsePin(fs.readFileSync(v.manifest, 'utf8'));
+    if (!pin.sha) {
+      return `VENDOR CHECK NOT RUNNING — could not read a "Commit: \`<sha>\`" line from ${v.manifestRel}. Restore that line.`;
+    }
+
+    const notes = [];
+
+    // Regulation drift is the more dangerous of the two checks: a pin taken
+    // under a previous regulation keeps serving complete, normal-looking data
+    // rather than failing, exactly like a stale Pikalytics slug.
+    const drift = driftNote(v.manifestRel, pin.regulation, active);
+    if (drift) notes.push(drift);
+
+    const upstream = await fetchSha(v.api);
+    if (!upstream) {
+      notes.push(
+        `VENDOR CHECK COULD NOT REACH UPSTREAM for ${v.manifestRel} — no network, or an unexpected API response. This is NOT a clean ` +
+        `bill of health; the vendored commit is ${pin.sha}. Compare manually against ${v.commits}.`
+      );
+    } else if (pin.sha !== upstream) {
+      notes.push(
+        `${v.label} is behind upstream.\nVendored: ${pin.sha}\nUpstream: ${upstream}\n` +
+        `Re-vendor per ${v.manifestRel}'s 'Re-vendoring' section if the gap looks significant. ` +
+        'If a regulation has just rolled over, re-vendoring is a required step of the vgc-regulation-transition skill, not optional.'
+      );
+    }
+
+    return notes.length ? notes.join('\n\n') : null;
+  } catch (err) {
+    // An unexpected failure (e.g. existsSync passes but readFileSync throws
+    // for a non-ENOENT reason) must still report rather than reject: this
+    // function is run in parallel with the other vendor's check, and a
+    // rejected promise here must never be able to take the other vendor's
+    // already-computed report down with it.
+    const message = err && err.message ? err.message : String(err);
+    return `VENDOR CHECK FAILED UNEXPECTEDLY for ${v.manifestRel}: ${message}. This is not a clean bill of health — treat this as an unknown state, not "current".`;
   }
-
-  return notes.length ? notes.join('\n\n') : null;
 }
 
 async function main() {
@@ -127,7 +151,7 @@ async function main() {
   if (body) emit(body);
 }
 
-module.exports = { parsePin, parseActiveRegulation };
+module.exports = { parsePin, parseActiveRegulation, driftNote, checkVendor };
 
 if (require.main === module) {
   main().catch(() => {}).finally(() => process.exit(0));
