@@ -48,9 +48,37 @@ function detectCapabilities(indexText) {
   };
 }
 
-function describe(indexText) {
+// `expectedCode`, when given, is the format code the caller actually asked
+// for (the URL it fetched). Pikalytics' own agent API can 200 with a body
+// for a different format than requested (a redirect, a server-side alias);
+// asserting the page's own declared code against what was requested catches
+// that the same way a stale Pikalytics slug is caught elsewhere in this
+// tool — silently trusting whatever came back is how that class of bug
+// slips through.
+function describe(indexText, expectedCode) {
   const info = parse.parseFormatInfo(indexText);
   const rows = parse.parseUsageTable(indexText);
+  // An empty/unparseable response (a 404 body, a changed upstream heading)
+  // must not be mistaken for a real format that simply lacks every metric.
+  // assertNotFiller below only fires when there ARE rows to inspect for the
+  // alphabetical-filler shape — zero rows short-circuits it entirely and
+  // would otherwise flow straight through to a complete-looking, all-false
+  // capability set.
+  if (!info.code || !rows.length) {
+    throw new Error(
+      `Could not parse a usable format from this response — ` +
+      `${!info.code ? 'no **Format Code** found' : 'no rows in the "Best 50 Pokemon by Usage" table'}. ` +
+      `This is a parse failure or an empty response (a 404 body, a changed upstream heading), not ` +
+      `a format that legitimately lacks a metric: a real format still has ranked rows even when ` +
+      `every metric column in them is a sentinel.`
+    );
+  }
+  if (expectedCode && info.code !== expectedCode) {
+    throw new Error(
+      `Requested format "${expectedCode}" but the fetched index page declares format ` +
+      `"${info.code}" — possible redirect or server-side alias serving different data.`
+    );
+  }
   validate.assertNotFiller(rows, info.code);
   const regulation = regulationOf(info.label, info.code);
   const active = activeRegulation();
@@ -91,12 +119,46 @@ function defaultFormatCode() {
   return stamped;
 }
 
+function manifestPath() {
+  return path.join(__dirname, 'META_MANIFEST.md');
+}
+
+// Pure text -> row parse, same style as upsertManifestRow: no I/O, so it's
+// directly testable with synthetic manifest text. Returns null when the
+// format code has never been written to the manifest — that "never pinned"
+// state must stay distinguishable from a pinned row whose etag happens to
+// match, or a caller can't tell "nothing to compare against" from "verified
+// unchanged".
+function readManifestRow(src, code) {
+  const codeCell = `\`${code}\``;
+  for (const line of src.split('\n')) {
+    if (!line.trim().startsWith('|')) continue;
+    if (!line.includes(codeCell)) continue;
+    const cells = line.split('|').map((c) => c.trim());
+    // | Format code | Regulation | Usage | Win rate | Record | ETag | Last checked |
+    return {
+      code: cells[1] ? cells[1].replace(/`/g, '') : null,
+      regulation: cells[2] || null,
+      etag: cells[6] || null,
+      checked: cells[7] || null,
+    };
+  }
+  return null;
+}
+
 // Disagreement between what Pikalytics itself declares as current and what
 // reference/regulation.md has stamped is a hard error, never a fallback:
 // silently preferring either source reintroduces the exact trap this repo has
 // been burned by (a previous regulation's slug keeps returning complete,
 // correctly-formatted, entirely wrong data forever).
-function check(fetchmod) {
+//
+// The manifest's whole stated purpose (META_MANIFEST.md's own header) is
+// answering "has upstream changed since we last cited it?" — which was
+// previously unanswerable, because nothing ever read the file back. `check`
+// is where that read belongs: it already fetches the live index page and
+// its ETag for the slug-agreement check, so comparing that ETag against the
+// pinned one costs nothing extra.
+function check(fetchmod, opts = {}) {
   const declared = declaredDefault(fetchmod);
   const stamped = stampedSlug();
   if (declared !== stamped) {
@@ -107,8 +169,29 @@ function check(fetchmod) {
     );
   }
   const idx = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${stamped}`);
-  const d = describe(idx.text);
-  return { slug: stamped, agrees: true, etag: idx.etag, ...d };
+  if (idx.status !== 200) {
+    throw new Error(
+      `Format "${stamped}" returned HTTP ${idx.status} at ${fetchmod.BASE}/ai/pokedex/${stamped} — ` +
+      `cannot verify agreement or ETag drift against a failed fetch.`
+    );
+  }
+  const d = describe(idx.text, stamped);
+
+  const mp = opts.manifestPath || manifestPath();
+  let manifestSrc = '';
+  try {
+    manifestSrc = fs.readFileSync(mp, 'utf8');
+  } catch {
+    manifestSrc = '';
+  }
+  const pinned = readManifestRow(manifestSrc, stamped);
+  const pinnedEtag = pinned ? pinned.etag : null;
+  // 'unpinned': this format code has never been written with `formats --write`.
+  // 'unchanged': the pinned ETag still matches what upstream serves right now.
+  // 'changed': upstream has moved since the pin — re-vendor/re-check before citing it.
+  const etagStatus = !pinnedEtag ? 'unpinned' : pinnedEtag === idx.etag ? 'unchanged' : 'changed';
+
+  return { slug: stamped, agrees: true, etag: idx.etag, pinnedEtag, etagStatus, ...d };
 }
 
 // Insert-or-update a manifest row keyed on the format code (the manifest is
@@ -149,7 +232,13 @@ function upsertManifestRow(src, code, row) {
 function report(fetchmod, opts = {}) {
   const code = defaultFormatCode();
   const idx = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${code}`);
-  const d = describe(idx.text);
+  if (idx.status !== 200) {
+    throw new Error(
+      `Format "${code}" returned HTTP ${idx.status} at ${fetchmod.BASE}/ai/pokedex/${code} — ` +
+      `refusing to report capabilities off a failed fetch.`
+    );
+  }
+  const d = describe(idx.text, code);
   const out = { ...d, etag: idx.etag, checked: new Date().toISOString().slice(0, 10) };
   if (opts.write) {
     const p = path.join(__dirname, 'META_MANIFEST.md');
@@ -164,5 +253,5 @@ function report(fetchmod, opts = {}) {
 
 module.exports = {
   activeRegulation, regulationOf, detectCapabilities, describe,
-  defaultFormatCode, report, check, upsertManifestRow,
+  defaultFormatCode, report, check, upsertManifestRow, readManifestRow,
 };

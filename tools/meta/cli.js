@@ -60,11 +60,11 @@ function main() {
       const megaInfo = megas.resolve(name);
       const lookup = megaInfo.isMega ? megaInfo.base : name;
       const idx = loadIndex(code);
-      const describe = formats.describe(idx.text);
+      const describe = formats.describe(idx.text, code);
       const r = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${code}/${encodeURIComponent(lookup)}`);
       if (r.status !== 200) return fail(`"${lookup}" returned HTTP ${r.status} in format ${code}`);
       const out = meta.monFromText(r.text, {
-        formatCode: code, capabilities: describe.capabilities, megaInfo, describe,
+        formatCode: code, capabilities: describe.capabilities, megaInfo, describe, lookupName: lookup,
       });
       out.species = name;
       out.regulation = describe.regulation;
@@ -74,7 +74,7 @@ function main() {
 
     if (command === 'usage') {
       const idx = loadIndex(code);
-      return ok(meta.usageFromText(idx.text, { describe: formats.describe(idx.text) }));
+      return ok(meta.usageFromText(idx.text, { describe: formats.describe(idx.text, code) }));
     }
 
     if (command === 'formats') {

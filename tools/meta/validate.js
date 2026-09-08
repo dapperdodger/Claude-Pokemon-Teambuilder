@@ -44,4 +44,35 @@ function assertNotFiller(rows, formatCode) {
   }
 }
 
-module.exports = { SENTINELS, isSentinel, toNumber, assertNotFiller };
+// A Mega/alt-form page generated straight from the dex (no ladder rows of
+// its own, e.g. tools/meta/tests/fixtures/ranked-raichu-mega-y.md) renders
+// its headline metrics AND its item list as sentinels at the same time. A
+// real entry never does both together — even an unpopular Pokemon with no
+// measured usage still has real numbers in at least one of winRate/record,
+// or a real (non-`undefined%`) item distribution. That compound signal is
+// the tell, mirroring assertNotFiller's alphabetical+all-sentinel detector
+// for a whole empty format.
+//
+// This exists as defense in depth: megas.js's input-name regex is the FIRST
+// line of protection against asking for a stub page, but it only catches
+// names megas.js recognises as Mega-shaped. A form it doesn't recognise (an
+// unvendored Mega, an alternate spelling, some other dex-generated stub)
+// would still slip a fetch through to a page shaped exactly like this one.
+function assertNotStub(quickInfo, itemPercentsRaw, label) {
+  const metricsSentinel = isSentinel(quickInfo.usage)
+    && isSentinel(quickInfo.winRate)
+    && isSentinel(quickInfo.record);
+  const itemsSentinel = itemPercentsRaw.length > 0 && itemPercentsRaw.every((raw) => isSentinel(raw));
+  if (metricsSentinel && itemsSentinel) {
+    throw new Error(
+      `"${label}" has no rows of its own in this format: Usage, Win Rate, Record and every ` +
+      `item are all sentinel values at once. This is a generated stub page (the typical shape ` +
+      `for an unresolved Mega form on Pikalytics' ladder upstream), not a real ladder entry — ` +
+      `the metric is not "unreported", the entity has no data behind it. If this is a Mega, ` +
+      `query the base species instead (see tools/meta/megas.js, which resolves Pikalytics' ` +
+      `own Mega names automatically).`
+    );
+  }
+}
+
+module.exports = { SENTINELS, isSentinel, toNumber, assertNotFiller, assertNotStub };

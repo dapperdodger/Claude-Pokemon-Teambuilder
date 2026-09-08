@@ -75,7 +75,7 @@ test('REGRESSION: an off-regulation format is flagged not-current', () => {
 test('REGRESSION: mon on an off-regulation format warns, in the SAME words usage uses', () => {
   const describeInfo = { code: 'x', label: 'l', regulation: 'M-A', current: false, capabilities: rankedCaps() };
   const monOut = meta.monFromText(fx('ranked-raichu.md'), {
-    formatCode: 'x', capabilities: rankedCaps(), describe: describeInfo,
+    formatCode: 'battledataregmbs3', capabilities: rankedCaps(), describe: describeInfo,
   });
   const usageOut = meta.usageFromText(fx('ranked-index.md'), { describe: describeInfo });
   assert.ok(monOut.warnings.some((w) => /previous regulation|not current/i.test(w)));
@@ -89,7 +89,7 @@ test('REGRESSION: mon on an off-regulation format warns, in the SAME words usage
 test('mon on the CURRENT format carries no off-regulation warning', () => {
   const describeInfo = { code: 'x', label: 'l', regulation: 'M-B', current: true, capabilities: rankedCaps() };
   const out = meta.monFromText(fx('ranked-raichu.md'), {
-    formatCode: 'x', capabilities: rankedCaps(), describe: describeInfo,
+    formatCode: 'battledataregmbs3', capabilities: rankedCaps(), describe: describeInfo,
   });
   assert.ok(!out.warnings.some((w) => /previous regulation|not current/i.test(w)));
 });
@@ -99,4 +99,74 @@ test('mon without a describe opt (existing callers) still returns a warnings arr
     formatCode: 'battledataregmbs3', capabilities: rankedCaps(),
   });
   assert.deepEqual(out.warnings, []);
+});
+
+// FIX 4: megaShare.ofSpecies used to rebuild {value, reason: null} by hand
+// instead of using row.percent directly, discarding the reason whenever the
+// stone's OWN percentage happened to be a sentinel — reproducing the exact
+// bare-null-with-no-reason hole toNumber() exists to close.
+test('REGRESSION: a Mega share preserves the stone\'s own sentinel reason, not a bare null', () => {
+  const text = [
+    '| Property | Value |',
+    '|----------|-------|',
+    '| **Usage** | N/A |',
+    '| **Win Rate** | 45.2% |',
+    '| **Record** | 100-90-2 |',
+    '',
+    '## Common Items',
+    '- **Weirdite**: undefined%',
+    '',
+  ].join('\n');
+  const out = meta.monFromText(text, {
+    capabilities: {},
+    megaInfo: { isMega: true, base: 'Weirdmon', stone: 'Weirdite', dexName: 'Mega Weirdmon' },
+  });
+  assert.equal(out.megaShare.ofSpecies.value, null);
+  assert.ok(out.megaShare.ofSpecies.reason, 'must carry a reason, not a bare null');
+});
+
+// FIX 2(b): the input-name regex in megas.js is the FIRST line of defense
+// against fetching a Mega's dex-generated stub page, not the only one. This
+// pins the second line: a fetched page whose metrics AND items are all
+// sentinel must be rejected outright, with a reason naming the real problem,
+// rather than reported as a real (if data-sparse) entry.
+test('REGRESSION: a stub page (all metrics AND all items sentinel) is rejected, not silently reported', () => {
+  assert.throws(
+    () => meta.monFromText(fx('ranked-raichu-mega-y.md'), {
+      formatCode: 'battledataregmbs3', capabilities: rankedCaps(), lookupName: 'Raichu-Mega-Y',
+    }),
+    /stub|no rows of its own/i
+  );
+});
+
+// FIX 8: mon already parses the fetched page's own declared format code via
+// parseQuickInfo and discarded it. A redirect or server-side alias serving a
+// different format than requested must be caught, the same class of trap as
+// a stale Pikalytics slug.
+test('REGRESSION: mon throws when the fetched page declares a different format than requested', () => {
+  assert.throws(
+    () => meta.monFromText(fx('ranked-raichu.md'), {
+      formatCode: 'someotherformat', capabilities: rankedCaps(),
+    }),
+    /requested format|declares format/i
+  );
+});
+
+// FIX 7: no offline test previously covered usageFromText's happy path —
+// current regulation, a format that DOES carry usage, real (non-sentinel)
+// numbers all the way through.
+test('FIX 7: usageFromText happy path — current true, capabilities.usage true, real numbers survive', () => {
+  const caps = formats.detectCapabilities(fx('tournaments-index.md'));
+  assert.equal(caps.usage, true, 'tournament format must carry usage for this to be a real happy-path test');
+  const out = meta.usageFromText(fx('tournaments-index.md'), {
+    describe: { code: 'championstournaments', label: 'l', regulation: 'M-B', current: true, capabilities: caps },
+  });
+  assert.equal(out.current, true);
+  assert.deepEqual(out.warnings, []);
+  assert.equal(out.rows[0].species, 'Kingambit');
+  assert.equal(out.rows[0].usage.value, 35.59);
+  assert.equal(out.rows[0].usage.reason, null);
+  assert.equal(out.rows[0].winRate.value, 51.397);
+  assert.equal(out.rows[0].winRate.reason, null);
+  assert.equal(out.rows[0].record, '13129-12414-39');
 });

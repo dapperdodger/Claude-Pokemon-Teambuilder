@@ -36,6 +36,7 @@ $ node tools/meta/cli.js check
 {
   "slug": "battledataregmbs3", "agrees": true,
   "etag": "W/\"459e-RBQlRZysoWXer8KGrQ0pAg\"",
+  "pinnedEtag": null, "etagStatus": "unpinned",
   "code": "battledataregmbs3", "regulation": "M-B", "current": true,
   "capabilities": { "usage": false, "winRate": true, "record": true }
 }
@@ -50,7 +51,10 @@ disagreement instead of guessing which source to trust. A stale stamp does
 not fail loudly on any of the other three commands — it keeps returning
 complete, normal-looking, wrong-regulation data forever (the exact trap this
 skill used to guard against by eyeballing a page label, now closed
-structurally as long as `check` actually runs first). If `check` throws,
+structurally as long as `check` actually runs first). `check` also reports
+`etagStatus` (`unpinned`/`unchanged`/`changed`) by comparing the live ETag
+against the one pinned by the last `formats --write` — `changed` means
+upstream moved since that pin; re-run `formats --write`. If `check` throws,
 resolve the disagreement by hand — reconcile `reference/regulation.md`'s
 stamp against what Pikalytics currently declares — before running anything
 else in this skill. Full detail: `reference/meta-lookup.md`'s "What `check`

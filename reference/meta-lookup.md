@@ -89,7 +89,11 @@ $ node tools/meta/cli.js mon "Garchomp" --format championstournaments
 **`check`** — the only command that cross-verifies the format code against
 what Pikalytics itself currently declares as default (via `/llms-full.txt`'s
 `**Format Code**`), rather than trusting the local stamp. Throws a hard error
-on disagreement instead of silently preferring either source. See
+on disagreement instead of silently preferring either source. It also reads
+`tools/meta/META_MANIFEST.md` back and compares the pinned ETag against the
+live one, returning `pinnedEtag` and `etagStatus` (`"unpinned"` — this format
+has never been written with `formats --write`; `"unchanged"`; or `"changed"`
+— upstream has moved since the pin). See
 ["What `check` verifies"](#what-check-verifies-that-the-other-commands-dont)
 below for why this matters and what it does *not* cover.
 
@@ -187,6 +191,34 @@ declared default `**Format Code**` against that same stamp, throwing a hard
 error on disagreement rather than silently preferring either source
 (`formats.js`'s `check()`).
 
+`check` is also the only command that reads `tools/meta/META_MANIFEST.md`
+back rather than only writing it. It compares the live ETag of the default
+format against the ETag pinned by the most recent `formats --write` for that
+same code, returning:
+
+```bash
+$ node tools/meta/cli.js check
+{
+  "slug": "battledataregmbs3", "agrees": true,
+  "etag": "W/\"459e-RBQlRZysoWXer8KGrQ0pAg\"",
+  "pinnedEtag": null, "etagStatus": "unpinned",
+  ...
+}
+```
+(live output, this session — `unpinned` because `formats --write` had never
+been run for this code)
+
+`etagStatus` is one of `"unpinned"` (this format code has never been written
+to the manifest — distinct from "checked and unchanged", since there is
+nothing to compare against), `"unchanged"` (the pin still matches upstream),
+or `"changed"` (upstream has moved since the pin — the manifest is stale;
+re-run `formats --write` before treating cited data as fresh). All three
+require both a status-checked fetch (a non-200 fetch now throws rather than
+letting a 404 body parse into a false PASS — see `tools/meta/formats.test.js`)
+and a real page-format match (the fetched page's own declared format code
+must equal the one requested, catching a redirect or alias serving different
+data).
+
 This is a real, un-closed gap, not a rounding error: if `regulation.md` gets
 hand-edited carelessly at a rollover and `check` is never run afterward,
 `mon`/`usage`/`formats` will keep serving confident, well-formed data for
@@ -201,3 +233,4 @@ exactly this reason.
 | Date | Change | Source |
 |---|---|---|
 | 2026-09-08 | Created file, documenting `tools/meta`'s command surface, the per-upstream metrics table, the per-population/no-blending rule, ETag-vs-Data-Date freshness, the Mega naming convention, and the `check`-only regulation-verification gap | `tools/meta/{cli.js,formats.js,meta.js,megas.js,fetch.js,validate.js,META_MANIFEST.md}`; `tools/meta/tests/fixtures/{ranked-raichu.md,ranked-raichu-mega-y.md,tournaments-garchomp.md,tournaments-index.md,filler-index.md}`; live `node tools/meta/cli.js` runs this session (`formats`, `usage`, `mon "Garchomp" --format championstournaments`, `mon "Staraptor-Mega"`, `check`) |
+| 2026-09-08 | Final whole-branch review fix wave: `check` and `report` now check HTTP status before parsing (a failed fetch used to parse as an all-null PASS); `check` now actually reads `META_MANIFEST.md` back and reports `pinnedEtag`/`etagStatus` (`unpinned`/`unchanged`/`changed`) — the ETag-drift capability this doc already claimed, now real instead of write-only; `mon`/`usage`/`formats`/`check` all assert the fetched page's own declared format code against what was requested; a Mega whose stub page slips past `megas.js`'s name matching now fails loudly instead of reporting `undefined%` fields as ordinary missing data; Mega name matching is case-insensitive | `tools/meta/{formats.js,meta.js,megas.js,validate.js,cli.js}` and their test files, this session's review-response task |

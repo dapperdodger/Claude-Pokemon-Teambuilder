@@ -22,6 +22,22 @@ function percentList(text, heading, reason) {
 function monFromText(text, opts) {
   const q = parse.parseQuickInfo(text);
   const caps = opts.capabilities || {};
+
+  // The page's own declared format must match what was actually requested —
+  // catches a redirect or a server-side alias silently serving a different
+  // format, the same failure class as a stale Pikalytics slug. Only checked
+  // when both sides are known; costs no extra request since Quick Info is
+  // already being parsed.
+  if (opts.formatCode && q.formatCode && q.formatCode !== opts.formatCode) {
+    throw new Error(
+      `Requested format "${opts.formatCode}" but the fetched page declares format ` +
+      `"${q.formatCode}" — possible redirect or server-side alias serving different data.`
+    );
+  }
+
+  const rawItems = parse.parsePercentList(text, 'Common Items');
+  validate.assertNotStub(q, rawItems.map((e) => e.percentRaw), opts.lookupName || opts.formatCode || 'this entry');
+
   const items = percentList(text, 'Common Items', 'not reported for this entry');
   const warnings = [];
   if (opts.describe && !opts.describe.current) warnings.push(offRegulationWarning(opts.describe));
@@ -47,7 +63,7 @@ function monFromText(text, opts) {
     out.megaShare = {
       stone: opts.megaInfo.stone,
       ofSpecies: row
-        ? { value: row.percent.value, reason: null }
+        ? row.percent
         : { value: null, reason: `stone does not appear in ${opts.megaInfo.base}'s item distribution for this format` },
       basis: `share of ${opts.megaInfo.base}'s item distribution`,
       note: `${opts.megaInfo.dexName} has no rows of its own; battles are logged against ${opts.megaInfo.base}.`,
