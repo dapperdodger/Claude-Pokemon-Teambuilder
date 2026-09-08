@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "node --test \"tools/damage-calc/tests/*.test.js\" \"tools/dex/tests/*.test.js\" \".claude/hooks/tests/*.test.js\""
+    "test": "node --test \"tools/damage-calc/tests/*.test.js\" \"tools/dex/tests/*.test.js\" \"tools/meta/tests/*.test.js\" \".claude/hooks/tests/*.test.js\""
   },
   "repository": {
     "type": "git",
