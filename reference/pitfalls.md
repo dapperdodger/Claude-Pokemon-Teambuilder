@@ -14,6 +14,7 @@ caught — live in `docs/case-studies.md`, deliberately out of the hot path.
 - [Current-mechanic correction](#current-mechanic-correction)
 - [Weather effects on move power](#weather-effects-on-move-power)
 - [Doubles-specific traps](#doubles-specific-traps)
+- [Ladder rules are not tournament rules](#ladder-rules-are-not-tournament-rules)
 - [Build assumption trap](#build-assumption-trap)
 - [Team-finalization checks](#team-finalization-checks)
 - [Changelog](#changelog)
@@ -25,6 +26,7 @@ Scan this. Follow a link only where the answer isn't already obviously fine.
 **Before trusting data**
 - [ ] Threat list built from Pikalytics' *team-level* pages, not per-mon usage rank or a WebSearch summary → [Data source pitfalls](#data-source-pitfalls)
 - [ ] Ladder usage is not tournament results — don't treat one as the other
+- [ ] Ladder and tournament **rules** differ too, not just their data — Open Team Sheets are tournament-only → [Ladder vs tournament rules](#ladder-rules-are-not-tournament-rules)
 - [ ] Co-occurrence is a frequency signal, not proof of synergy
 - [ ] An empty Pikalytics stats panel is a loading artifact, not absence of usage — check the curated Champions Teams section instead
 
@@ -171,6 +173,31 @@ table; these are no longer documentation problems, they are tool calls.
   synergy" claims should specify which 4-Pokémon subset the synergy applies
   to, not assume all 6 are always on the field.
 
+## Ladder rules are not tournament rules
+
+The repo already warns that ladder *usage data* is not tournament *results*.
+The same split applies to the **rules themselves**, and it is easier to miss
+because a single source often describes both without saying which it means.
+
+- **Open Team Sheets (OTS) are a tournament convention, not a game mode.**
+  Under OTS the opponent gets moves, items and abilities before the match.
+  The in-game ranked ladder does not do this — there, Team Preview is the only
+  pre-match information.
+- Corrected 2026-09-07 after stating flatly that "Champions uses Open Team
+  Sheets" while evaluating a two-Mega bring-6 plan. The source quoted to
+  support it literally began *"In tournaments, ..."* — the qualifier was in
+  the citation and got dropped in the summary. **When a rules source opens
+  with "in tournaments", that scope is load-bearing; carry it into the claim.**
+- This flips conclusions rather than just shading them. Any plan whose value
+  comes from **hidden information** — two Mega Stones so the opponent cannot
+  predict which Mega arrives, an unexpected item, a surprise set — is worth
+  materially more on ladder than in an OTS tournament. Ask which the team is
+  for before pricing that kind of tech.
+- Secondary Champions sites describe Team Preview as showing held items
+  (Mega Stones included) with no ladder/tournament distinction drawn. That is
+  **not** confirmed against an official rules source, so treat item
+  visibility on the ladder as unresolved rather than settled either way.
+
 ## Build assumption trap
 
 - **Don't assume a "generic" Stat Point (SP)/item/ability spread.** A
@@ -296,3 +323,4 @@ checking whether a new mistake repeats an old one.
 | 2026-09-07 | Softened the "don't default to old EV terminology" bullet to add a user-requested standing method: proportionally scale an inherited EV spread's ratio onto the 66-point SP budget as a starting point (not a fixed conversion factor) when no real current-game SP allocation is available — see `methodology.md`'s new "Converting an inherited EV spread" bullet for the exact steps | User instruction, given while reviewing a Milotic Coil/Hypnosis set quoted in EV terms (252/104/88/64) |
 | 2026-09-07 | Restructured for scannability: added a Contents list and a Quick checklist at the top, and moved the 220-line "Process-lesson case studies" section plus two long data-source narratives to `docs/case-studies.md`. No trap was removed — the rules stayed, the incident narratives left the decision-time hot path. Type-chart and Mega-ability traps now point at `tools/dex/cli.js` instead of a markdown file | docs/specs/2026-09-07-repo-reorganization.md |
 | 2026-09-07 | Replaced dangling `CLAUDE.md rule N` references in live prose with named pointers (changelog rows keep their numbers as historical statements). The mechanically checkable team-finalization traps — duplicate items, SP budget, item/ability legality, Mega abilities — are now enforced by `node tools/dex/cli.js team` and a PostToolUse hook rather than by this checklist alone | docs/specs/2026-09-07-workflow-audit.md |
+| 2026-09-07 | Added "Ladder rules are not tournament rules" plus a Quick-checklist line, after asserting Champions uses Open Team Sheets when OTS is tournament-only — the ChampDex passage cited as support began "In tournaments," and that scope was dropped. Matters because it inverts the value of hidden-information plans (e.g. carrying two Mega Stones so the opponent cannot predict the Mega): worth more on ladder, near-worthless under OTS. Item visibility in ladder Team Preview left explicitly unresolved — secondary sites say items show, no official rules source found | User correction this session; ChampDex format-rules and team-preview guides; multiple searches failed to surface an official ladder/tournament rules split |

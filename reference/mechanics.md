@@ -47,6 +47,41 @@ opening the file at the moment of stating it.
 - **Some Mega Evolutions have an ability fixed by the Mega itself, overriding whatever ability the base Pokémon had selected before evolving.** Confirmed examples: Mega Swampert is always **Swift Swim** once evolved (Torrent/Damp are only its pre-Mega options and stop mattering the instant it Mega Evolves); Mega Raichu-Y is always **No Guard** (Lightning Rod is pre-Mega only); Mega Delphox is always **Levitate** (Blaze/Magician are pre-Mega only — the payoff is real: Levitate cancels Fire/Psychic's normal 2x Ground weakness, so Garchomp's Earthquake, the single most-used move in the M-B metagame, goes from a guaranteed OHKO to 0 damage); Mega Blastoise is always **Mega Launcher** (Torrent/Rain Dish are pre-Mega only — Mega Launcher boosts pulse/aura moves 1.5x, directly buffing a real Dark Pulse/Aura Sphere set, see the "ability's power-boosted move category" bullet in `pitfalls.md`); Mega Charizard Y is always **Drought** (Blaze/Solar Power are pre-Mega only — sets real Sun, which also boosts its own Fire STAB 1.5x on top of the Mega's own bulk-behind-Sun playstyle). Mega Tyranitar is a case where this doesn't change anything visibly — it keeps Sand Stream either way — which is a coincidence, not a rule that Megas keep their ability by default. Mega Staraptor is always **Contrary** (Intimidate/Reckless are pre-Mega only) — confirmed via `POKEDEX_CHAMPIONS["Mega Staraptor"].ab`; also changes typing to **Fighting/Flying** (base Staraptor is Normal/Flying), which matters independently of the ability fix — e.g. Ghost-type moves whiff on the Normal-typed base form but hit the Fighting/Flying Mega normally, see `pitfalls.md`'s 2026-09-04 case study.
 - **Don't trust a usage-stat page's "ability" breakdown at face value for a Mega-capable species** — it may be reporting the pre-evolution ability selection (what % of players picked Torrent vs Damp before evolving), not the fixed battle-time ability the Mega actually has. Check whether the specific Mega fixes its ability before reading a Torrent/Damp/Swift-Swim-style percentage split as "the ability it fights with." Confirmed recurring in practice: live Pikalytics/WebFetch summaries for Mega Delphox and Mega Blastoise both reported the pre-Mega ability (Blaze, Rain Dish) as "the actual ability used" across real champion teams — the page is showing the team-sheet's pre-Mega selection, not the fixed post-Mega battle ability. Cross-check the vendored `POKEDEX_CHAMPIONS["Mega <Species>"].ab` field (or a source that explicitly discusses the Mega's fixed ability) rather than trusting a usage-stat page's per-Mega ability column directly.
 
+## Terrain mechanics
+
+- **Grassy Terrain** (Rillaboom's Grassy Surge, or the move) — verified
+  2026-09-07 against the vendored calc via `--terrain "Grassy"` (exact
+  capitalisation, same silent-no-op risk as `--weather`):
+  - Grass-type moves **+30%** in Gen 9 — down from 50% in earlier gens, so
+    don't quote the old number.
+  - Earthquake / Bulldoze / Magnitude **halved** against grounded targets.
+    Measured: Adamant 32 Atk Garchomp Earthquake vs 32 HP / 16 Def Incineroar
+    goes 134-158 (66-78% of 202 HP) → **66-80 (33-40%)** under Grassy Terrain.
+  - End-of-turn heal of **1/16 max HP** to every grounded Pokémon — including
+    the **opponent's**. On a slow, low-damage core this is a real cost, not a
+    pure upside.
+  - **The +30% applies to both sides too.** Measured: Modest 32 SpA Sinistcha
+    Matcha Gotcha vs 32 HP / 12 SpD Milotic goes 74-90 (37-45%) → **98-116
+    (49-57%)** under your own Grassy Terrain — a 3HKO becomes a 2HKO. Setting
+    terrain next to a Water-type deepens its worst weakness.
+
+## Ability interactions (non-Mega)
+
+- **No Guard does NOT help your ally.** "All moves used by or against the
+  ability holder cannot miss" means exactly that: in doubles the effect covers
+  the No Guard Pokemon and anything targeting it, and nothing else. Verified
+  2026-09-07. So pairing Mega Raichu Y (No Guard, Mega-fixed) with an ally
+  running a shaky-accuracy move — Hypnosis, Focus Blast, Stone Edge — does
+  **not** make the ally's move hit. It is also symmetrical and therefore a
+  real liability on a frail holder: every opposing low-accuracy move becomes
+  guaranteed against it.
+- **Coil's accuracy boost applies to status moves, including Hypnosis.**
+  Accuracy stages use `(3 + stage) / 3` from Gen 5 on, so Hypnosis' 60% goes
+  to **80% at +1** and **100% at +2**. That accuracy engine, not the Attack
+  boost, is what a Coil set on a special attacker is actually buying — Coil
+  raises Atk/Def/accuracy and touches **no** special stat, so it does nothing
+  about special threats.
+
 ## Item mechanics
 - **Focus Sash only protects against the first hit of a multi-hit move.** Sash (and Sturdy) check "would this hit knock the holder from full HP to 0" independently per strike — after the first strike of a 2-5 hit move (or a fixed-2-hit move like Dual Wingbeat) brings the holder to 1 HP, the holder is no longer at full HP, so the second strike faints it normally. A Focus Sash holder does NOT reliably survive a multi-hit spread move the way it survives a single-target nuke — relevant any time a Focus Sash set (e.g. Whimsicott) is being counted on to tank a hit from something running a 2-hit move like Dual Wingbeat (Mega Staraptor).
 
@@ -70,3 +105,5 @@ opening the file at the moment of stating it.
 | 2026-09-07 | Added a "check this before stating any Mega's ability" lead-in after misreporting Mega Raichu Y's ability as Lightning Rod (93.7% usage split) when this section already named it as fixed to No Guard since 2026-07-10 — the web usage split was pre-Mega base Raichu's ability selection, not the Mega's. Confirmed again via direct vendor read. User asked what should change structurally, not just factually, since the correct fact being already written here didn't prevent the mistake | `tools/damage-calc/vendor/pokedex.js` direct read (`POKEDEX_CHAMPIONS["Mega Raichu Y"]`: `ab: "No Guard"`); see `pitfalls.md`'s matching 2026-09-07 case study and `CLAUDE.md` rule 13 |
 | 2026-09-07 | "Mega Evolution ability changes" is no longer the primary lookup path — `node tools/dex/cli.js mon "Mega <Species>"` returns the fixed ability plus the pre-Mega ability the usage pages report, and a PostToolUse hook injects the same on any WebFetch/WebSearch showing a Mega beside ability percentages. The list below stays as the record of confirmed cases and their real payoffs; the grep instruction it used to carry was removed because it did not work cleanly against the pretty-printed vendor JSON | docs/specs/2026-09-07-repo-reorganization.md |
 | 2026-09-07 | Replaced a dangling `CLAUDE.md rule 13` reference with a named pointer to CLAUDE.md's lookup table | docs/specs/2026-09-07-workflow-audit.md |
+| 2026-09-07 | Added a "Terrain mechanics" section with Grassy Terrain's verified numbers (Gen 9 Grass boost is +30%, not the older 50%; EQ/Bulldoze/Magnitude halved; 1/16 end-of-turn heal to *both* sides; the Grass boost also applies to the opponent). Prompted by evaluating a Milotic/Rillaboom/Incineroar core, where the terrain both halves Garchomp Earthquake into Incineroar and turns Sinistcha Matcha Gotcha into Milotic from a 3HKO into a 2HKO — the file had no terrain entry at all | `tools/damage-calc/cli.js --terrain "Grassy"` before/after runs this session; Bulbapedia Grassy Terrain (move) and Pokemon Database for the Gen 9 +30% figure |
+| 2026-09-07 | Added an "Ability interactions (non-Mega)" section recording that No Guard covers only its holder and moves targeting it — allies get no benefit — and that Coil's accuracy boost does apply to Hypnosis (60% -> 80% at +1, 100% at +2, via the Gen 5+ (3+stage)/3 accuracy formula). Both came up evaluating a Coil/Hypnosis Milotic alongside Mega Raichu Y, where the tempting inference is that the Mega's No Guard makes the ally's Hypnosis reliable. It does not | Bulbapedia No Guard (Ability) and Accuracy/Stat modifier pages via live search; `dex mon "Mega Raichu Y"` for the Mega-fixed No Guard |
