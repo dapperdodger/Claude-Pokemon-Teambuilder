@@ -51,3 +51,20 @@ test('parsePercentList returns an empty array for an absent section', () => {
   // Floette-Eternal legitimately has no Featured Teams; absence is not an error.
   assert.deepEqual(parse.parsePercentList(fx('ranked-raichu.md'), 'No Such Section'), []);
 });
+
+test('parseUsageTable reads the ranked index', () => {
+  const rows = parse.parseUsageTable(fx('ranked-index.md'));
+  assert.equal(rows.length, 50);
+  assert.equal(rows[0].rank, 1);
+  assert.equal(rows[0].species, 'Garchomp');
+  assert.equal(rows[0].usageRaw, 'N/A%');       // ladder carries no usage
+  assert.equal(rows[0].winRateRaw, '48.05%');
+  assert.equal(rows[0].recordRaw, '10833-11714-41');
+});
+
+test('parseUsageTable reads real usage from the tournament index', () => {
+  const rows = parse.parseUsageTable(fx('tournaments-index.md'));
+  assert.equal(rows[0].species, 'Kingambit');
+  assert.equal(rows[0].usageRaw, '35.59%');
+  assert.equal(rows[0].winRateRaw, '51.397%');
+});

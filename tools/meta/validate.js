@@ -23,4 +23,25 @@ function toNumber(raw, reason) {
   return { value: Number(m[1]), reason: null };
 }
 
-module.exports = { SENTINELS, isSentinel, toNumber };
+// An empty dataset renders as the full dex in alphabetical order with sentinels
+// in every metric column. It is well-formed, rank-ordered, and completely
+// meaningless. Detect it structurally: real usage tables are ordered by usage,
+// so alphabetical ordering combined with no real metric anywhere is the tell.
+function assertNotFiller(rows, formatCode) {
+  if (!rows.length) return;
+  const names = rows.map((r) => r.species);
+  const sorted = [...names].sort((a, b) => a.localeCompare(b));
+  const alphabetical = names.every((n, i) => n === sorted[i]);
+  const noRealMetric = rows.every(
+    (r) => isSentinel(r.usageRaw) && isSentinel(r.winRateRaw) && isSentinel(r.recordRaw)
+  );
+  if (alphabetical && noRealMetric) {
+    throw new Error(
+      `Format "${formatCode}" returned an empty dataset: ${rows.length} rows in alphabetical ` +
+      `order with no real metric in any column (first: ${names[0]}). The page renders as a ` +
+      `complete usage table but contains no data. Do not use this format.`
+    );
+  }
+}
+
+module.exports = { SENTINELS, isSentinel, toNumber, assertNotFiller };

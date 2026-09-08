@@ -64,4 +64,24 @@ function parsePercentList(text, heading) {
   return out;
 }
 
-module.exports = { parseQuickInfo, parseFormatInfo, sectionBody, parsePercentList };
+// | Rank | Pokemon | Usage % | Win Rate | Record | Web Page | AI Data |
+function parseUsageTable(text) {
+  const body = sectionBody(text, 'Best 50 Pokemon by Usage');
+  if (body === null) return [];
+  const out = [];
+  for (const line of body.split('\n')) {
+    const m = line.match(/^\|\s*(\d+)\s*\|\s*\*\*(.+?)\*\*\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|/);
+    if (m) {
+      out.push({
+        rank: Number(m[1]),
+        species: m[2],
+        usageRaw: m[3],
+        winRateRaw: m[4],
+        recordRaw: m[5],
+      });
+    }
+  }
+  return out;
+}
+
+module.exports = { parseQuickInfo, parseFormatInfo, sectionBody, parsePercentList, parseUsageTable };
