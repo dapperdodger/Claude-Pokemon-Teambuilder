@@ -72,8 +72,38 @@ be ten separate calls), and `optimize-bulk-cli.js` for the minimum HP/Def/SpD
 that survives a named attack. Needs Node.js.
 
 ```bash
-npm test   # 144 tests across the tools and the hooks
+npm test   # 257 tests across the tools and the hooks
 ```
+
+### `tools/meta/` — live usage and win-rate lookups
+
+Reads Pikalytics' documented **agent API** (`/ai/pokedex/...` — plain
+structured markdown, not the human site) rather than scraping or hand-
+fetching a page. Prints JSON, same shape as `tools/dex`.
+
+```bash
+node tools/meta/cli.js check                          # slug agreement + ETag drift — run this first
+node tools/meta/cli.js usage --format championstournaments
+node tools/meta/cli.js mon "Garchomp" --format championstournaments
+node tools/meta/cli.js mon "Staraptor-Mega"            # resolves to base + real Mega item share
+node tools/meta/cli.js formats --write                 # capabilities + manifest row
+```
+
+Which metrics a format carries is a property of its **upstream**, not of
+Pikalytics: the official ranked ladder has win rate and W-L-D records but no
+usage weighting at all; RK9/Limitless tournament team sheets have both. The
+tool reports capabilities per format instead of assuming them, and refuses a
+format that renders as a complete, alphabetically-ordered, all-`N/A` dataset
+rather than serving it as real data.
+
+**Opposite Mega convention from `tools/damage-calc`**: pass `"Staraptor-Mega"`
+(or the bare `Staraptor`) here, not `"Mega Staraptor"` — see
+`reference/pitfalls.md`'s paired entity-convention entry.
+
+Only `check` cross-verifies the format code against what Pikalytics itself
+currently declares as default; `mon`/`usage`/`formats` trust the stamp in
+`reference/regulation.md` — see `reference/meta-lookup.md` for the full
+command surface and why `check` has to run first.
 
 ## Reference files
 
@@ -87,6 +117,7 @@ npm test   # 144 tests across the tools and the hooks
 | [`reference/methodology.md`](reference/methodology.md) | Process rules: how to evaluate a matchup, how to solve an SP spread, when damage isn't the right lens, live meta lookup. |
 | [`reference/mechanics.md`](reference/mechanics.md) | Priority, speed modifiers, item mechanics, Mega ability changes — things typing alone doesn't capture. |
 | [`reference/damage-calc.md`](reference/damage-calc.md) | Damage-calc CLI usage, flags, and its real caveats. |
+| [`reference/meta-lookup.md`](reference/meta-lookup.md) | `tools/meta` CLI usage: command surface, per-upstream metrics table, per-population/ETag freshness rules, and the Mega naming convention. |
 | [`reference/team-refining.md`](reference/team-refining.md) | The narrower refine-an-existing-team workflow. |
 
 The 18×18 type chart markdown was **removed** — `tools/dex/cli.js type`

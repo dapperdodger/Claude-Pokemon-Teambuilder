@@ -55,6 +55,8 @@ them is the wrong answer. Full detail and sourcing in
 | Damage rolls | `node tools/damage-calc/cli.js …` — see `reference/damage-calc.md` |
 | Minimum SP to survive a named attack | `node tools/damage-calc/optimize-bulk-cli.js …` |
 | Is this team legal? (items, SP, abilities, regulation) | `node tools/dex/cli.js team teams/<file>.md` |
+| What is *used* in the current meta | `node tools/meta/cli.js usage` |
+| A Pokémon's real moves/items/abilities distribution | `node tools/meta/cli.js mon "<Species>"` |
 
 Every claim in that table has been stated wrong from recall in this repo
 **while the correct answer was already written down here**. The command costs
@@ -74,6 +76,13 @@ Two specifics the tool exists to settle:
   notable" — and the 18-type list is yours to get wrong. `--vs-mon` also reads
   the defender's typing from the dex rather than taking it from your recall,
   which matters most for Megas that retype.
+- **A Mega goes into `tools/damage-calc` and `tools/meta` by opposite
+  names.** Damage-calc needs the dex form, `"Mega Staraptor"`. Meta needs
+  Pikalytics' own form, `"Staraptor-Mega"` (or the bare `Staraptor`) — its
+  ladder upstream logs the Mega as a held item on the base species, so there
+  is no separate Mega entry to query. Each tool fails confidently, not
+  loudly, when given the other's convention. See `reference/pitfalls.md`'s
+  paired entry.
 
 Non-Mega Pokémon usually have 2-3 legal abilities. `dex mon` returns one
 option, not the only one — check the real preset for the specific set being
@@ -183,4 +192,5 @@ Scope: legality only. The data carries no level-up/TM/egg distinction.
 | Process and reasoning rules | `reference/methodology.md` |
 | Priority, speed modifiers, item and ability mechanics | `reference/mechanics.md` |
 | Damage-calc CLI usage and its caveats | `reference/damage-calc.md` |
+| Meta usage-lookup CLI usage and its caveats | `reference/meta-lookup.md` |
 | Why a rule exists — the incident behind it | `docs/case-studies.md` |

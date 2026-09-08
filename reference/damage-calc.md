@@ -34,6 +34,18 @@ the wrong-weather halved-power penalty instead of full power. See
 `pitfalls.md`'s "Weather effects on move power" section for a
 confirmed before/after example.
 
+**A Mega must be passed as `"Mega <Species>"`, not base + stone.** Passing
+`--defender Staraptor --defender-item Staraptorite` silently computes the
+**base** Pokémon, not the Mega — confirmed via a real wrong claim this
+produced (Ceruledge's Ghost moves reported as 0 damage to base Staraptor,
+which nobody actually fields; Mega Staraptor is Fighting/Flying and takes
+normal damage). `tools/meta` (`reference/meta-lookup.md`) needs the
+**opposite** convention for the same Mega — `"Staraptor-Mega"` or the bare
+`Staraptor` — because its ladder upstream logs the Mega as a held item on
+the base species. Two tools, opposite entity rules, both failing
+confidently when crossed — see `pitfalls.md`'s "Data source pitfalls"
+section for the full paired write-up.
+
 Prints structured JSON including the exact matched Pokémon/move records used
 (base stats, computed stats, type, power) so a wrong name match is visible
 in the output, not hidden. Real, current-regulation data — not recalled
@@ -283,3 +295,4 @@ especially once terrain/weather/abilities start stacking.
 | 2026-08-19 | Added case-sensitivity warning for `--weather`/`--terrain` — a lowercase `sun` silently fails to match the vendored engine's exact-capitalized weather strings, dropping both the same-type STAB weather boost and (for Solar Beam/Solar Blade) applying the wrong-weather halved-power penalty, with no error raised. Caught while evaluating Mega Charizard Y's Heat Wave/Solar Beam against a user's team | Side-by-side `--weather Sun` vs `--weather sun` comparison this session; root cause confirmed in `tools/damage-calc/vendor/damage_MASTER.js`'s weather-string checks |
 | 2026-09-07 | Added a Contents list; hook paths updated for the move to `.claude/hooks/`; type-effectiveness pointer now names `node tools/dex/cli.js type` rather than the deleted markdown chart | docs/specs/2026-09-07-repo-reorganization.md |
 | 2026-09-07 | Added `sweep-cli.js` for running many matchups in one invocation (checking one move against N threats was N separate calls, i.e. N agent round-trips). Replaced a dangling `CLAUDE.md rule 3` reference with a named pointer | docs/specs/2026-09-07-workflow-audit.md |
+| 2026-09-08 | Added an explicit Mega-naming note and cross-reference to `pitfalls.md`'s paired entity-convention entry, after documenting the new `tools/meta` CLI (`reference/meta-lookup.md`), which requires the opposite convention (`"Staraptor-Mega"`/bare species) for the same Mega this tool needs as `"Mega Staraptor"` | `tools/meta/megas.js`; `reference/pitfalls.md`'s 2026-09-04 Mega Staraptor case study |

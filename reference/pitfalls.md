@@ -45,6 +45,7 @@ Scan this. Follow a link only where the answer isn't already obviously fine.
 - [ ] Ladder and tournament **rules** differ too, not just their data — Open Team Sheets are tournament-only → `vgc-format.md`, and [why this keeps happening](#ladder-rules-are-not-tournament-rules)
 - [ ] Co-occurrence is a frequency signal, not proof of synergy
 - [ ] An empty Pikalytics stats panel is a loading artifact, not absence of usage — check the curated Champions Teams section instead
+- [ ] A Mega goes into `tools/damage-calc` and `tools/meta` by **opposite** names (`"Mega Staraptor"` vs. `"Staraptor-Mega"`/bare `Staraptor`) — the wrong one doesn't error, it silently returns the wrong entity → [Data source pitfalls](#data-source-pitfalls)
 
 **Before trusting a number**
 - [ ] `--weather` passed with the **exact capitalised** string, including when the *opponent* sets it (silently no-ops on a mismatch) → [Weather](#weather-effects-on-move-power)
@@ -127,6 +128,46 @@ table; these are no longer documentation problems, they are tool calls.
   Pikalytics wrong-slug trap logged above: complete, correctly-formatted,
   wrong. Check the session-start hook's regulation-drift line before trusting
   a legality answer near a rollover.
+- **`tools/damage-calc` and `tools/meta` use OPPOSITE naming conventions for
+  the same Mega, and each fails confidently — not loudly — when given the
+  other's form.** `tools/damage-calc` needs the dex name `"Mega Staraptor"`;
+  passing the base species plus its stone (`--defender Staraptor
+  --defender-item Staraptorite`) silently computes the **base** Pokémon
+  instead (already logged above, 2026-09-04 — Ceruledge's Ghost moves were
+  reported as doing 0 to the base form nobody actually fields). `tools/meta`
+  needs the opposite: the bare species `Staraptor`, or Pikalytics' own
+  hyphenated form `Staraptor-Mega`, because the ladder's upstream logs every
+  battle against the **base** species with the Mega encoded as a held item —
+  there is no separate "Mega Staraptor" population to query. Passing the
+  Mega name straight through to the wrong tool doesn't error on either side:
+  confirmed live this session, `node tools/meta/cli.js mon "Staraptor-Mega"`
+  correctly resolves and reports `megaShare` of 94.5% (real, from the
+  Staraptite share of Staraptor's item distribution), but the equivalent raw
+  per-entity Pikalytics page a naive lookup would hit instead — vendored as
+  `tools/meta/tests/fixtures/ranked-raichu-mega-y.md` — is a real, well-formed
+  page with `undefined%` in every field (`Common Abilities` "No Guard:
+  undefined%", `Usage`/`Win Rate`/`Record` all `N/A`) and no move or teammate
+  data at all, for a Pokémon that is genuinely the large majority of its base
+  species' real usage. Two tools in one repo, opposite entity rules, both
+  producing a real-looking answer for the wrong entity. Rule: pass whichever
+  name the tool actually documents (`"Mega <Species>"` to damage-calc,
+  `"<Species>-Mega[-X/Y/Z]"` or the bare species to meta) — never assume one
+  tool's convention carries over to the other. → `reference/damage-calc.md`
+  and `reference/meta-lookup.md` both cross-reference this entry; the
+  resolution logic lives in `tools/meta/megas.js`.
+- **A real Pikalytics format can return a complete, well-formed, rank-ordered
+  50-row usage table that is pure filler.** `gen9championsvgc2026regmbbo3`
+  (vendored as `tools/meta/tests/fixtures/filler-index.md`) renders as the
+  entire Pokédex in alphabetical order — Abomasnow, Absol, Aegislash,
+  Aerodactyl, Aggron, ... — with `N/A` in every usage/win-rate/record column,
+  and the page's own "Format Notes" prose confidently asserts the format "is
+  currently led by Abomasnow" (simply the alphabetically-first row). Same
+  shape as the stale-slug trap above: complete, normal-looking, wrong.
+  `tools/meta` detects this structurally — alphabetical species order plus no
+  real metric anywhere — and refuses the format outright
+  (`validate.assertNotFiller`) rather than serving the table. Treat that
+  refusal as the tool doing its job, not a bug to route around by retrying a
+  nearby-looking format code.
 
 ## Current-mechanic correction
 
@@ -402,3 +443,4 @@ checking whether a new mistake repeats an old one.
 | 2026-09-08 | Added "a shell loop that greps a CLI's JSON is a data source, and a silent one" after auditing the loop used to build three defensive profiles. `2>&1 \| grep \| head` discards the CLI's error text *and* its non-zero exit, so a misspelled type printed a blank row while the pipeline exited 0 — indistinguishable from a real "nothing notable" result, the same shape as a missed immunity. Fixed at the source rather than by documenting the workaround: `dex type --vs-mon <Species>` now returns all 18 types in one call | Direct reproduction this session (`Watr` -> blank row, pipeline exit 0, while the CLI itself exits 1); `tools/dex/tests/defensive-profile.test.js` |
 | 2026-09-08 | Added "a constraint every good team already builds around is not a discovery". Had been surfacing the one-Mega-per-battle limit as a premise-breaking objection to registering two Mega Stones — a legal, standard configuration used by four of M-B's top six archetypes by team count (~66% weighted). The limit is real and the base-forme drop-off is real; presenting them as a reason the plan does not work was not. Verified rather than conceded: Pikalytics M-B S3 team-usage pulled this session | User correction; pikalytics.com/team-usage and /pokedex (format label confirmed "Regulation Set M-B S3"); rule and data now in `reference/vgc-format.md` |
 | 2026-09-08 | Reverted the item-visibility "resolution" from earlier the same day. The 2026-09-08 row above promoted "held items are visible on ladder" from unresolved to **[consensus]** on one third-party guide plus search summaries quoting that same guide — repetition counted as independent agreement. That guide also discusses open team lists on the same page, so its item line may describe tournaments, which would make this the third instance of the same scope drop. User (who plays the ladder) reports items are not visible; Serebii's Ranked Battle pages say nothing about Team Preview contents; no official source exists either way. Back to **[unresolved]** in `vgc-format.md`, with a standing rule not to assert it in either direction | User correction; re-checked champdex.com/guides/team-preview, serebii.net/pokemonchampions/rankedbattle.shtml and /preview/, plus searches that returned only the same single source |
+| 2026-09-08 | Added the paired `tools/damage-calc`/`tools/meta` Mega entity-convention trap (opposite required names, each tool fails confidently on the other's form) and the alphabetical-empty-dataset trap, plus a Quick-checklist line for the Mega case — both surfaced while building and documenting `tools/meta` | `tools/meta/megas.js`, `tools/meta/validate.js`; `tools/meta/tests/fixtures/ranked-raichu-mega-y.md` and `filler-index.md`; live `node tools/meta/cli.js mon "Staraptor-Mega"` this session (94.5% real megaShare) |
