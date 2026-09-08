@@ -63,4 +63,70 @@ function describe(indexText) {
   };
 }
 
-module.exports = { activeRegulation, regulationOf, detectCapabilities, describe };
+const LLMS = '/llms-full.txt';
+
+// The site declares its own current default format; this is what makes the
+// slug programmatically checkable instead of a manual habit.
+function declaredDefault(fetchmod) {
+  const r = fetchmod.get(fetchmod.BASE + LLMS);
+  if (r.status !== 200) throw new Error(`llms-full.txt returned HTTP ${r.status}`);
+  const m = r.text.match(/\*\*Format Code\*\*:\s*`([^`]+)`/);
+  if (!m) throw new Error('llms-full.txt no longer declares a **Format Code**');
+  return m[1];
+}
+
+function stampedSlug() {
+  try {
+    const p = path.join(repoRoot(), 'reference', 'regulation.md');
+    const m = fs.readFileSync(p, 'utf8').match(/^\*\*Pikalytics slug: (\S+)\*\*/m);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+function defaultFormatCode() {
+  const stamped = stampedSlug();
+  if (!stamped) throw new Error('reference/regulation.md has no **Pikalytics slug:** stamp');
+  return stamped;
+}
+
+// Disagreement between what Pikalytics itself declares as current and what
+// reference/regulation.md has stamped is a hard error, never a fallback:
+// silently preferring either source reintroduces the exact trap this repo has
+// been burned by (a previous regulation's slug keeps returning complete,
+// correctly-formatted, entirely wrong data forever).
+function check(fetchmod) {
+  const declared = declaredDefault(fetchmod);
+  const stamped = stampedSlug();
+  if (declared !== stamped) {
+    throw new Error(
+      `Slug disagreement: llms-full.txt declares "${declared}", reference/regulation.md ` +
+      `stamps "${stamped}". One is stale. Resolve it by hand — silently preferring either ` +
+      `reintroduces the wrong-regulation-data trap.`
+    );
+  }
+  const idx = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${stamped}`);
+  const d = describe(idx.text);
+  return { slug: stamped, agrees: true, etag: idx.etag, ...d };
+}
+
+function report(fetchmod, opts = {}) {
+  const code = defaultFormatCode();
+  const idx = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${code}`);
+  const d = describe(idx.text);
+  const out = { ...d, etag: idx.etag, checked: new Date().toISOString().slice(0, 10) };
+  if (opts.write) {
+    const p = path.join(__dirname, 'META_MANIFEST.md');
+    const row = `| \`${d.code}\` | ${d.regulation} | ${d.capabilities.usage} | ${d.capabilities.winRate} | ${d.capabilities.record} | ${idx.etag} | ${out.checked} |`;
+    const src = fs.readFileSync(p, 'utf8').replace(/\| _\(populated.*\n/, row + '\n');
+    fs.writeFileSync(p, src);
+    out.written = p;
+  }
+  return out;
+}
+
+module.exports = {
+  activeRegulation, regulationOf, detectCapabilities, describe,
+  defaultFormatCode, report, check,
+};
