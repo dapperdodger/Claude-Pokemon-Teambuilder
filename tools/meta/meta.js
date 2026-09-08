@@ -36,7 +36,9 @@ function monFromText(text, opts) {
     out.resolvedFrom = opts.megaInfo.base;
     out.megaShare = {
       stone: opts.megaInfo.stone,
-      ofSpecies: row ? row.percent.value : null,
+      ofSpecies: row
+        ? { value: row.percent.value, reason: null }
+        : { value: null, reason: `stone does not appear in ${opts.megaInfo.base}'s item distribution for this format` },
       basis: `share of ${opts.megaInfo.base}'s item distribution`,
       note: `${opts.megaInfo.dexName} has no rows of its own; battles are logged against ${opts.megaInfo.base}.`,
     };

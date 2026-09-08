@@ -34,9 +34,23 @@ test('REGRESSION: a Mega gets base stats plus its stone share', () => {
     megaInfo: { isMega: true, base: 'Raichu', stone: 'Raichunite Y', dexName: 'Mega Raichu Y' },
   });
   assert.equal(out.megaShare.stone, 'Raichunite Y');
-  assert.equal(out.megaShare.ofSpecies, 60.5);
+  assert.equal(out.megaShare.ofSpecies.value, 60.5);
+  assert.equal(out.megaShare.ofSpecies.reason, null);
   assert.equal(out.resolvedFrom, 'Raichu');
   assert.match(out.megaShare.basis, /item distribution/i);
+});
+
+test('REGRESSION: Mega with stone not in item distribution reports reason, not bare null', () => {
+  // Alakazite does not appear in ranked-raichu.md's item list.
+  const out = meta.monFromText(fx('ranked-raichu.md'), {
+    formatCode: 'battledataregmbs3',
+    capabilities: rankedCaps(),
+    megaInfo: { isMega: true, base: 'Raichu', stone: 'Alakazite', dexName: 'Mega Alakazam' },
+  });
+  assert.equal(out.megaShare.stone, 'Alakazite');
+  assert.equal(out.megaShare.ofSpecies.value, null);
+  assert.ok(out.megaShare.ofSpecies.reason);
+  assert.match(out.megaShare.ofSpecies.reason, /does not appear/i);
 });
 
 test('REGRESSION: Common Teammates undefined% never becomes a number', () => {
