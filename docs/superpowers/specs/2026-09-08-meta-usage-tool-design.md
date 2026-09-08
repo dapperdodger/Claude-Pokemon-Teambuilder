@@ -32,13 +32,14 @@ Pikalytics publishes a documented agent API — `llms-full.txt`, `/ai/pokedex/
 It aggregates three different upstreams, and **which metrics exist is a
 property of the upstream, not of the site**:
 
-| Format | Upstream | Usage % | Win rate / record |
-|---|---|---|---|
-| `battledataregmbs3` (current ranked) | HOME Battle Stadium (official ladder) | **absent** | present |
-| `championstournaments` | RK9 / Limitless team sheets | present | present |
-| `championspreview` | Showdown | present | absent |
-| `gen9championsvgc2026regmabo3` | Showdown, **M-A** | present | absent |
-| `gen9ou`, `gen9vgc2025regi` | Showdown | present | absent |
+| Format | Upstream | Regulation | Usage % | Win rate / record |
+|---|---|---|---|---|
+| `battledataregmbs3` (current ranked) | HOME Battle Stadium (official ladder) | M-B | **absent** | present |
+| `championstournaments` | RK9 / Limitless team sheets | current | present | present |
+| `championspreview` | Showdown | pre-launch? | present | absent |
+| `gen9championsvgc2026regmabo3` | Showdown | **M-A (previous)** | present | absent |
+| `gen9vgc2025regi` | Showdown | **VGC 2025 — different game** | present | absent |
+| `gen9ou` | Showdown | n/a — singles | present | absent |
 
 Consequences that shape the whole design:
 
@@ -71,12 +72,59 @@ empty dataset rendered as a full answer. Nothing about the response shape
 signals this. It is the same failure as a stale Pikalytics slug and a stale
 learnset pin: complete, normal-looking, wrong.
 
-### Known holes to encode, not paper over
+## Key finding 2: the ladder aggregates by base species; the Mega is an item
+
+A Mega has no rows of its own. Battles are logged against the **base species**,
+and which Mega it was is encoded in the held item:
+
+```
+Raichu            Win 48.411%  Record 3527-3759-14
+                  Items: Raichunite Y 60.5% | Raichunite X 18.2% | Focus Sash 14.7%
+
+Raichu-Mega-Y     Win N/A      Record N/A
+                  Items: Raichunite Y undefined%     <- synthetic stub
+                  Abilities: No Guard undefined%
+```
+
+`Raichu` + `Raichunite Y` **is** Mega Raichu Y. The `-Mega-` page is generated
+from the dex — it knows the fixed ability and the stone — but has nothing
+behind it. Querying it returns a page that reads as "barely used" for a
+Pokémon that is 60.5% of all Raichu.
+
+Staraptor shows the stakes: **Staraptite 94.5%**. Nearly every Staraptor on
+ladder is Mega Staraptor, and the current approach surfaces none of that while
+`Staraptor-Mega` looks unused.
+
+**So this is not a missing metric — it is the wrong entity.** The tool must:
+
+- **Resolve a Mega query to base species + stone automatically**, and return a
+  composed answer: the base's win rate and record, plus that stone's share of
+  the base's item distribution as the Mega's share of the species.
+- **Never report a `-Mega-` stub's `undefined%` as a usage figure**, and never
+  let an empty Mega page read as low usage. Requesting a Mega by name is a
+  resolvable query, not an error — but answering it from the stub is a bug.
+- State the composition in the output, so the number's derivation is visible:
+  `"megaShare": { "stone": "Staraptite", "ofSpecies": 94.5, "basis": "share of
+  Staraptor's item distribution" }`.
+
+**This is the exact inverse of the damage calculator's convention**, where a
+Mega must be passed as `"Mega <Species>"` and passing base + stone silently
+computes the base form (`reference/pitfalls.md`, 2026-09-04). Two tools in one
+repo with opposite entity rules is itself a trap; both must be documented
+together, in both files.
+
+Note this does **not** apply uniformly across formats — `championstournaments`
+reports Mega names in its cores and archetypes, because team sheets name the
+Mega directly. Entity handling is therefore part of per-format capability
+detection, not a global rule.
+
+## Known holes to encode, not paper over
 
 | Symptom | Where | Meaning |
 |---|---|---|
 | `Usage: N/A` | ladder formats | source carries no usage — a fact, not an error |
-| `Win Rate: N/A`, `Record: N/A` | **all Megas**, and Showdown formats | genuinely absent |
+| `Win Rate: N/A`, `Record: N/A` | Showdown formats | genuinely absent |
+| `Win Rate: N/A` + `undefined%` items | **`-Mega-` pages on ladder formats** | **wrong entity — resolve to base + stone** |
 | `undefined%` ×6 | Common Teammates, every page | upstream bug |
 | `high%` | format FAQ prose | unfilled template placeholder |
 | `Data Date: 2026-05` | **every format**, incl. VGC 2025 | global constant, not freshness |
@@ -119,6 +167,33 @@ tools/meta/
 3. **Disagreement is an error, not a fallback.** Report both and exit non-zero;
    the human decides which is stale. Silently preferring either reintroduces
    the trap.
+
+### Regulation provenance — every format is stamped, and off-regulation data is gated
+
+The supported-format list mixes regulations *and eras*: `gen9championsvgc2026regmabo3`
+is the previous regulation, `gen9vgc2025regi` is a different game entirely, and
+`championspreview` looks pre-launch. Any of them returns clean, confident,
+well-formed numbers. Treating one as a current signal is the stale-slug failure
+wearing a different name, and the multi-population usage design makes it
+*easier* to hit, since it invites pulling several formats at once.
+
+So every format in the registry carries a `regulation` field, resolved from its
+label and the format code and pinned in `META_MANIFEST.md`. Then:
+
+- **Commands default to formats whose regulation matches the active one** in
+  `reference/regulation.md`. Off-regulation formats are excluded from
+  multi-population results rather than quietly averaged in.
+- **Requesting one explicitly is allowed and must be labelled.** `--format
+  gen9championsvgc2026regmabo3` works, but every value it produces is stamped
+  `"regulation": "M-A", "current": false` in the output, and a top-level
+  `warnings` entry names it as previous-regulation carryover. Reading last
+  cycle's data deliberately is legitimate — the `vgc-regulation-transition`
+  skill's early-phase guidance explicitly calls for it. Doing so *unknowingly*
+  is the failure.
+- **A format whose regulation cannot be determined is not usable** without an
+  explicit override, and says so.
+- `meta check` reports when the active regulation has moved and the pinned
+  format regulations no longer include it — the rollover signal for this tool.
 
 ### Capability detection
 
@@ -170,7 +245,18 @@ Following `tools/dex`, TDD, real fixtures rather than mocks:
 - **Regression: the alphabetical-filler dataset is rejected.** Fixture from
   `gen9championsvgc2026regmbbo3`.
 - **Regression: `undefined%` teammates never reach output as a number.**
-- **Regression: a Mega's `N/A` win rate is reported as null-with-reason, not 0.**
+- **Regression: a Mega query resolves to base + stone.** `Raichu-Mega-Y`
+  returns Raichu's win rate and record plus `megaShare` 60.5% from Raichunite
+  Y — never the stub's `undefined%`, and never a "low usage" reading.
+- **Regression: `Staraptor-Mega` reports 94.5%**, the case where the stub is
+  most misleading — a near-universal Mega whose own page looks unused.
+- **Regression: the ladder/damage-calc entity conventions do not get crossed.**
+  Passing `"Mega Staraptor"` to the damage calc and `Staraptor` to meta are
+  both correct; the tests assert each tool rejects or resolves the other's form
+  rather than silently answering about the wrong entity.
+- **Regression: an off-regulation format is excluded by default and labelled
+  when explicit.** `gen9championsvgc2026regmabo3` (M-A) and `gen9vgc2025regi`
+  (different game) must never appear in a default multi-population result.
 - **Regression: usage requested from the ladder format returns the reason, not
   an empty value.**
 - Slug disagreement between `llms-full.txt` and `regulation.md` exits non-zero.
@@ -187,7 +273,13 @@ Following `tools/dex`, TDD, real fixtures rather than mocks:
 - `CLAUDE.md` — a row in the command table; usage claims come from the tool.
 - `reference/methodology.md`, `reference/regulation.md` — replace hand-fetch
   URL patterns with the command.
-- `reference/pitfalls.md` — the alphabetical-filler case as a data-source trap.
+- `reference/pitfalls.md` — the alphabetical-filler case as a data-source trap,
+  **and the two-tools-opposite-entity-rules trap**: the damage calculator needs
+  `"Mega <Species>"` and silently computes the base form if given base + stone;
+  meta needs the base species and returns an empty stub if given the Mega name.
+  Both directions produce confident wrong answers, so both belong in one entry.
+- `reference/damage-calc.md` — the counterpart cross-reference, so the rule is
+  reachable from whichever tool the reader started at.
 
 ## Scope fence
 
@@ -225,9 +317,13 @@ decisions worth surfacing, not gaps.
 
 ## Sequencing
 
-1. Capture fixtures and write the failing parser tests.
+1. Capture fixtures and write the failing parser tests — including the
+   alphabetical-filler format, a `-Mega-` stub, and its base species.
 2. `fetch.js` + ETag manifest.
-3. `formats.js` capability detection, `meta formats` / `meta check`.
-4. `meta mon`, `meta usage`.
-5. `meta cores`, `meta teams`.
-6. Documentation and skill rewrite.
+3. `formats.js`: capability detection **and regulation stamping**, then
+   `meta formats` / `meta check`.
+4. Mega entity resolution (base + stone → composed answer), then `meta mon`.
+5. `meta usage`, per-population with the off-regulation gate.
+6. `meta cores`, `meta teams`.
+7. Documentation and skill rewrite, including the paired entity-convention
+   entry in `pitfalls.md` and `damage-calc.md`.
