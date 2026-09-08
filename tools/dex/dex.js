@@ -312,4 +312,44 @@ function learnset(species, moveName) {
   };
 }
 
-module.exports = { TYPES, canonicalType, typeEffectiveness, mon, move, legal, isMegaForme, learnset, resolveLearnsetId, toId };
+// Full defensive profile: every one of the 18 attacking types against this
+// defender, grouped by multiplier. The single-pair `typeEffectiveness` answers
+// "is X effective against Y"; this answers "what is Y weak to", which is the
+// question actually being asked whenever a defender is evaluated.
+//
+// Enumerating TYPES here rather than in a caller's loop is the point: a caller
+// that lists the types itself can omit one, and the type it omits is usually
+// the 0x — an immunity absent from a profile reads as "not a threat".
+function defensiveProfile(defendingInputs) {
+  if (!Array.isArray(defendingInputs) || defendingInputs.length === 0) {
+    throw new Error('At least one defending type is required (--vs Grass, or --vs Rock,Flying)');
+  }
+  if (defendingInputs.length > 2) {
+    throw new Error(`A Pokemon has at most 2 types; got ${defendingInputs.length}: ${defendingInputs.join(', ')}`);
+  }
+  const defending = defendingInputs.map(canonicalType);
+
+  const byMultiplier = new Map();
+  for (const attacking of TYPES) {
+    const { multiplier } = typeEffectiveness(attacking, defending);
+    if (!byMultiplier.has(multiplier)) byMultiplier.set(multiplier, []);
+    byMultiplier.get(multiplier).push(attacking);
+  }
+
+  const tiers = [...byMultiplier.entries()]
+    .sort(([a], [b]) => b - a)
+    .map(([multiplier, types]) => ({ multiplier, verdict: verdictFor(multiplier), types }));
+  const typesAt = (m) => (tiers.find((t) => t.multiplier === m) || { types: [] }).types;
+
+  return {
+    defending,
+    tiers,
+    // Promoted out of `tiers` deliberately. These two are the verdicts that
+    // flip a conclusion, and a reader should not have to scan for them.
+    immunities: typesAt(0),
+    quadWeaknesses: typesAt(4),
+    typesCovered: tiers.reduce((acc, t) => acc + t.types.length, 0),
+  };
+}
+
+module.exports = { TYPES, canonicalType, typeEffectiveness, defensiveProfile, mon, move, legal, isMegaForme, learnset, resolveLearnsetId, toId };

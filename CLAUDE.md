@@ -42,7 +42,8 @@ them is the wrong answer. Full detail and sourcing in
 
 | Claim | Command |
 |---|---|
-| Type effectiveness: resistance, weakness, immunity, coverage | `node tools/dex/cli.js type <Type> --vs <Def1[,Def2]>` |
+| Type effectiveness: one attacker vs one defender | `node tools/dex/cli.js type <Type> --vs <Def1[,Def2]>` |
+| **What is X weak to** — the whole defensive profile | `node tools/dex/cli.js type --vs-mon "<Species>"` |
 | A Mega's ability, typing, or base stats | `node tools/dex/cli.js mon "Mega <Species>"` |
 | Item or ability legality in Champions | `node tools/dex/cli.js legal --item "<Item>"` |
 | Move power, type, spread/priority flags | `node tools/dex/cli.js move "<Move>"` |
@@ -63,6 +64,12 @@ Two specifics the tool exists to settle:
   labels which is which.
 - For a dual-type defender, pass both types in one call and let the tool
   multiply. Reasoning from one half is how a 0x immunity gets missed.
+- **Never loop this CLI over a list of types and grep its JSON.** Ask the
+  profile question in one call instead. In a shell loop a bad type prints a
+  blank line and the pipeline still exits 0, so an error looks like "nothing
+  notable" — and the 18-type list is yours to get wrong. `--vs-mon` also reads
+  the defender's typing from the dex rather than taking it from your recall,
+  which matters most for Megas that retype.
 
 Non-Mega Pokémon usually have 2-3 legal abilities. `dex mon` returns one
 option, not the only one — check the real preset for the specific set being

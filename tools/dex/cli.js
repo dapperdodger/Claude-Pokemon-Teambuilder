@@ -15,7 +15,9 @@ const dex = require('./dex');
 
 const USAGE = `Usage:
   node tools/dex/cli.js mon <Species>            types, base stats, ability (Mega-fixed flag)
-  node tools/dex/cli.js type <Type> --vs <A[,B]> combined type effectiveness
+  node tools/dex/cli.js type <Type> --vs <A[,B]> one attacker vs one defender
+  node tools/dex/cli.js type --vs <A[,B]>        defender's full 18-type profile
+  node tools/dex/cli.js type --vs-mon <Species>  same, typing read from the dex
   node tools/dex/cli.js move <Move>              bp, type, category, spread/priority flags
   node tools/dex/cli.js legal --item <Item>      Champions item-pool legality
   node tools/dex/cli.js legal --ability <Ability>
@@ -26,7 +28,12 @@ const USAGE = `Usage:
 Examples:
   node tools/dex/cli.js mon "Mega Raichu Y"
   node tools/dex/cli.js type Electric --vs Grass
-  node tools/dex/cli.js type Fire --vs Rock,Flying`;
+  node tools/dex/cli.js type Fire --vs Rock,Flying
+  node tools/dex/cli.js type --vs-mon "Mega Froslass"
+
+"What is X weak to" is one call, not a shell loop over 18 types: use
+--vs-mon (or --vs) with no attacking type. Never loop this CLI and grep its
+JSON — a bad type then prints a blank line and the pipeline still exits 0.`;
 
 function fail(message) {
   process.stdout.write(JSON.stringify({ error: message }, null, 2) + '\n');
@@ -60,12 +67,39 @@ function main() {
     }
 
     if (command === 'type') {
-      const attacking = argv[1];
-      if (!attacking) return fail('type: an attacking type is required, e.g. type Electric --vs Grass');
       const vs = flagValue(argv, '--vs');
-      if (!vs) return fail('type: --vs is required, e.g. type Fire --vs Rock,Flying (comma-separated for a dual type)');
-      const defending = vs.split(',').map((t) => t.trim()).filter(Boolean);
-      return ok(dex.typeEffectiveness(attacking, defending));
+      const vsMon = flagValue(argv, '--vs-mon');
+      if (vs !== undefined && vsMon !== undefined) {
+        return fail('type: pass --vs or --vs-mon, not both');
+      }
+
+      // Resolve the defender first. --vs-mon exists so the defender's typing
+      // is read out of the dex instead of being typed in from recall — the
+      // failure mode a Mega makes likely (Mega Staraptor retypes to
+      // Fighting/Flying), and one that silently corrupts every row at once.
+      let defending;
+      let defendingFrom;
+      if (vsMon !== undefined) {
+        if (!vsMon) return fail('type: --vs-mon requires a species, e.g. type --vs-mon "Mega Froslass"');
+        const defender = dex.mon(vsMon);
+        defending = defender.types;
+        defendingFrom = defender.name;
+      } else if (vs !== undefined) {
+        if (!vs) return fail('type: --vs requires a value, e.g. type Fire --vs Rock,Flying');
+        defending = vs.split(',').map((t) => t.trim()).filter(Boolean);
+      } else {
+        return fail('type: --vs <A[,B]> or --vs-mon <Species> is required, e.g. type Fire --vs Rock,Flying');
+      }
+
+      // A leading non-flag argument means the single-pair question. Without
+      // one, the question is the defender's whole profile.
+      const attacking = argv[1] && !argv[1].startsWith('--') ? argv[1] : undefined;
+      if (attacking) return ok(dex.typeEffectiveness(attacking, defending));
+
+      const { defending: resolved, ...profile } = dex.defensiveProfile(defending);
+      return ok(defendingFrom
+        ? { defending: resolved, defendingFrom, ...profile }
+        : { defending: resolved, ...profile });
     }
 
     if (command === 'move') {

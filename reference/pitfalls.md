@@ -51,6 +51,7 @@ Scan this. Follow a link only where the answer isn't already obviously fine.
 - [ ] Spread-move damage **not** manually multiplied by 0.75 — the CLI already applies it → [Doubles traps](#doubles-specific-traps)
 - [ ] Multi-hit move: `min`/`max` is one hit, not the total (`isVariableMultiHit`)
 - [ ] Attacker's realistic held item included in the worst case
+- [ ] Tool output read as JSON, **not** grepped out of a shell loop — a bad input goes blank instead of failing → [Data source pitfalls](#data-source-pitfalls)
 
 **Before trusting a build**
 - [ ] SP spread solved for the *minimum* per stat, not defaulted to 32/32/2
@@ -103,6 +104,19 @@ table; these are no longer documentation problems, they are tool calls.
   low-presence signal. For a specific curated entry's full moveset, read the
   JSON API directly: `https://www.pikalytics.com/api/p/<date>/<format>-<id>/<species>`.
   → `docs/case-studies.md`
+- **A shell loop that greps a CLI's JSON is a data source, and a silent one.**
+  `for t in …; do node tools/dex/cli.js type "$t" --vs "Fire,Dark" 2>&1 |
+  grep -o '"multiplier":[^,}]*'; done` looks thorough and fails invisibly:
+  `2>&1 | grep | head` discards both the error text and the exit status, so a
+  misspelled type prints a **blank line** while the pipeline exits 0. In a
+  defensive profile a blank row reads as "nothing notable" — the same shape as
+  a missed 0x immunity. Two further problems ride along: the list of 18 types
+  is yours to get wrong (five were silently absent from the run that prompted
+  this entry), and the defender's typing is passed in **from recall**, so one
+  wrong Mega typing corrupts every row at once. Ask the tool the question you
+  actually have — `dex type --vs-mon "<Species>"` returns all 18 types grouped
+  by multiplier, in one call, with immunities and 4x weaknesses as named keys.
+  The same rule generalises: read a tool's structured output, don't scrape it.
 - **A stale learnset pin serves plausible wrong data, it does not fail.**
   Learnsets are regulation-variant — at the M-B boundary upstream changed by
   +2019/-353 lines, and the deletions matter most: a pin from a previous
@@ -362,3 +376,4 @@ checking whether a new mistake repeats an old one.
 | 2026-09-07 | Added "a stale learnset pin serves plausible wrong data" — vendoring learnsets locally closes the Mega Altaria class of error but introduces a staleness trap structurally identical to the Pikalytics wrong-slug entry: regulations cut move pools, not just add them, so an expired pin produces false-POSITIVE legality | docs/superpowers/specs/2026-09-07-learnset-vendoring-design.md |
 | 2026-09-08 | Inverted this file's relationship with the format rules it had accumulated. The Item Clause, the fixed-at-registration rule and the ladder/tournament split were stored here as incidents, so each was only reachable by first recalling the mistake attached to it — and all three answer questions asked at the *start* of a conversation, when nothing triggers a read of this file. Repeating the OTS error on 2026-09-08, one day after documenting it here, made the storage location the actual defect. Rules moved to the new `reference/vgc-format.md` and summarised in `CLAUDE.md`; these sections keep the incident and point at the rule. Added a "what this file is not" contract at the top so future entries get sorted rule-vs-mistake on the way in | User observation that the file was being used backwards; `reference/vgc-format.md` |
 | 2026-09-08 | Resolved the item-visibility question this file had left open, and recorded that its own 2026-09-07 correction over-corrected: ladder is not broadly hidden-information play. All six species are public in both venues and held items (Mega Stones included) appear to be public on ladder too — what ladder hides is abilities, moves and spreads. The two-Mega plan's "they can't predict which Mega" premise therefore fails on ladder as well, leaving only the weaker pick-pressure argument | champdex.com/guides/team-preview and corroborating Champions resources; marked **[consensus]** in `vgc-format.md` as no official source was found |
+| 2026-09-08 | Added "a shell loop that greps a CLI's JSON is a data source, and a silent one" after auditing the loop used to build three defensive profiles. `2>&1 \| grep \| head` discards the CLI's error text *and* its non-zero exit, so a misspelled type printed a blank row while the pipeline exited 0 — indistinguishable from a real "nothing notable" result, the same shape as a missed immunity. Fixed at the source rather than by documenting the workaround: `dex type --vs-mon <Species>` now returns all 18 types in one call | Direct reproduction this session (`Watr` -> blank row, pipeline exit 0, while the CLI itself exits 1); `tools/dex/tests/defensive-profile.test.js` |
