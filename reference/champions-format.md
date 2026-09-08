@@ -109,17 +109,11 @@ pointless searching.
 | Type effectiveness | `TYPE_CHART_SV` | `dex type <T> --vs <A[,B]>` |
 | Move power/type/category/spread | `MOVES_CHAMPIONS` | `dex move <Move>` |
 | Item and ability legality | `ITEMS_CHAMPIONS`, `ABILITIES_CHAMPIONS` | `dex legal --item/--ability` |
+| Move legality (learnsets) | `CHAMPIONS_LEARNSETS` | `dex learnset <Species> --move <Move>` |
 | Stat Alignments (natures) | `NATURES` | — |
 
 **It does NOT cover.** These need a live lookup every time:
 
-- **Learnsets.** There is no move-legality data in the vendored dex at all —
-  `POKEDEX_CHAMPIONS` entries carry only `t1/t2/bs/w/ab/formes`. Whether a
-  Pokémon can actually *learn* a move cannot be answered locally, and this
-  gap caused the most severe failure in this repo's history (a whole team
-  premise built on Mega Altaria running Calm Mind, which it cannot learn).
-  Check Bulbapedia's Champions learnset for the species, or a real usage
-  page's move list, **before** committing to a role that depends on a move.
 - **Usage, common sets, threat rankings.** Meta-dependent by definition — use
   the `vgc-meta-lookup` skill.
 - **Current-regulation roster and mechanics.** The vendored dex is a snapshot
@@ -129,6 +123,11 @@ pointless searching.
 
 **Partial coverage — treat absence as "unknown", not "no":**
 
+- **Learnsets** are vendored from a separate upstream with its own pin
+  (`tools/dex/VENDOR_MANIFEST.md`) and are **regulation-variant** — a
+  regulation adds species and cuts existing move pools. A species absent from
+  the table returns `unknown`, never `illegal`. A pin from a previous
+  regulation serves normal-looking wrong data rather than failing.
 - `SETDEX_GEN10` presets exist for roughly **77 of 315** roster species
   (~24%). A species having no preset is expected and normal, not a signal
   that it is unused.
@@ -146,3 +145,4 @@ pointless searching.
 |---|---|---|
 | 2026-09-07 | Created by splitting the format-invariant sections (platform context, Stat Points system, roster-vs-legality discipline) out of `regulation.md`, so a regulation rollover replaces one small per-cycle file instead of editing a large mixed one. No content changed in the moved sections | docs/specs/2026-09-07-workflow-audit.md |
 | 2026-09-07 | Added "What the local vendored data does and does not cover" — in particular that learnsets are absent entirely and must be verified live, which the repo previously implied only in a changelog row | Direct inspection of the vendored `POKEDEX_CHAMPIONS`/`SETDEX_GEN10`/`MOVES_CHAMPIONS` tables this session |
+| 2026-09-07 | Learnsets moved from "does NOT cover" to "It covers" — vendored from smogon/pokemon-showdown's Champions mod behind its own pin. Added the regulation-variance caveat: upstream changed +2019/-353 lines at the M-B boundary, so a stale pin can report a move as legal that the current regulation removed | docs/superpowers/specs/2026-09-07-learnset-vendoring-design.md |

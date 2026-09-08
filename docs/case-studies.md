@@ -247,6 +247,13 @@ only happens after a user catches a mistake:
   win condition. Caught only because the user asked for a full move-by-move
   audit at the end, not proactively during the build.
 
+  **Resolved 2026-09-07.** Move legality is now vendored locally and enforced.
+  `node tools/dex/cli.js learnset "Mega Altaria" --move "Calm Mind"` returns
+  `illegal`, `dex team` fails any file listing it, and the case is pinned as a
+  permanent regression test. The residual risk moved rather than vanished: the
+  pin is regulation-variant, so see the staleness pitfall in
+  `reference/pitfalls.md`.
+
 ## Data-source misses
 
 Moved out of `reference/pitfalls.md`'s "Data source pitfalls" section, which

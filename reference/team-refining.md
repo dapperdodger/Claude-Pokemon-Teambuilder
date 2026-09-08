@@ -60,8 +60,10 @@ the Scope section above rather than filling it.
 
 ### 1. Move verification (per Pokémon, per listed move)
 
-1. **Legality**: confirm the move is in that Pokémon's current-regulation
-   learnset and not restricted this regulation.
+1. **Legality**: run `node tools/dex/cli.js learnset "<Species>" --move "<Move>"`.
+   `illegal` is a hard stop. `unknown` means the species is not in the vendored
+   table — verify live rather than assuming either way. Also confirm the move
+   is not restricted this regulation.
 2. **Meta-relevance**: cross-check live Pikalytics per-Pokémon set data
    (see the "Live meta lookup" section of
    `reference/methodology.md`). If a move is legal but

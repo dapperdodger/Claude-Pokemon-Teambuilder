@@ -42,6 +42,7 @@ node tools/dex/cli.js type Electric --vs Grass  # 0.5 — resisted
 node tools/dex/cli.js type Fire --vs Rock,Flying # multiplies both halves
 node tools/dex/cli.js move "Rock Slide"
 node tools/dex/cli.js legal --item "Choice Band"
+node tools/dex/cli.js learnset "Mega Altaria" --move "Calm Mind"  # move legality
 node tools/dex/cli.js team teams/my-team.md     # validate a team file
 node tools/dex/cli.js team --all                # validate every saved team
 ```
@@ -185,6 +186,11 @@ lifecycle event with a runbook**, not an incident:
   purposes.
 - **One home per fact.** If a rule needs restating in a second place, link
   instead. Four copies of a rule are weaker than one, not stronger.
+- **Two vendors, two pins.** `tools/damage-calc/VENDOR_MANIFEST.md` (roster,
+  moves, items, abilities) and `tools/dex/VENDOR_MANIFEST.md` (learnsets) come
+  from different upstreams and go stale independently. The learnset pin also
+  records the regulation it was taken for, because move pools change at a
+  regulation boundary. The session-start hook reports both.
 
 ## Design history
 

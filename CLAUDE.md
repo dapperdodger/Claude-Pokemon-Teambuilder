@@ -13,6 +13,7 @@ EV→SP conversion factor. These rules apply to every session here.
 | A Mega's ability, typing, or base stats | `node tools/dex/cli.js mon "Mega <Species>"` |
 | Item or ability legality in Champions | `node tools/dex/cli.js legal --item "<Item>"` |
 | Move power, type, spread/priority flags | `node tools/dex/cli.js move "<Move>"` |
+| Whether a Pokémon can learn a move | `node tools/dex/cli.js learnset "<Species>" --move "<Move>"` |
 | Damage rolls | `node tools/damage-calc/cli.js …` — see `reference/damage-calc.md` |
 | Minimum SP to survive a named attack | `node tools/damage-calc/optimize-bulk-cli.js …` |
 | Is this team legal? (items, SP, abilities, regulation) | `node tools/dex/cli.js team teams/<file>.md` |
@@ -34,19 +35,30 @@ Non-Mega Pokémon usually have 2-3 legal abilities. `dex mon` returns one
 option, not the only one — check the real preset for the specific set being
 built.
 
-## Learnsets are NOT in the local data — verify them live
+## Learnsets are local now — but read the verdict, not just the exit code
 
-There is no move-legality data in the vendored dex at all. `dex move` tells
-you a move exists and what it does; **nothing local tells you whether a given
-Pokémon can learn it.**
+Move legality is answerable locally: `dex learnset` reads a vendored snapshot
+of Pokémon Showdown's Champions learnsets, and `dex team` enforces it.
 
-Before committing to any role that depends on a specific move, check the
-species' Champions learnset live (Bulbapedia's learnset for the species, or a
-real usage page's move list). This is not optional diligence — the worst
-failure in this repo's history was an entire team premise built on Mega
-Altaria running Calm Mind, which it cannot learn, unnoticed until a final
-audit. See `reference/champions-format.md` for the full list of what the
-local data does and does not cover.
+It returns **three** verdicts, and the third is not a failure mode to paper over:
+
+- `legal` / `illegal` — hard answers. Trust them.
+- `unknown` — the species is not in the vendored table. This is **not**
+  evidence the move is illegal. Verify live, and check whether
+  `tools/dex/VENDOR_MANIFEST.md` needs re-vendoring.
+
+**The pin expires.** Learnsets are regulation-variant: at the M-B rollover
+upstream changed by +2019/-353 lines, so regulations add species *and cut
+existing move pools*. A pin from a previous regulation keeps serving complete,
+normal-looking, wrong data rather than failing — the same trap as a stale
+Pikalytics slug. The session-start hook reports regulation drift; when it
+does, re-vendor before trusting a legality answer.
+
+This closes the worst failure in this repo's history — a whole team premise
+built on Mega Altaria running Calm Mind, which it cannot learn, unnoticed
+until a final audit. That exact case is now a permanent regression test.
+
+Scope: legality only. The data carries no level-up/TM/egg distinction.
 
 ## Every session, before giving advice
 
