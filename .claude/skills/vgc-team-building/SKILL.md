@@ -49,12 +49,13 @@ their trade-offs and let the user choose.** Verify each first (roster and
 legality, real current moveset) so the comparison is grounded. Researching one
 option and presenting it as the answer is the documented failure here.
 
-**4b. Verify the learnset before committing to a role.** Learnsets are not in
-the local data at all — nothing in `tools/` can tell you whether a Pokémon can
-learn a move. If a pick's whole job depends on a specific move (a sweeper's
-boosting move, a support's Tailwind/Trick Room, a coverage answer), check the
-species' Champions learnset live *before* building the plan around it. A whole
-team premise has been built on an unlearnable move before.
+**4b. Verify the learnset before committing to a role.** Run
+`node tools/dex/cli.js learnset "<Species>" --move "<Move>"` before building a
+plan around any move that defines a pick's job — a sweeper's boosting move, a
+support's Tailwind/Trick Room, a coverage answer. `illegal` is a hard stop. A
+verdict of `unknown` means the species is not in the vendored table: verify
+live, and do not read it as permission. A whole team premise has been built on
+an unlearnable move before.
 
 **5. Verify every counter claim** with the **vgc-threat-evaluation** skill.
 Type matchups come from `node tools/dex/cli.js type <Type> --vs <A[,B]>`, and
@@ -96,8 +97,8 @@ per iteration.
 ## Common mistakes
 - Writing to `teams/` because a loadout felt finished — wait to be told
 - Presenting one researched candidate for a gap instead of a comparison
-- Building around a move the Pokémon cannot learn — verify the learnset live,
-  it is not in the local data
+- Building around a move the Pokémon cannot learn — run `dex learnset`; treat
+  an `unknown` verdict as "go verify", not as a pass
 - Treating an empty Pikalytics "Best Moves" panel as a low-usage signal — it's
   a rendering artifact; check the curated Champions Teams section
 - Forgetting the opponent's weather when it's their side setting it

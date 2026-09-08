@@ -37,9 +37,10 @@ node tools/dex/cli.js team teams/<file>.md
 Catches duplicate items (hard illegal), SP budget and cap violations,
 roster/item/ability legality, and Megas listed with their pre-Mega ability.
 Fix-worthy findings here outrank everything else — there is no point
-analysing the matchup spread of an illegal team. Note what it does **not**
-check: move legality, because learnsets aren't in the local data. Verify any
-role-defining move live.
+analysing the matchup spread of an illegal team. Move legality **is** checked,
+against the vendored learnset table. Read the `notChecked` field: it now
+lists only species the learnset vendor does not cover, and those still need a
+live check.
 
 **2. Regulation currency.** If the team was built for a past regulation, say
 so up front and treat its reasoning as historical. Mechanics, roster and item

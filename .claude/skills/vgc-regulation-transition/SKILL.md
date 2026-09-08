@@ -30,6 +30,7 @@ Pokémon and Megas, which live in vendored data that lags), and the **meta**
 - [ ] 4. Record unverified new mechanics
 - [ ] 5. Re-vendor the roster data and run tests
 - [ ] 5b. Re-resolve the Pikalytics format slug
+- [ ] 5c. Re-vendor the learnsets and re-pin the regulation
 - [ ] 6. Flag teams built for the old regulation
 - [ ] 7. Set expectations with the user
 ```
@@ -92,6 +93,25 @@ consistent between regulations (M-B ranked was `battledataregmbs3`, M-A was
 `gen9championsvgc2026regma`), and the old slug will keep returning complete,
 normal-looking data from the previous regulation rather than failing. This is
 the step that most quietly poisons everything downstream if skipped.
+
+**5c. Re-vendor the learnsets and re-pin the regulation.** Move pools change
+at a regulation boundary — at the M-B rollover upstream changed by +2019/-353
+lines. The deletions are the dangerous half: an expired pin reports moves as
+legal that the new regulation removed. The upstream file is updated in place,
+so nothing in the data itself reveals which regulation it describes.
+
+Follow `tools/dex/VENDOR_MANIFEST.md`'s "Re-vendoring" section, and update
+**both** its `Commit:` and `Regulation:` fields — the regulation field is what
+the session-start hook compares against `reference/regulation.md`. Then:
+
+```bash
+npm test
+node tools/dex/cli.js learnset "<A New Species>"
+```
+
+`tools/dex/tests/learnset-coverage-invariant.test.js` fails loudly if the new
+roster contains species the learnsets do not cover. That is a real finding: it
+means the two vendors have drifted, not that the test is broken.
 
 **6. Flag teams built for the old regulation.** The phase hook lists team
 files whose `Regulation:` stamp no longer matches. Don't silently rewrite
