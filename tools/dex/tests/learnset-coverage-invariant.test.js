@@ -43,6 +43,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const dex = require('../dex');
 const { getVendor } = require('../../damage-calc/load-vendor');
+const { getLearnsets } = require('../load-learnsets');
 
 test('invariant: every roster species has a usable learnset', () => {
   const v = getVendor();
@@ -82,4 +83,77 @@ test('invariant: the learnset table still covers a meaningful roster', () => {
   const v = getVendor();
   const total = Object.keys(v.POKEDEX_CHAMPIONS).length;
   assert.ok(total > 300, `roster shrank unexpectedly to ${total} — check the NCP vendor`);
+});
+
+// ---------------------------------------------------------------------------
+// The stem fallback in resolveLearnsetId (tools/dex/dex.js) — matching on
+// `base.split('-')[0]` when the full forme id has no direct entry — has no
+// notion of "should this forme actually share its base's move pool?". It
+// substitutes whatever the stem resolves to, confident or not. Today all 10
+// species that go through it are genuine shared-learnset formes (cosmetic
+// formes, battle formes, and Megas of formes with no learnset of their own):
+// confirmed by checking each one's real Champions move pool matches its base
+// species. But nothing stops a future re-vendor from adding a NEW forme with
+// a genuinely distinct move pool that happens to lack a direct learnset
+// entry — the stem fallback would silently substitute the wrong pool and
+// hand back a confident, wrong verdict instead of "unknown".
+//
+// This test pins the exact set of species that resolve via the stem fallback
+// today. A species dropping off this list is fine (it now resolves directly).
+// A NEW species appearing is NOT an auto-pass: it means the stem fallback
+// caught something it hasn't been checked against, and a human must verify
+// the substituted move pool is actually correct for that species before
+// updating this allowlist.
+// ---------------------------------------------------------------------------
+test('invariant: the stem-fallback resolution set matches the checked allowlist', () => {
+  const v = getVendor();
+  const learnsets = getLearnsets();
+
+  // Mirrors dex.js's resolveLearnsetId exactly, but split so it can report
+  // which of the two lookup attempts (direct, then stem) actually resolved.
+  function isMegaForme(species) {
+    return dex.isMegaForme(species);
+  }
+  function baseFormeOf(vendor, species) {
+    for (const [name, data] of Object.entries(vendor.POKEDEX_CHAMPIONS)) {
+      if (data.formes && data.formes.includes(species)) return name;
+    }
+    return null;
+  }
+  function hasUsableLearnset(id) {
+    return !!(learnsets[id] && learnsets[id].learnset);
+  }
+
+  const stemResolved = [];
+  for (const species of Object.keys(v.POKEDEX_CHAMPIONS)) {
+    const base = isMegaForme(species) ? (baseFormeOf(v, species) || species) : species;
+    if (hasUsableLearnset(dex.toId(base))) continue; // resolved directly — not via the stem fallback
+    const stem = base.split('-')[0];
+    if (hasUsableLearnset(dex.toId(stem))) stemResolved.push(species);
+  }
+
+  // Confirmed 2026-09-07, each individually checked to genuinely share its
+  // base form's Champions move pool (cosmetic formes, a battle forme, and
+  // Megas whose base form itself has no separate learnset entry):
+  const ALLOWLIST = [
+    'Aegislash-Blade',
+    'Aegislash-Shield',
+    'Gourgeist-Average',
+    'Gourgeist-Large',
+    'Gourgeist-Small',
+    'Gourgeist-Super',
+    'Lycanroc-Midday',
+    'Maushold-Four',
+    'Morpeko-Hangry',
+    'Palafin-Hero',
+  ].sort();
+
+  assert.deepEqual(
+    stemResolved.sort(),
+    ALLOWLIST,
+    'The set of species resolving via the stem fallback has changed. If a species was ADDED to this ' +
+    'set, it is a required human check — not an auto-pass: verify its real Champions move pool actually ' +
+    'matches the base species the stem fallback substituted before adding it to ALLOWLIST above. If one ' +
+    'was removed, it now resolves directly and can simply be dropped.'
+  );
 });
