@@ -64,7 +64,7 @@ function main() {
       const r = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${code}/${encodeURIComponent(lookup)}`);
       if (r.status !== 200) return fail(`"${lookup}" returned HTTP ${r.status} in format ${code}`);
       const out = meta.monFromText(r.text, {
-        formatCode: code, capabilities: describe.capabilities, megaInfo,
+        formatCode: code, capabilities: describe.capabilities, megaInfo, describe,
       });
       out.species = name;
       out.regulation = describe.regulation;

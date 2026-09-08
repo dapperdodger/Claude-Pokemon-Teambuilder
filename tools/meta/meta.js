@@ -5,6 +5,13 @@ const validate = require('./validate');
 const NO_USAGE = 'this format\'s upstream carries no usage weighting — use a tournament or Showdown format for usage';
 const TEAMMATES_BUG = 'upstream renders this section as undefined% for every format';
 
+// Shared with usageFromText so an off-regulation lookup reads identically no
+// matter which command surfaced it — one phrasing, not two that can drift.
+function offRegulationWarning(d) {
+  return `Format "${d.code}" is regulation ${d.regulation || 'unknown'}, which is NOT the current one. ` +
+    `Reading a previous regulation deliberately is fine; doing it unknowingly is not.`;
+}
+
 function percentList(text, heading, reason) {
   return parse.parsePercentList(text, heading).map((e) => ({
     name: e.name,
@@ -16,6 +23,8 @@ function monFromText(text, opts) {
   const q = parse.parseQuickInfo(text);
   const caps = opts.capabilities || {};
   const items = percentList(text, 'Common Items', 'not reported for this entry');
+  const warnings = [];
+  if (opts.describe && !opts.describe.current) warnings.push(offRegulationWarning(opts.describe));
 
   const out = {
     format: opts.formatCode,
@@ -26,6 +35,7 @@ function monFromText(text, opts) {
     abilities: percentList(text, 'Common Abilities', 'not reported for this entry'),
     items,
     teammates: percentList(text, 'Common Teammates', TEAMMATES_BUG),
+    warnings,
   };
 
   // A Mega has no rows of its own on ladder formats: the numbers above are the
@@ -51,12 +61,7 @@ function usageFromText(text, opts) {
   const rows = parse.parseUsageTable(text);
   validate.assertNotFiller(rows, d.code);
   const warnings = [];
-  if (!d.current) {
-    warnings.push(
-      `Format "${d.code}" is regulation ${d.regulation || 'unknown'}, which is NOT the current one. ` +
-      `Reading a previous regulation deliberately is fine; doing it unknowingly is not.`
-    );
-  }
+  if (!d.current) warnings.push(offRegulationWarning(d));
   if (!d.capabilities.usage) warnings.push(NO_USAGE);
 
   return {

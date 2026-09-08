@@ -111,6 +111,41 @@ function check(fetchmod) {
   return { slug: stamped, agrees: true, etag: idx.etag, ...d };
 }
 
+// Insert-or-update a manifest row keyed on the format code (the manifest is
+// meant to hold one row per format over time, refreshed on each --write, not
+// grow a new row per run). Placeholder-replace only fires the FIRST time a
+// given code is written; every later --write for that same code must find its
+// own row by the code cell and overwrite it in place, or this silently stops
+// updating anything while still claiming success.
+function upsertManifestRow(src, code, row) {
+  const codeCell = `\`${code}\``;
+  const lines = src.split('\n');
+  let codeRowIdx = -1;
+  let placeholderIdx = -1;
+  let lastTableRowIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim().startsWith('|')) continue;
+    lastTableRowIdx = i;
+    if (placeholderIdx === -1 && /_\(populated/.test(line)) placeholderIdx = i;
+    if (line.includes(codeCell)) codeRowIdx = i;
+  }
+  if (codeRowIdx !== -1) {
+    lines[codeRowIdx] = row;
+    return { text: lines.join('\n'), action: 'updated' };
+  }
+  if (placeholderIdx !== -1) {
+    lines[placeholderIdx] = row;
+    return { text: lines.join('\n'), action: 'added' };
+  }
+  if (lastTableRowIdx !== -1) {
+    lines.splice(lastTableRowIdx + 1, 0, row);
+    return { text: lines.join('\n'), action: 'added' };
+  }
+  lines.push(row);
+  return { text: lines.join('\n'), action: 'added' };
+}
+
 function report(fetchmod, opts = {}) {
   const code = defaultFormatCode();
   const idx = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${code}`);
@@ -119,14 +154,15 @@ function report(fetchmod, opts = {}) {
   if (opts.write) {
     const p = path.join(__dirname, 'META_MANIFEST.md');
     const row = `| \`${d.code}\` | ${d.regulation} | ${d.capabilities.usage} | ${d.capabilities.winRate} | ${d.capabilities.record} | ${idx.etag} | ${out.checked} |`;
-    const src = fs.readFileSync(p, 'utf8').replace(/\| _\(populated.*\n/, row + '\n');
-    fs.writeFileSync(p, src);
-    out.written = p;
+    const src = fs.readFileSync(p, 'utf8');
+    const { text: next, action } = upsertManifestRow(src, d.code, row);
+    fs.writeFileSync(p, next);
+    out.written = { path: p, action };
   }
   return out;
 }
 
 module.exports = {
   activeRegulation, regulationOf, detectCapabilities, describe,
-  defaultFormatCode, report, check,
+  defaultFormatCode, report, check, upsertManifestRow,
 };

@@ -68,3 +68,35 @@ test('REGRESSION: an off-regulation format is flagged not-current', () => {
   assert.equal(out.current, false);
   assert.ok(out.warnings.some((w) => /previous regulation|not current/i.test(w)));
 });
+
+// FINDING 2: mon reported off-regulation data with `current: false` in the
+// output but no warning text — a reader has to know to check the boolean.
+// usage already warns in words; mon must say the same thing, not stay silent.
+test('REGRESSION: mon on an off-regulation format warns, in the SAME words usage uses', () => {
+  const describeInfo = { code: 'x', label: 'l', regulation: 'M-A', current: false, capabilities: rankedCaps() };
+  const monOut = meta.monFromText(fx('ranked-raichu.md'), {
+    formatCode: 'x', capabilities: rankedCaps(), describe: describeInfo,
+  });
+  const usageOut = meta.usageFromText(fx('ranked-index.md'), { describe: describeInfo });
+  assert.ok(monOut.warnings.some((w) => /previous regulation|not current/i.test(w)));
+  assert.deepEqual(
+    monOut.warnings.filter((w) => /previous regulation|not current/i.test(w)),
+    usageOut.warnings.filter((w) => /previous regulation|not current/i.test(w)),
+    'mon and usage must use identical wording for the same condition'
+  );
+});
+
+test('mon on the CURRENT format carries no off-regulation warning', () => {
+  const describeInfo = { code: 'x', label: 'l', regulation: 'M-B', current: true, capabilities: rankedCaps() };
+  const out = meta.monFromText(fx('ranked-raichu.md'), {
+    formatCode: 'x', capabilities: rankedCaps(), describe: describeInfo,
+  });
+  assert.ok(!out.warnings.some((w) => /previous regulation|not current/i.test(w)));
+});
+
+test('mon without a describe opt (existing callers) still returns a warnings array', () => {
+  const out = meta.monFromText(fx('ranked-raichu.md'), {
+    formatCode: 'battledataregmbs3', capabilities: rankedCaps(),
+  });
+  assert.deepEqual(out.warnings, []);
+});
