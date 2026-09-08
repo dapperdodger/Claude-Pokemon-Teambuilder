@@ -23,7 +23,7 @@ discipline, what the local data covers) live in
 `reference/champions-format.md`. Past cycles are archived under
 `reference/regulations/`.
 
-Regulations turn over roughly every 3-4 months. A transition is a scheduled
+Regulations turn over every one to three months. A transition is a scheduled
 event with a defined workflow, not an emergency.
 
 ## Contents
@@ -139,6 +139,7 @@ meta-lookup skill's "early in a regulation" section covers what to do instead.
 
 | Date | Change | Source |
 |---|---|---|
+| 2026-09-08 | Corrected the turnover cadence from "roughly every 3-4 months" to "every one to three months". The handbook states regulation sets "may last between one and three months"; the repo's figure was never sourced and overshot every actual cycle (M-B ran ~2.7 months, M-C runs ~2.8). Same correction applied in `CLAUDE.md`, `README.md` and the `vgc-regulation-transition` skill | Play! Pokémon VGC Tournament Handbook rev. 2026-09-01, §2.1.1 Regulation Sets in Pokémon Champions |
 | 2026-09-07 | Restructured for rollover: added the four-stamp machine-readable block (`Regulation`/`starts`/`ends`/`Last verified`) that the phase hook and team validator read; moved the format-invariant sections (platform context, Stat Points, roster-vs-legality) to `reference/champions-format.md`; added an "Unverified mechanics" gate; renamed the M-C section to "Incoming regulation" as a standing slot rather than a one-off; archived prior history under `reference/regulations/`. Also recorded that the vendored data does not yet contain M-C's roster | docs/specs/2026-09-07-workflow-audit.md; direct inspection of `POKEDEX_CHAMPIONS` this session |
 
 Earlier changelog history for this file — including the M-A→M-B transition

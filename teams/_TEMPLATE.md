@@ -4,12 +4,21 @@
 **Status:** <Draft>
 **Built for:** Ladder / a specific tournament / exploring a concept
 **Last updated:** YYYY-MM-DD
+**Supersedes:** <teams/original-name.md — omit this line on a first build>
 
 <!-- `**Regulation:**` must start with the bare regulation id (e.g. "M-B"),
      matching reference/regulation.md's `**Regulation:**` stamp. The
      session-start hook and `node tools/dex/cli.js team` both parse it to tell
      you when a team predates the current regulation. Prose may follow the id
-     on the same line. -->
+     on the same line.
+
+     `**Supersedes:**` appears only on a revision that got its own file.
+     Whether a revision does is decided by the six species: same six, edit
+     the existing file in place with a changelog row recording each old
+     value; any species swapped (or the team ported to a new regulation),
+     write `<original-basename>-v2.md` with this stamp. A file named here is
+     left untouched — no back-pointer, no Status change — so the pointer runs
+     forward only. See .claude/rules/teams.md. -->
 
 **Status vocabulary** — use exactly one, and mean it:
 
@@ -89,3 +98,10 @@ see `reference/pitfalls.md`'s bring-6-pick-4 note. A team's
 | Date | Change | Reasoning |
 |---|---|---|
 | YYYY-MM-DD | Initial build | |
+
+Every revision gets a row, and the row must record the **old value**, not
+just that something moved — `Gallade Speed 20→24 SP, outspeeds Maushold`, not
+`re-tuned Gallade's Speed`. On an in-place edit that row is the only surviving
+trace of the previous build; on a `-v2` file the first row states what changed
+from the file named in `**Supersedes:**`, since the predecessor is never
+edited.

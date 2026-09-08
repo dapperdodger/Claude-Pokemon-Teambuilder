@@ -109,6 +109,7 @@ Ground". Say plainly what you could not verify.
 - Treating a listed move as coverage without checking it's actually run
 
 ## References
+- `reference/vgc-format.md` — clauses, Team Preview, OTS scope, Bo1 vs Bo3
 - `reference/pitfalls.md` — the trap checklist
 - `reference/methodology.md` — matchup reasoning, when damage isn't the lens
 - `reference/champions-format.md` — SP/stat formulas, local-data limits

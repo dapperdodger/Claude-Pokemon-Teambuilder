@@ -90,9 +90,13 @@ It exits non-zero on an error. It does **not** check move legality.
 **8. Ask before saving.** **Do not `Write` or `Edit` anything in `teams/`
 until the user explicitly says to save it.** A fully discussed loadout is not
 permission to persist it. When they do say so, use `teams/_TEMPLATE.md` —
-reasoning per pick, intentional exclusions, bring-6-pick-4 notes — and update
-an existing file in place with a changelog row rather than creating a new one
-per iteration.
+reasoning per pick, intentional exclusions, bring-6-pick-4 notes.
+
+**Revising an existing team: the six species decide.** Same six — edit in
+place, changelog row per change recording the old value. Any species swapped,
+or ported to a new regulation — new file `<original-basename>-v2.md` with a
+`**Supersedes:**` stamp, predecessor untouched. Ambiguous — ask first. See
+`.claude/rules/teams.md`.
 
 ## Common mistakes
 - Writing to `teams/` because a loadout felt finished — wait to be told
@@ -106,6 +110,7 @@ per iteration.
 
 ## References
 - `reference/methodology.md` — full methodology and citations
+- `reference/vgc-format.md` — clauses, Team Preview, OTS scope, Bo1 vs Bo3
 - `reference/pitfalls.md` — the trap checklist
 - `reference/regulation.md` — regulation authority
 - `reference/damage-calc.md` — CLI usage and caveats

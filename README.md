@@ -82,7 +82,8 @@ npm test   # 144 tests across the tools and the hooks
 | [`reference/regulation.md`](reference/regulation.md) | **The current cycle only** — dates, active mechanics, unverified new mechanics, what's incoming. Replaced wholesale at each rollover. Carries the four stamps the phase hook and team validator read. |
 | [`reference/champions-format.md`](reference/champions-format.md) | What does **not** change between regulations: Stat Points system and formulas, platform context, roster-vs-legality discipline, and exactly what the local vendored data does and does not cover. |
 | [`reference/regulations/`](reference/regulations/) | Archived past regulations, so old team files stay interpretable. |
-| [`reference/pitfalls.md`](reference/pitfalls.md) | Trap checklist, scannable. Data-source traps, weather, doubles-specific traps, build assumptions, team-finalization checks. |
+| [`reference/vgc-format.md`](reference/vgc-format.md) | How a match and a team work: register-6/bring-4, Species and Item Clauses, what Team Preview reveals in each venue, Open Team Sheets scope, Bo1 vs Bo3, clocks. Summarised in `CLAUDE.md` so it needs no lookup; each fact marked official / consensus / unresolved. |
+| [`reference/pitfalls.md`](reference/pitfalls.md) | Trap checklist, scannable. Data-source traps, weather, doubles-specific traps, build assumptions, team-finalization checks. Records *failure modes*, not rules — rules live in the files above. |
 | [`reference/methodology.md`](reference/methodology.md) | Process rules: how to evaluate a matchup, how to solve an SP spread, when damage isn't the right lens, live meta lookup. |
 | [`reference/mechanics.md`](reference/mechanics.md) | Priority, speed modifiers, item mechanics, Mega ability changes — things typing alone doesn't capture. |
 | [`reference/damage-calc.md`](reference/damage-calc.md) | Damage-calc CLI usage, flags, and its real caveats. |
@@ -152,7 +153,7 @@ material; `teams/` is where one person's builds accumulate.
 
 ## Regulation changes
 
-Regulations turn over roughly every 3-4 months. That is a **scheduled
+Regulations turn over every one to three months. That is a **scheduled
 lifecycle event with a runbook**, not an incident:
 
 - `reference/regulation.md` describes only the current cycle and is replaced

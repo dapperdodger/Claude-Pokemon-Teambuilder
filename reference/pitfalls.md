@@ -7,6 +7,22 @@ recommendation**; read the matching section only when a line applies.
 The incidents behind these — what was claimed, what was true, how it was
 caught — live in `docs/case-studies.md`, deliberately out of the hot path.
 
+**What this file is not.** It records *failure modes*, not format rules. A
+rule that belongs in someone's baseline knowledge should not live here, and
+several did: the Item Clause, the fixed-at-registration rule and the
+ladder/tournament split were all stored as war stories, so they were only
+reachable by first recalling the mistake attached to them. That is backwards
+— the questions they answer ("can I flex this item?", "does my opponent see
+my stones?") get asked at the *start* of a conversation, when nothing is
+triggering a read of this file. Those rules now live in
+`reference/vgc-format.md` and are summarised in `CLAUDE.md`, which is loaded
+every session. The sections below keep the incident and the correction, and
+point at the rule rather than being its home.
+
+**So when adding to this file, ask first whether the entry is a rule or a
+mistake.** A rule goes in `vgc-format.md` (format), `mechanics.md` (battle
+mechanics) or `regulation.md` (this cycle), with at most a pointer here.
+
 ## Contents
 
 - [Quick checklist](#quick-checklist)
@@ -26,7 +42,7 @@ Scan this. Follow a link only where the answer isn't already obviously fine.
 **Before trusting data**
 - [ ] Threat list built from Pikalytics' *team-level* pages, not per-mon usage rank or a WebSearch summary → [Data source pitfalls](#data-source-pitfalls)
 - [ ] Ladder usage is not tournament results — don't treat one as the other
-- [ ] Ladder and tournament **rules** differ too, not just their data — Open Team Sheets are tournament-only → [Ladder vs tournament rules](#ladder-rules-are-not-tournament-rules)
+- [ ] Ladder and tournament **rules** differ too, not just their data — Open Team Sheets are tournament-only → `vgc-format.md`, and [why this keeps happening](#ladder-rules-are-not-tournament-rules)
 - [ ] Co-occurrence is a frequency signal, not proof of synergy
 - [ ] An empty Pikalytics stats panel is a loading artifact, not absence of usage — check the curated Champions Teams section instead
 
@@ -44,8 +60,8 @@ Scan this. Follow a link only where the answer isn't already obviously fine.
 - [ ] No EV terminology, and no assumed EV→SP conversion factor
 
 **Before calling a team finished**
-- [ ] **No duplicate items across the six** — hard rule, has been missed twice → [Team-finalization](#team-finalization-checks)
-- [ ] No "flex this item per matchup" advice — items are fixed at registration
+- [ ] **No duplicate items across the six** — hard rule (`vgc-format.md`), has been missed twice → [Team-finalization](#team-finalization-checks)
+- [ ] No "flex this item per matchup" advice — everything but which four you bring is fixed at registration (`vgc-format.md`)
 - [ ] Synergy claims scoped to a specific bring-6-pick-4 subset
 - [ ] Tera **not** assumed active (confirm in `reference/regulation.md`)
 - [ ] Redirection plan checked against Grass-types and Overcoat (powder immunity)
@@ -185,28 +201,33 @@ table; these are no longer documentation problems, they are tool calls.
 
 ## Ladder rules are not tournament rules
 
+**The rule now lives in `reference/vgc-format.md`** — what each venue reveals,
+what OTS is, and how ladder and tournament rules diverge. This section keeps
+only why it went wrong twice.
+
 The repo already warns that ladder *usage data* is not tournament *results*.
 The same split applies to the **rules themselves**, and it is easier to miss
 because a single source often describes both without saying which it means.
 
-- **Open Team Sheets (OTS) are a tournament convention, not a game mode.**
-  Under OTS the opponent gets moves, items and abilities before the match.
-  The in-game ranked ladder does not do this — there, Team Preview is the only
-  pre-match information.
-- Corrected 2026-09-07 after stating flatly that "Champions uses Open Team
-  Sheets" while evaluating a two-Mega bring-6 plan. The source quoted to
-  support it literally began *"In tournaments, ..."* — the qualifier was in
-  the citation and got dropped in the summary. **When a rules source opens
-  with "in tournaments", that scope is load-bearing; carry it into the claim.**
-- This flips conclusions rather than just shading them. Any plan whose value
-  comes from **hidden information** — two Mega Stones so the opponent cannot
-  predict which Mega arrives, an unexpected item, a surprise set — is worth
-  materially more on ladder than in an OTS tournament. Ask which the team is
-  for before pricing that kind of tech.
-- Secondary Champions sites describe Team Preview as showing held items
-  (Mega Stones included) with no ladder/tournament distinction drawn. That is
-  **not** confirmed against an official rules source, so treat item
-  visibility on the ladder as unresolved rather than settled either way.
+- **The failure mode is dropping a scope qualifier.** Stated flatly that
+  "Champions uses Open Team Sheets" while evaluating a two-Mega bring-6 plan
+  (2026-09-07, and again 2026-09-08). Both times the source quoted in support
+  literally began *"In tournaments, ..."* — the qualifier was present in the
+  citation and got dropped in the summary. **When a rules source opens with
+  "in tournaments", that scope is load-bearing; carry it into the claim.**
+- **It flips conclusions rather than shading them.** Any plan whose value
+  comes from hidden information is priced differently by venue, so ask which
+  the team is for *before* evaluating that kind of tech.
+- **But check what is actually hidden before crediting surprise value at
+  all.** The first correction here over-corrected in the other direction: it
+  treated ladder as broadly hidden-information play, when in fact all six
+  species are public in both venues, and held items — Mega Stones
+  included — appear to be public on ladder too. What ladder actually hides is
+  abilities, moves and spreads. The two-Mega plan's "they can't tell which
+  Mega arrives" premise fails on ladder as well; its real value is pick
+  pressure, which is a different and weaker argument. Resolved 2026-09-08
+  from third-party consensus (still no official source) — see
+  `vgc-format.md`'s Team Preview table, which marks the confidence.
 
 ## Build assumption trap
 
@@ -263,9 +284,14 @@ because a single source often describes both without saying which it means.
 
 ## Team-finalization checks
 
-- **No two Pokémon on a team can hold the same item — this is a hard rule
-  in doubles VGC/Champions, not a style choice.** Check the final six's
-  item column for duplicates before calling a team finished. Real miss:
+The two rules this section is built on — the Item Clause, and everything
+except your four being fixed at registration — are stated in
+`reference/vgc-format.md`. What follows is why knowing them has not been
+enough.
+
+- **The Item Clause needs an explicit check at assignment time, not just
+  recall.** Check the final six's item column for duplicates before calling
+  a team finished. Real miss:
   gave both Rotom-Wash and Archaludon Leftovers in the same six-Pokémon
   build across several messages before it was caught. Fix used Rotom-Wash's
   actual second-most-common real item (Sitrus Berry, 39.1% usage) rather
@@ -284,10 +310,9 @@ because a single source often describes both without saying which it means.
   (Focus Sash preserved both of Gallade's guaranteed OHKOs, though the
   Attack SP breakpoint that secured one of them changed as a result) —
   don't assume a same-Pokémon item swap is damage-neutral.
-- **A Pokémon's item, moveset, ability, and SP spread are fixed when the
-  team is built/registered — Team Preview only lets you choose which 4 of
-  6 to bring and see the opponent's 6, it does not let you swap a held
-  item (or anything else) per-opponent or per-game.** Suggested "Occa Berry
+- **The fixed-at-registration rule is easiest to break while sounding
+  helpful** — situational advice reads as thorough right up until it
+  describes something the format does not permit. Suggested "Occa Berry
   vs. a Charizard-Y matchup, Colbur Berry vs. a Tyranitar/sand matchup" as
   if Sinistcha could carry whichever one fit the game currently being
   played — that's not how the format works; whichever berry gets chosen
@@ -335,3 +360,5 @@ checking whether a new mistake repeats an old one.
 | 2026-09-07 | Replaced dangling `CLAUDE.md rule N` references in live prose with named pointers (changelog rows keep their numbers as historical statements). The mechanically checkable team-finalization traps — duplicate items, SP budget, item/ability legality, Mega abilities — are now enforced by `node tools/dex/cli.js team` and a PostToolUse hook rather than by this checklist alone | docs/specs/2026-09-07-workflow-audit.md |
 | 2026-09-07 | Added "Ladder rules are not tournament rules" plus a Quick-checklist line, after asserting Champions uses Open Team Sheets when OTS is tournament-only — the ChampDex passage cited as support began "In tournaments," and that scope was dropped. Matters because it inverts the value of hidden-information plans (e.g. carrying two Mega Stones so the opponent cannot predict the Mega): worth more on ladder, near-worthless under OTS. Item visibility in ladder Team Preview left explicitly unresolved — secondary sites say items show, no official rules source found | User correction this session; ChampDex format-rules and team-preview guides; multiple searches failed to surface an official ladder/tournament rules split |
 | 2026-09-07 | Added "a stale learnset pin serves plausible wrong data" — vendoring learnsets locally closes the Mega Altaria class of error but introduces a staleness trap structurally identical to the Pikalytics wrong-slug entry: regulations cut move pools, not just add them, so an expired pin produces false-POSITIVE legality | docs/superpowers/specs/2026-09-07-learnset-vendoring-design.md |
+| 2026-09-08 | Inverted this file's relationship with the format rules it had accumulated. The Item Clause, the fixed-at-registration rule and the ladder/tournament split were stored here as incidents, so each was only reachable by first recalling the mistake attached to it — and all three answer questions asked at the *start* of a conversation, when nothing triggers a read of this file. Repeating the OTS error on 2026-09-08, one day after documenting it here, made the storage location the actual defect. Rules moved to the new `reference/vgc-format.md` and summarised in `CLAUDE.md`; these sections keep the incident and point at the rule. Added a "what this file is not" contract at the top so future entries get sorted rule-vs-mistake on the way in | User observation that the file was being used backwards; `reference/vgc-format.md` |
+| 2026-09-08 | Resolved the item-visibility question this file had left open, and recorded that its own 2026-09-07 correction over-corrected: ladder is not broadly hidden-information play. All six species are public in both venues and held items (Mega Stones included) appear to be public on ladder too — what ladder hides is abilities, moves and spreads. The two-Mega plan's "they can't predict which Mega" premise therefore fails on ladder as well, leaving only the weaker pick-pressure argument | champdex.com/guides/team-preview and corroborating Champions resources; marked **[consensus]** in `vgc-format.md` as no official source was found |

@@ -5,6 +5,39 @@ doubles — not Smogon singles, not Scarlet/Violet. Champions replaced EVs/IVs
 with Stat Points (SP) entirely: never use EV numbers, and never assume an
 EV→SP conversion factor. These rules apply to every session here.
 
+## Format rules that are always true — state these directly
+
+Baseline rules of VGC doubles. They do not change between regulations, they
+need no tool call and no web lookup, and answering "let me check" to one of
+them is the wrong answer. Full detail and sourcing in
+`reference/vgc-format.md`.
+
+- **Register 6 (4-6 legal), bring 4.** The first two of the four lead.
+- **Item Clause:** no two Pokémon on a team may hold the same item. Hard rule.
+- **Species Clause:** no two may share a National Pokédex number — Rotom-Wash
+  and Rotom-Heat collide.
+- **Everything but which four you bring is locked at registration** — item,
+  moves, ability, SP, Stat Alignment. Never suggest flexing an item or move
+  per matchup; present it as a permanent trade-off instead.
+- **Team Preview always shows the opponent all six species.** No plan gets
+  value from hiding *what you brought*.
+- **On the in-game ladder, held items are visible too** (Mega Stones
+  included), while abilities, moves and spreads are hidden. Well-attested but
+  not officially confirmed — hedge when it decides something.
+- **Open Team Sheets are a tournament convention, not a game mode.** The
+  ladder has no OTS option. Under OTS the opponent gets ability, item, moves
+  and Stat Alignment — **never the stats**.
+- **A rules source that opens "In tournaments, ..." means it.** That scope is
+  load-bearing; carry it into the claim. Dropping it has caused this exact
+  error twice.
+- **SP spreads are private in every venue**, OTS included — the one genuinely
+  hidden variable left.
+- **Ladder is best-of-one; tournament top cut is best-of-three.** A Bo3 team
+  needs a viable *second* four, because the opponent re-picks after game one.
+- **All battles are Level 50.** Hidden Abilities are legal; **Battle Bond is
+  banned in every regulation.**
+- **Clocks:** Team Preview 90s, move 45s, player time 7 min, game 20 min.
+
 ## Never state these from recall — run the command
 
 | Claim | Command |
@@ -65,7 +98,7 @@ Scope: legality only. The data carries no level-up/TM/egg distinction.
 1. **Regulation** — read `reference/regulation.md` fresh, even if it was
    already checked earlier in this same conversation. It is the sole
    authority on which mechanics are active, and the fact here most likely
-   to have flipped. Regulations turn over every ~3-4 months; the
+   to have flipped. Regulations turn over every one to three months; the
    session-start hook reports which **phase** the current one is in
    (`EARLY` / `FORMING` / `SETTLED` / `ROLLOVER IMMINENT` / `ENDED`) and the
    correct behaviour differs by phase — act on what it says.
@@ -91,9 +124,24 @@ Scope: legality only. The data carries no level-up/TM/egg distinction.
   permission; locking things in does. Check in at real decision points, and
   when filling a single roster slot present 3-5 verified candidates with
   their trade-offs rather than one researched answer.
-- **Never `Write` or `Edit` anything in `teams/` until the user explicitly
-  says to save.** Working a full loadout out in chat is not permission to
-  persist it — that is a separate step the user gates.
+- **`teams/` is read-only unless the user explicitly says to write.** No
+  implicit exceptions, in either direction:
+  - **New teams** — working a full loadout out in chat is not permission to
+    persist it. Saving is a separate step the user gates.
+  - **Existing teams** — they are historical records of what was true when
+    they were built, and stay wrong on purpose. Do **not** edit one to fix a
+    legality error, refresh a spread, apply an audit finding, re-verify it
+    against the current regulation, or add a note that it predates one. A
+    rollover is not permission. Finding a genuine error is not permission.
+    Being mid-audit of that exact file is not permission.
+  - Report what you found in chat and leave the file alone. If the change
+    seems worth making, *ask* — one line, then drop it if the answer is no.
+  - **When told to revise a team, the six species decide where it goes.**
+    Same six — edit in place, with a changelog row recording each **old
+    value**. Any species swapped, or ported to a new regulation — new file
+    `<original-basename>-v2.md` with a `**Supersedes:**` stamp, predecessor
+    left untouched. Not sure which? Ask in one line first. "It's a small
+    tweak" is not the test; the species list is.
 - **Solve for the minimum SP** each stat actually needs; don't default to a
   round 32/32/2 split. Verifying that 32 survives a hit is not the same as
   finding the minimum that survives it.
@@ -116,6 +164,7 @@ Scope: legality only. The data carries no level-up/TM/egg distinction.
 | "Does X counter/answer/beat Y" | `vgc-threat-evaluation` skill |
 | "What's the meta / what will I face" | `vgc-meta-lookup` skill |
 | A regulation just ended or is about to | `vgc-regulation-transition` skill |
+| Match/team rules — clauses, Team Preview, OTS, Bo1 vs Bo3, clocks | `reference/vgc-format.md` |
 | Active regulation, active mechanics, what's incoming | `reference/regulation.md` |
 | SP system, platform, roster-vs-legality, what the local data covers | `reference/champions-format.md` |
 | Past regulations (for reading old team files) | `reference/regulations/` |

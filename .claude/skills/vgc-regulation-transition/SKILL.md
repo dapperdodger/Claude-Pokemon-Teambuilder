@@ -6,7 +6,7 @@ description: Use when a VGC regulation has ended or is about to, when the sessio
 # VGC Regulation Transition
 
 ## Overview
-Regulations turn over roughly every 3-4 months. This is a **scheduled event
+Regulations turn over every one to three months. This is a **scheduled event
 with a runbook**, not an incident — the whole point of this skill is that a
 rollover should be routine rather than something rediscovered each time.
 
@@ -116,10 +116,17 @@ node tools/dex/cli.js learnset "<A New Species>"
 roster contains species the learnsets do not cover. That is a real finding: it
 means the two vendors have drifted, not that the test is broken.
 
-**6. Flag teams built for the old regulation.** The phase hook lists team
-files whose `Regulation:` stamp no longer matches. Don't silently rewrite
-them — a team file is a historical record. Note in the file that it was built
-under the previous regulation, and only revise it if the user asks.
+**6. Flag teams built for the old regulation — in chat, not in the files.**
+The phase hook lists team files whose `Regulation:` stamp no longer matches.
+**Write nothing to `teams/`.** A team file is a historical record of what was
+true when it was built; a rollover does not make it wrong, it makes it old,
+and that is already visible from its own `Regulation:` stamp plus the archive
+you wrote in step 2.
+
+List the affected files in your reply and say what changed under them. Do not
+add an "outdated" banner, do not update the stamp, do not correct newly
+illegal picks. If a team looks worth rebuilding for the new regulation, say
+so and stop — rebuilding is a separate job the user starts.
 
 **7. Set expectations.** Say plainly that the meta is unsettled and why. For
 the first ~2 weeks there is effectively no usage data; see the
