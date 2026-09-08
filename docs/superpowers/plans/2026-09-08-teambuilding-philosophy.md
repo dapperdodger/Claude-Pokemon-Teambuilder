@@ -25,14 +25,32 @@
 - **Mega naming hazard:** `tools/damage-calc` and `tools/dex` need `"Mega Staraptor"`; `tools/meta` needs `"Staraptor-Mega"`. Any code crossing the two must go through `tools/meta/megas.js`.
 - **Never present an incomplete derived list as complete.** Any filter that cannot see the whole roster must say so in its own output.
 
-## Phase gate
+## Ordering
 
-**Tasks 1-5 (Phase 1) run today.** They are regulation-agnostic.
+**Tasks 1-16 all run today.** None of them depends on the regulation
+rollover. The tests assert *properties* rather than contents — "every result
+carrying type Fire has Fire", "count > 0", "`find` agrees with
+`learnset()`" — so they survive a re-vendor unchanged. The meta tests run
+against frozen fixtures. The skills are prose.
 
-**Task 6 (Phase 2) is a hard gate** and cannot run before 2026-09-09. **Tasks 7-17 must not start until Task 6 is complete and `npm test` is green.**
+**Task 17 is the rollover, and it runs last**, on or after 2026-09-09.
+
+One artifact is genuinely rollover-sensitive: `reference/format-knowledge.md`,
+generated in Task 10. Generated today it describes the outgoing regulation's
+field, and Task 17 regenerates it. It is still generated today, because a
+renderer that has never run is an untested renderer, and because Task 17
+Step 6 uses this exact file to confirm the staleness machinery fires for real.
+
+That last point is why the rollover is a *task* rather than a gate. Building
+first means the two staleness warnings — `pinStatus` in Task 7 and
+`formatKnowledgeStatus` in Task 10 — are in place *before* the event they
+exist to detect, so Task 17 can watch them fire instead of asserting they
+would have. On the day this plan was written the pin and the active
+regulation match, so those branches are unreachable from the CLI; they are
+covered by injected-value unit tests until the rollover makes them reachable
+for real.
 
 ---
-
 # Phase 1 — Reference layer
 
 ### Task 1: Commit the source notes verbatim
@@ -406,94 +424,9 @@ thresholds from becoming over-fixation."
 
 ---
 
-# Phase 2 — The rollover gate
+# Phase 2 — `dex find`
 
-### Task 6: Regulation transition and cross-vendor re-vendor
-
-**BLOCKS TASKS 7-17. Cannot run before 2026-09-09.**
-
-**Files:**
-- Modify: `reference/regulation.md`
-- Create: `reference/regulations/m-b.md` is already present — create the new archive entry only if the transition skill says to
-- Modify: `tools/dex/vendor/learnsets.js`
-- Modify: `tools/dex/VENDOR_MANIFEST.md`
-- Modify: `tools/damage-calc/vendor/` (per its own manifest)
-- Modify: `tools/damage-calc/VENDOR_MANIFEST.md`
-
-**Interfaces:**
-- Consumes: nothing from Tasks 1-5.
-- Produces: a current roster and current move pools, which every subsequent task's output depends on for correctness.
-
-- [ ] **Step 1: Run the transition skill, do not improvise**
-
-Invoke the **vgc-regulation-transition** skill and follow it. It already covers verifying the new regulation's rules, archiving the old cycle, and re-vendoring. Do not hand-roll this sequence.
-
-- [ ] **Step 2: Re-vendor BOTH datasets, not one**
-
-`tools/dex/vendor/learnsets.js` (move pools, from smogon/pokemon-showdown) and `tools/damage-calc/vendor/` (roster/moves/items/abilities, from NCP-VGC-Damage-Calculator) have **independent pins**. Re-vendoring either alone breaks the cross-vendor invariant in a different direction: a newer roster leaves new species with no move pool; newer learnsets can drop species the older roster still lists.
-
-Follow the `## Re-vendoring` section of each manifest exactly. For learnsets that includes the line-1 transform:
-
-```
-export const Learnsets: import('../../../sim/dex-species').ModdedLearnsetDataTable = {
-```
-
-becomes
-
-```
-var CHAMPIONS_LEARNSETS = {
-```
-
-Skipping it makes the file parse and define nothing, and `load-learnsets.js` throws a named error saying exactly that.
-
-- [ ] **Step 3: Update the Commit AND Regulation fields in both manifests**
-
-Both fields are load-bearing: the commit answers "is this behind upstream", the regulation answers "is this describing the rules we are playing under". Add a changelog row to each manifest.
-
-- [ ] **Step 4: Run the cross-vendor gate**
-
-Run: `npm test`
-Expected: PASS, including all three invariants in `tools/dex/tests/learnset-coverage-invariant.test.js`.
-
-If `invariant: every roster species has a usable learnset` fails, **that is a real finding, not a broken test** — the two pins disagree. Re-vendor the lagging one. Never relax the assertion.
-
-If `invariant: the stem-fallback resolution set matches the checked allowlist` fails with a species **added**, that is a required human check, not an auto-pass: verify that species' real Champions move pool actually matches the base species the stem fallback substituted, then update `ALLOWLIST`. A species **removed** from that set now resolves directly and can simply be dropped from the list.
-
-- [ ] **Step 5: Record the measured coverage**
-
-Run:
-
-```bash
-node -e '
-const { getVendor } = require("./tools/damage-calc/load-vendor.js");
-const dex = require("./tools/dex/dex.js");
-const v = getVendor();
-const roster = Object.keys(v.POKEDEX_CHAMPIONS);
-const missing = roster.filter((n) => !dex.resolveLearnsetId(v, n));
-console.log("roster:", roster.length, "| uncovered:", missing.length);
-if (missing.length) console.log(missing.join(", "));
-'
-```
-
-Expected: `uncovered: 0`. Record the roster count in the `tools/dex/VENDOR_MANIFEST.md` changelog row — the baseline before this work was **315 entries, 0 uncovered** (measured 2026-09-08).
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add reference/ tools/dex/ tools/damage-calc/
-git commit -m "chore(vendor): re-vendor both datasets for the new regulation
-
-Roster and learnsets come from different upstreams with independent pins.
-Re-vendoring either alone breaks the cross-vendor invariant, so both move
-together. learnset-coverage-invariant.test.js is the gate that proves they
-agree."
-```
-
----
-
-# Phase 3 — `dex find`
-
-### Task 7: The `find` query function
+### Task 6: The `find` query function
 
 **Files:**
 - Modify: `tools/dex/dex.js`
@@ -794,7 +727,7 @@ one."
 
 ---
 
-### Task 8: `find` CLI wiring and the staleness stamp
+### Task 7: `find` CLI wiring and the staleness stamp
 
 **Files:**
 - Modify: `tools/dex/cli.js`
@@ -803,7 +736,7 @@ one."
 - Modify: `tools/dex/tests/find.test.js`
 
 **Interfaces:**
-- Consumes: `dex.find(filters)` from Task 7; `team.currentRegulation()` from `tools/dex/team.js:31`.
+- Consumes: `dex.find(filters)` from Task 6; `team.currentRegulation()` from `tools/dex/team.js:31`.
 - Produces: `manifest.learnsetPin() -> {commit: string|null, regulation: string|null}`; the `find` subcommand.
 
 - [ ] **Step 1: Write the failing test for the pin reader**
@@ -824,6 +757,31 @@ test('learnsetPin: reads both load-bearing fields from VENDOR_MANIFEST.md', () =
 
 test('learnsetPin: never throws, even if the manifest is unreadable', () => {
   assert.doesNotThrow(() => manifest.learnsetPin());
+});
+
+// pinStatus is a pure function taking injected values rather than reading the
+// manifest, for a specific reason: on the day this is written the pin and the
+// active regulation MATCH, so the stale branch cannot be reached by calling
+// the real CLI. An untested branch that only fires at a regulation rollover
+// is an untested branch at exactly the moment it matters most.
+test('pinStatus: a pin matching the active regulation is not stale', () => {
+  const s = manifest.pinStatus({ pinRegulation: 'M-B', activeRegulation: 'M-B' });
+  assert.equal(s.stale, false);
+  assert.equal(s.caveat, null);
+});
+
+test('pinStatus: a pin from a previous regulation is stale and explains why', () => {
+  const s = manifest.pinStatus({ pinRegulation: 'M-B', activeRegulation: 'M-C' });
+  assert.equal(s.stale, true);
+  assert.match(s.caveat, /STALE LEARNSET PIN/);
+  assert.match(s.caveat, /M-B/);
+  assert.match(s.caveat, /M-C/);
+  assert.match(s.caveat, /CUT move pools/);
+});
+
+test('pinStatus: an unknown pin or unknown active regulation is not asserted either way', () => {
+  assert.equal(manifest.pinStatus({ pinRegulation: null, activeRegulation: 'M-C' }).stale, false);
+  assert.equal(manifest.pinStatus({ pinRegulation: 'M-B', activeRegulation: null }).stale, false);
 });
 ```
 
@@ -860,7 +818,28 @@ function learnsetPin() {
   }
 }
 
-module.exports = { learnsetPin };
+// Pure: takes the two regulation ids rather than reading them, so the stale
+// branch is reachable in a test on a day when the real pin happens to match.
+//
+// Unknown on either side is NOT stale. Absence of information is not evidence
+// of drift, and a warning that fires whenever a field cannot be parsed trains
+// the reader to ignore it.
+function pinStatus({ pinRegulation, activeRegulation }) {
+  if (!pinRegulation || !activeRegulation || pinRegulation === activeRegulation) {
+    return { stale: false, caveat: null };
+  }
+  return {
+    stale: true,
+    caveat:
+      `STALE LEARNSET PIN: move pools are pinned to regulation ${pinRegulation}, but the active ` +
+      `regulation is ${activeRegulation}. Regulations CUT move pools as well as adding them, and ` +
+      'upstream updates the mod in place — so this list may contain species that no longer learn ' +
+      'the move it was filtered on. Re-vendor per tools/dex/VENDOR_MANIFEST.md before trusting ' +
+      'these candidates.',
+  };
+}
+
+module.exports = { learnsetPin, pinStatus };
 ```
 
 - [ ] **Step 4: Run it to verify it passes**
@@ -928,18 +907,14 @@ if (command === 'find') {
   // no longer playing: find generates the candidate SET, so a stale pool does
   // not produce one wrong answer, it seeds every downstream slot decision.
   if (learns.length) {
-    const pin = require('./manifest').learnsetPin();
+    const manifest = require("./manifest");
+    const pin = manifest.learnsetPin();
     result.learnsetPin = pin;
-    const active = require('./team').currentRegulation();
-    if (pin.regulation && active && pin.regulation !== active) {
-      result.caveats.push(
-        `STALE LEARNSET PIN: move pools are pinned to regulation ${pin.regulation}, but the active ` +
-        `regulation is ${active}. Regulations CUT move pools as well as adding them, and upstream ` +
-        'updates the mod in place — so this list may contain species that no longer learn the move ' +
-        'it was filtered on. Re-vendor per tools/dex/VENDOR_MANIFEST.md before trusting these ' +
-        'candidates.'
-      );
-    }
+    const status = manifest.pinStatus({
+      pinRegulation: pin.regulation,
+      activeRegulation: require("./team").currentRegulation(),
+    });
+    if (status.stale) result.caveats.push(status.caveat);
   }
 
   return ok(result);
@@ -1006,7 +981,11 @@ Run:
 node tools/dex/cli.js find --learns "Trick Room" --max-spe 50 --min-atk 100 --sort atk
 ```
 
-Expected: a JSON object with `count`, `results`, `notInLearnsetTable: []`, `caveats`, and a `learnsetPin` whose `regulation` matches the active one. Confirm `caveats` contains no `STALE LEARNSET PIN` entry — if it does, Task 6 was skipped or incomplete.
+Expected: a JSON object with `count`, `results`, `notInLearnsetTable: []`, `caveats`, and a `learnsetPin` whose `regulation` matches the active one.
+
+**Before the rollover, `caveats` will contain no `STALE LEARNSET PIN` entry** — the pin and the active regulation agree, so the branch correctly does not fire. That is why the branch is covered by the injected-value `pinStatus` tests in Step 4 rather than by this command: a check that can only be exercised on the day it matters is not a check.
+
+**After the rollover and before Task 17 completes, this command SHOULD emit that caveat.** Seeing it is the end-to-end confirmation the unit tests cannot give.
 
 - [ ] **Step 9: Run the whole suite and commit**
 
@@ -1025,9 +1004,9 @@ downstream slot decision instead of producing one wrong answer."
 
 ---
 
-# Phase 4 — Generated format knowledge
+# Phase 3 — Generated format knowledge
 
-### Task 9: Speed tiers
+### Task 8: Speed tiers
 
 **Files:**
 - Create: `tools/meta/format-knowledge.js`
@@ -1228,7 +1207,7 @@ dropped, because a silently shorter list reads as a smaller field."
 
 ---
 
-### Task 10: Key-move and ability distributions
+### Task 9: Key-move and ability distributions
 
 **Files:**
 - Modify: `tools/meta/format-knowledge.js`
@@ -1437,7 +1416,7 @@ current field. Share is unweighted and says so — a species running a move on
 
 ---
 
-### Task 11: `--write` and the freshness check
+### Task 10: `--write` and the freshness check
 
 **Files:**
 - Modify: `tools/meta/format-knowledge.js`
@@ -1595,6 +1574,8 @@ head -20 reference/format-knowledge.md
 
 Expected: the file exists, its `**Regulation:**` matches `reference/regulation.md`'s active one, and its `**Generated:**` is today.
 
+**This is the one artifact in the whole plan that the rollover invalidates.** Generated before the rollover it describes the outgoing regulation's field, and Task 17 regenerates it. Commit it anyway rather than deferring: a generated file that has never been generated is an untested renderer, and watching the staleness check fire on this exact file at the rollover is better end-to-end evidence than any unit test. The extra commit is the cost of that evidence.
+
 - [ ] **Step 7: Confirm the hook now reports current, not stale**
 
 Run: `node .claude/hooks/vendor-staleness.js`
@@ -1618,15 +1599,15 @@ effect of opening a session would make the git history unreadable."
 
 ---
 
-# Phase 5 — Skills
+# Phase 4 — Skills
 
-### Task 12: Rewrite `vgc-team-building`
+### Task 11: Rewrite `vgc-team-building`
 
 **Files:**
 - Modify: `.claude/skills/vgc-team-building/SKILL.md`
 
 **Interfaces:**
-- Consumes: `reference/archetypes.md`, `reference/speed-control.md`, `reference/roles.md`, `reference/team-evaluation.md` (Tasks 2-5); `dex find` (Task 8).
+- Consumes: `reference/archetypes.md`, `reference/speed-control.md`, `reference/roles.md`, `reference/team-evaluation.md` (Tasks 2-5); `dex find` (Task 7).
 - Produces: the checklist every other team skill's scope fence is drawn against.
 
 - [ ] **Step 1: Replace the Process checklist**
@@ -1711,7 +1692,7 @@ sub-step of the design step it serves."
 
 ---
 
-### Task 13: Add the role-fit check to `vgc-team-refining`
+### Task 12: Add the role-fit check to `vgc-team-refining`
 
 **Files:**
 - Modify: `.claude/skills/vgc-team-refining/SKILL.md`
@@ -1779,7 +1760,7 @@ species, item and ability stay fixed inputs."
 
 ---
 
-### Task 14: Add design-constraint thresholds to `vgc-team-audit`
+### Task 13: Add design-constraint thresholds to `vgc-team-audit`
 
 **Files:**
 - Modify: `.claude/skills/vgc-team-audit/SKILL.md`
@@ -1832,13 +1813,13 @@ counterweights that keep precision from becoming over-fixation."
 
 ---
 
-### Task 15: Add format knowledge to `vgc-meta-lookup`
+### Task 14: Add format knowledge to `vgc-meta-lookup`
 
 **Files:**
 - Modify: `.claude/skills/vgc-meta-lookup/SKILL.md`
 
 **Interfaces:**
-- Consumes: `meta speed-tiers`, `meta distribution` (Tasks 9-10); `reference/format-knowledge.md` (Task 11).
+- Consumes: `meta speed-tiers`, `meta distribution` (Tasks 8-9); `reference/format-knowledge.md` (Task 10).
 - Produces: a fourth dimension in the meta scan.
 
 - [ ] **Step 1: Add the format-knowledge step**
@@ -1887,7 +1868,7 @@ the co-occurrence warning."
 
 ---
 
-### Task 16: New skill `vgc-post-game`
+### Task 15: New skill `vgc-post-game`
 
 **Files:**
 - Create: `.claude/skills/vgc-post-game/SKILL.md`
@@ -1987,9 +1968,9 @@ stays read-only: finding a real problem mid-triage is not permission to write."
 
 ---
 
-# Phase 6 — Wiring
+# Phase 5 — Wiring
 
-### Task 17: `CLAUDE.md`, `README.md`, transition step, changelogs
+### Task 16: `CLAUDE.md`, `README.md`, transition step, changelogs
 
 **Files:**
 - Modify: `CLAUDE.md`
@@ -1999,7 +1980,7 @@ stays read-only: finding a real problem mid-triage is not permission to write."
 - Modify: `reference/mechanics.md`
 
 **Interfaces:**
-- Consumes: everything from Tasks 1-16.
+- Consumes: everything from Tasks 1-15.
 - Produces: the routing that makes all of it reachable.
 
 - [ ] **Step 1: Add the always-on block to `CLAUDE.md`**
@@ -2106,17 +2087,145 @@ sections gain cross-links rather than having their content moved."
 
 ---
 
+# Phase 6 — The rollover
+
+### Task 17: Regulation transition and cross-vendor re-vendor
+
+**Runs last. Cannot run before 2026-09-09.**
+
+Everything before this task is regulation-agnostic *code and prose*: the tests assert properties ("every result carrying type Fire has Fire", "count > 0", "`find` agrees with `learnset()`"), never contents, so they survive a re-vendor. This task is where the *data* becomes current, and where the machinery built above gets its first real exercise.
+
+**Files:**
+- Modify: `reference/regulation.md`
+- Create: `reference/regulations/m-b.md` is already present — create the new archive entry only if the transition skill says to
+- Modify: `tools/dex/vendor/learnsets.js`
+- Modify: `tools/dex/VENDOR_MANIFEST.md`
+- Modify: `tools/damage-calc/vendor/` (per its own manifest)
+- Modify: `tools/damage-calc/VENDOR_MANIFEST.md`
+
+**Interfaces:**
+- Consumes: `manifest.pinStatus` (Task 7) and `formatKnowledgeStatus` (Task 10) — both should be *firing* when this task starts, and silent when it ends.
+- Produces: a current roster, current move pools, and a regenerated `reference/format-knowledge.md`.
+
+- [ ] **Step 1: Run the transition skill, do not improvise**
+
+Invoke the **vgc-regulation-transition** skill and follow it. It already covers verifying the new regulation's rules, archiving the old cycle, and re-vendoring. Do not hand-roll this sequence.
+
+- [ ] **Step 2: Re-vendor BOTH datasets, not one**
+
+`tools/dex/vendor/learnsets.js` (move pools, from smogon/pokemon-showdown) and `tools/damage-calc/vendor/` (roster/moves/items/abilities, from NCP-VGC-Damage-Calculator) have **independent pins**. Re-vendoring either alone breaks the cross-vendor invariant in a different direction: a newer roster leaves new species with no move pool; newer learnsets can drop species the older roster still lists.
+
+Follow the `## Re-vendoring` section of each manifest exactly. For learnsets that includes the line-1 transform:
+
+```
+export const Learnsets: import('../../../sim/dex-species').ModdedLearnsetDataTable = {
+```
+
+becomes
+
+```
+var CHAMPIONS_LEARNSETS = {
+```
+
+Skipping it makes the file parse and define nothing, and `load-learnsets.js` throws a named error saying exactly that.
+
+- [ ] **Step 3: Update the Commit AND Regulation fields in both manifests**
+
+Both fields are load-bearing: the commit answers "is this behind upstream", the regulation answers "is this describing the rules we are playing under". Add a changelog row to each manifest.
+
+- [ ] **Step 4: Run the cross-vendor gate**
+
+Run: `npm test`
+Expected: PASS, including all three invariants in `tools/dex/tests/learnset-coverage-invariant.test.js`.
+
+If `invariant: every roster species has a usable learnset` fails, **that is a real finding, not a broken test** — the two pins disagree. Re-vendor the lagging one. Never relax the assertion.
+
+If `invariant: the stem-fallback resolution set matches the checked allowlist` fails with a species **added**, that is a required human check, not an auto-pass: verify that species' real Champions move pool actually matches the base species the stem fallback substituted, then update `ALLOWLIST`. A species **removed** from that set now resolves directly and can simply be dropped from the list.
+
+- [ ] **Step 5: Record the measured coverage**
+
+Run:
+
+```bash
+node -e '
+const { getVendor } = require("./tools/damage-calc/load-vendor.js");
+const dex = require("./tools/dex/dex.js");
+const v = getVendor();
+const roster = Object.keys(v.POKEDEX_CHAMPIONS);
+const missing = roster.filter((n) => !dex.resolveLearnsetId(v, n));
+console.log("roster:", roster.length, "| uncovered:", missing.length);
+if (missing.length) console.log(missing.join(", "));
+'
+```
+
+Expected: `uncovered: 0`. Record the roster count in the `tools/dex/VENDOR_MANIFEST.md` changelog row — the baseline before this work was **315 entries, 0 uncovered** (measured 2026-09-08).
+
+- [ ] **Step 6: Observe the staleness machinery firing — before fixing it**
+
+Do this **first**, before re-vendoring. It is the only chance to confirm end to end that the two warnings built in Tasks 7 and 10 actually fire on a real regulation change rather than only in unit tests.
+
+```bash
+node tools/dex/cli.js find --learns "Protect" --limit 1
+node .claude/hooks/vendor-staleness.js
+```
+
+Expected, at this moment and only at this moment: the `find` output carries a `STALE LEARNSET PIN` caveat naming both regulations, and the hook reports `reference/format-knowledge.md` as describing the previous regulation.
+
+**If either is silent, that is a real defect** — the warning that was supposed to protect against exactly this situation did not work. Fix it before continuing, and add the case that was missed to its unit tests.
+
+- [ ] **Step 7: Regenerate format knowledge**
+
+```bash
+node tools/meta/cli.js speed-tiers --write
+```
+
+The format slug increments at a rollover, so confirm the regenerated file's `**Format:**` and `**Regulation:**` both name the new cycle. Re-vendoring first is a prerequisite: speed tiers join usage against the vendored dex, so a stale roster produces a stale tier list that looks fine.
+
+- [ ] **Step 8: Confirm both warnings have gone quiet**
+
+```bash
+node tools/dex/cli.js find --learns "Protect" --limit 1
+node .claude/hooks/vendor-staleness.js
+npm test
+```
+
+Expected: no `STALE LEARNSET PIN` caveat, no `format-knowledge.md` staleness line, and a green suite.
+
+- [ ] **Step 9: Re-validate the saved teams, and do not fix them**
+
+```bash
+node tools/dex/cli.js team --all
+```
+
+Teams built for the previous regulation will now warn. **That is correct and must be left alone** — `teams/` files are historical records that stay wrong on purpose. Report what changed; edit nothing. See `.claude/rules/teams.md`.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add reference/ tools/dex/ tools/damage-calc/
+git commit -m "chore(vendor): re-vendor both datasets for the new regulation
+
+Roster and learnsets come from different upstreams with independent pins.
+Re-vendoring either alone breaks the cross-vendor invariant, so both move
+together. learnset-coverage-invariant.test.js is the gate that proves they
+agree."
+```
+
+---
+
 ## Self-review notes
 
-**Spec coverage.** Every section of the spec maps to a task: reference layer → Tasks 1-5; examples policy → Task 2 Step 2, enforced per-file in Tasks 3-5; `dex find` → Tasks 7-8; `meta` subcommands and freshness → Tasks 9-11; workflow changes → Tasks 12-16; `CLAUDE.md` and sequencing → Task 17; the rollover gate → Task 6.
+**Spec coverage.** Every section of the spec maps to a task: reference layer → Tasks 1-5; examples policy → Task 2 Step 2, enforced per-file in Tasks 3-5; `dex find` → Tasks 6-7; `meta` subcommands and freshness → Tasks 8-10; workflow changes → Tasks 11-15; `CLAUDE.md` and wiring → Task 16; the rollover → Task 17.
 
-**Deviation from the spec, flagged for the reviewer.** The spec lists `--ability` as a plain `find` filter. Measured 2026-09-08: the vendored roster stores exactly **one** ability per species (`entry.ab` — Whimsicott reports only `Prankster`, Garchomp only `Rough Skin`), and `dex.mon`'s own `abilityNote` already states non-Megas legally have 2-3. So `--ability` produces **false negatives by construction** — it cannot see a species whose relevant ability sits in an unstored slot. Task 7 therefore ships it with a permanent, non-silenceable caveat in every `--ability` result, and a test asserting the caveat is always present. The honest alternative was to drop the filter; it is kept because it is still useful for the abilities the roster does store, and because `meta distribution --ability` (Task 10) answers the "what is actually run" half properly.
+**Departure from the spec's sequencing, and why.** The spec made the rollover a hard gate blocking every tooling task. That was over-broad — it conflated *building* a tool with *trusting its output*. Only one artifact, the generated `format-knowledge.md`, is actually invalidated by the rollover; every test in Tasks 6-15 asserts properties rather than contents and survives a re-vendor. Building first is also strictly better for verification: it puts the two staleness warnings in place *before* the event they exist to detect, so Task 17 Step 6 can watch them fire rather than assert they would have. The spec's stated concern — shipping a tool that warns about itself from day one — does not apply, because today the pin and the active regulation match and the warning is correctly silent until the rollover.
+
+**Deviation from the spec, flagged for the reviewer.** The spec lists `--ability` as a plain `find` filter. Measured 2026-09-08: the vendored roster stores exactly **one** ability per species (`entry.ab` — Whimsicott reports only `Prankster`, Garchomp only `Rough Skin`), and `dex.mon`'s own `abilityNote` already states non-Megas legally have 2-3. So `--ability` produces **false negatives by construction** — it cannot see a species whose relevant ability sits in an unstored slot. Task 6 therefore ships it with a permanent, non-silenceable caveat in every `--ability` result, and a test asserting the caveat is always present. The honest alternative was to drop the filter; it is kept because it is still useful for the abilities the roster does store, and because `meta distribution --ability` (Task 9) answers the "what is actually run" half properly.
 
 **Second deviation, flagged for the reviewer: `dex.js` will have two stat-key conventions.** `dex.mon()` returns the vendor's raw keys (`hp at df sa sd sp`) because it passes `entry.bs` straight through, and existing tests and callers depend on that. `dex.find()` returns long keys (`hp atk def spa spd spe`) because the spec requires Speed never to be exposed as `sp` — that string means Stat Points everywhere else in this repo, and a `--min-sp` flag or a `baseStats.sp` field in a *candidate-generation* tool is exactly the collision most likely to produce a silently wrong spread.
 
-Task 9's `speedTiers` therefore reads `entry.baseStats.sp` (it calls `mon`) while Task 7's tests read `m.baseStats.spe` (they call `find`). Both are correct. The alternative — renaming `mon()`'s keys — is a breaking change to a function with existing consumers, and is outside this spec.
+Task 8's `speedTiers` therefore reads `entry.baseStats.sp` (it calls `mon`) while Task 6's tests read `m.baseStats.spe` (they call `find`). Both are correct. The alternative — renaming `mon()`'s keys — is a breaking change to a function with existing consumers, and is outside this spec.
 
-**Task 7 Step 3 must document the divergence in code**, immediately above `STAT_KEYS`:
+**Task 6 Step 3 must document the divergence in code**, immediately above `STAT_KEYS`:
 
 ```js
 // NOTE: mon() returns the vendor's raw stat keys (hp/at/df/sa/sd/sp) because

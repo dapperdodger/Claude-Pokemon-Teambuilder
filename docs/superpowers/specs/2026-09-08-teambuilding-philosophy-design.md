@@ -480,49 +480,43 @@ same as it being good.
 
 ## Sequencing
 
-The re-vendor is folded in as a **hard gate**, not a later chore: `dex find`
-is only as trustworthy as the move pools behind it, and shipping it against an
-M-B pin would mean shipping a tool that warns about itself from its first
-invocation.
+**Revised 2026-09-08, after measuring what actually depends on the rollover.**
+An earlier version of this section made the re-vendor a hard gate blocking every
+tooling task. That was over-broad: it conflated *building* a tool with *trusting
+its output*. The corrected sequencing is below; the reasoning for the change is
+in the next section.
 
 **Phase 1 — reference layer.** `reference/sources/` plus the four working
-reference files. Regulation-agnostic by construction, so it does not wait on
-the rollover and is reviewable entirely on its own.
+reference files. Regulation-agnostic by construction.
 
-**Phase 2 — the rollover gate.** Runs on or after 2026-09-09, via the
-`vgc-regulation-transition` skill. Blocks phases 3-6 (5 and 6 transitively, via phase 3).
+**Phase 2 — `dex find`.** The query function, the CLI wiring, and the learnset
+pin stamp.
 
-- Verify M-C's actual rules and update `reference/regulation.md`; archive M-B
-  to `reference/regulations/`.
-- **Re-vendor both datasets, not one.** `tools/dex/vendor/learnsets.js` (move
-  pools) and `tools/damage-calc/vendor/` (roster, moves, items, abilities) come
-  from different upstreams with independent pins. Re-vendoring either alone
-  breaks the cross-vendor invariant: a newer roster leaves new species with no
-  move pool, and newer learnsets can drop species the older roster still lists.
-  The staleness hook already reports damage-calc as behind upstream today.
-- Update the Commit **and** Regulation fields in both manifests.
-- `npm test`. `learnset-coverage-invariant.test.js` is the gate that proves the
-  two vendors agree — a failure here is a real finding, not a broken test.
+**Phase 3 — generated format knowledge.** `meta speed-tiers`, `meta distribution`,
+`--write`, and the freshness check in the SessionStart hook.
 
-**Phase 3 — `dex find`** + tests. Gated on phase 2, so its first run is
-against current move pools.
+**Phase 4 — skills.** Rewrites of building, refining, audit and meta-lookup, plus
+the new `vgc-post-game` skill.
 
-**Phase 4 — `meta speed-tiers` / `distribution`** + `--write` + the staleness
-check + tests. Also gated on phase 2: the Pikalytics format slug changes at the
-rollover, and `format-knowledge.md`'s first generated contents should be M-C
-rather than a file that is stale the moment it is written.
+**Phase 5 — wiring.** `CLAUDE.md`, `README.md`, the regeneration step in
+`vgc-regulation-transition`, and a changelog row on every touched reference file.
 
-**Phase 5 — skills.** Rewrites of building, refining, audit and meta-lookup,
-plus the new `vgc-post-game` skill. After phase 3, because a skill instructing
-`dex find` before that command exists is a broken instruction.
+**Phase 6 — the rollover.** On or after 2026-09-09. Runs the regulation
+transition, re-vendors **both** datasets, regenerates `format-knowledge.md`, and
+re-runs everything.
 
-**Phase 6 — wiring.** `CLAUDE.md`, `README.md`, the regeneration step in
-`vgc-regulation-transition`, and a `## Changelog` row on every touched
-reference file citing these notes.
+**Re-vendoring both datasets, not one, is still non-negotiable.**
+`tools/dex/vendor/learnsets.js` and `tools/damage-calc/vendor/` come from
+different upstreams with independent pins. Re-vendoring either alone breaks the
+cross-vendor invariant in a different direction: a newer roster leaves new species
+with no move pool; newer learnsets can drop species the older roster still lists.
+`learnset-coverage-invariant.test.js` is the gate that proves they agree, and a
+failure there is a real finding rather than a broken test.
 
-**What can start today:** phase 1 only. Phases 3-6 are downstream of a
-regulation that does not exist yet.
-
+**Phases 1-5 all run before the rollover.** Their tests assert properties, not
+contents — "every result carrying type Fire has Fire", "count > 0", "`find` agrees
+with `learnset()`" — so a re-vendor does not invalidate them. The meta tests run
+against frozen fixtures.
 ## Testing
 
 - `dex find`: filter correctness per filter and in combination; the
@@ -543,24 +537,37 @@ regulation that does not exist yet.
 
 ## Regulation timing
 
-M-B ends 2026-09-09, one day after this spec. This is the reason the sequencing
-above has a gate in the middle rather than running straight through.
+M-B ends 2026-09-09, one day after this spec.
 
-Principles outlive regulations, so phase 1 is genuinely unblocked — archetypes,
-roles, speed control and evaluation criteria do not change when the regulation
-does. Everything that touches *data* does: move pools get cut, the roster
-moves, and the Pikalytics format slug increments.
+**Exactly one artifact is invalidated by that.** `reference/format-knowledge.md`
+is generated from live usage joined against the vendored dex; generated before
+the rollover it describes the outgoing field. Everything else in this design is
+either principle (which outlives regulations) or code whose tests assert
+structure rather than roster contents.
 
-The earlier draft of this spec proposed building against M-B and letting the
-staleness warning fire immediately afterward. That is defensible for a tool
-answering one deliberate question, and wrong for one that generates candidate
-sets — the warning would be correct on every single invocation from day one,
-which is how warnings get ignored. Hence the gate.
+It is still generated before the rollover, for two reasons. A renderer that has
+never run is an untested renderer. And it is the file the staleness check acts
+on, so it is the evidence that the check works.
 
-One consequence worth stating: **the M-C re-vendor is now on this project's
-critical path**, not adjacent to it. If the rollover slips, phases 3-6 slip
-with it. Phase 1 is unaffected either way.
+**Building before the rollover is better for verification, not merely faster.**
+This design adds two staleness warnings — the learnset pin stamp on `dex find`
+and the freshness check on `format-knowledge.md`. Both exist to detect a
+regulation change. Building them beforehand means the rollover *exercises* them:
+the implementation plan makes observing both warnings fire a required step,
+performed before the re-vendor silences them. A warning built after the event it
+was meant to catch has never been shown to work.
 
+A branch reachability note that shaped the design: **today the learnset pin and
+the active regulation match**, so the stale-pin branch cannot be reached by
+calling the CLI. The staleness decisions are therefore pure functions taking
+injected regulation ids, unit-tested against a mismatch that does not yet exist
+in the repo. An untested branch that first executes at a regulation rollover is
+untested at exactly the moment it matters most.
+
+The earlier concern that motivated the gate — shipping a tool that warns about
+itself from day one — does not apply for the same reason: the warning is
+correctly silent until the rollover, and correctly loud after it until Phase 6
+runs.
 ## Out of scope
 
 - The `mechanics.md` Rillaboom/Grassy Surge inconsistency noted above. (Phase 2
