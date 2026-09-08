@@ -9,6 +9,7 @@
 //   node tools/dex/cli.js move "Rock Slide"
 //   node tools/dex/cli.js legal --item "Choice Band"
 //   node tools/dex/cli.js legal --ability "No Guard"
+//   node tools/dex/cli.js learnset "Mega Altaria" --move "Calm Mind"
 
 const dex = require('./dex');
 
@@ -18,6 +19,7 @@ const USAGE = `Usage:
   node tools/dex/cli.js move <Move>              bp, type, category, spread/priority flags
   node tools/dex/cli.js legal --item <Item>      Champions item-pool legality
   node tools/dex/cli.js legal --ability <Ability>
+  node tools/dex/cli.js learnset <Species> [--move <Move>]  move legality
   node tools/dex/cli.js team <file.md>           validate a team file
   node tools/dex/cli.js team --all               validate every file in teams/
 
@@ -70,6 +72,13 @@ function main() {
       const name = argv[1];
       if (!name) return fail('move: a move name is required, e.g. move "Rock Slide"');
       return ok(dex.move(name));
+    }
+
+    if (command === 'learnset') {
+      const name = argv[1];
+      if (!name) return fail('learnset: a species name is required, e.g. learnset "Mega Altaria" --move "Calm Mind"');
+      const mv = flagValue(argv, '--move');
+      return ok(dex.learnset(name, mv));
     }
 
     if (command === 'team') {

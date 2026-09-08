@@ -127,3 +127,30 @@ test('no roster species causes learnset() to throw', () => {
     );
   }
 });
+
+// ---------------------------------------------------------------------------
+// CLI tests
+// ---------------------------------------------------------------------------
+
+const { execFileSync } = require('node:child_process');
+const path = require('node:path');
+
+const CLI = path.join(__dirname, '..', 'cli.js');
+
+function runCli(...args) {
+  return JSON.parse(execFileSync(process.execPath, [CLI, ...args], { encoding: 'utf8' }));
+}
+
+test('CLI: learnset with --move returns a verdict', () => {
+  const out = runCli('learnset', 'Mega Altaria', '--move', 'Calm Mind');
+  assert.equal(out.verdict, 'illegal');
+});
+
+test('CLI: learnset without --move lists moves', () => {
+  const out = runCli('learnset', 'Altaria');
+  assert.ok(Array.isArray(out.moves));
+});
+
+test('CLI: learnset with no species is an error', () => {
+  assert.throws(() => execFileSync(process.execPath, [CLI, 'learnset'], { encoding: 'utf8', stdio: 'pipe' }));
+});
