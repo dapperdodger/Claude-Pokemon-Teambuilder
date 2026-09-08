@@ -72,7 +72,10 @@ whether it stacks with a regular Mega was unknown at M-C's launch.)
 **5. Re-vendor the roster data, then run the tests.** New Pokémon and Megas
 do **not** appear in `tools/dex` until the vendored data is refreshed —
 `POKEDEX_CHAMPIONS` is a point-in-time snapshot. Follow
-`tools/damage-calc/VENDOR_MANIFEST.md`'s "Re-vendoring" section, then:
+`tools/damage-calc/VENDOR_MANIFEST.md`'s "Re-vendoring" section, and update
+**both** its `Commit:` and `Regulation:` fields — the regulation field is what
+`.claude/hooks/vendor-staleness.js` compares against `reference/regulation.md`,
+the same drift check step 5c relies on for the learnset pin. Then:
 
 ```bash
 npm test

@@ -6,6 +6,7 @@ License: MIT (see upstream LICENSE)
 ## Vendored files (unmodified, byte-for-byte)
 
 Commit: `dfbf020d4ed7df8921c6e11bbaa23410f6ca1448` (main branch HEAD, 2026-07-09)
+Regulation: `M-B`
 
 - `pokedex.js` <- `script_res/pokedex.js`
 - `move_data.js` <- `script_res/move_data.js`
@@ -77,3 +78,4 @@ This is a deliberate, manual step — not automated. To re-sync:
 | Date | Change | Source |
 |---|---|---|
 | 2026-07-09 | Initial vendor from commit dfbf020d4ed7df8921c6e11bbaa23410f6ca1448 | https://github.com/nerd-of-now/NCP-VGC-Damage-Calculator |
+| 2026-09-07 | Added `Regulation: \`M-B\`` pin, matching tools/dex/VENDOR_MANIFEST.md's format, so roster regulation drift is reportable by `.claude/hooks/vendor-staleness.js` the same way learnset drift already is | (docs only, no re-vendor) |

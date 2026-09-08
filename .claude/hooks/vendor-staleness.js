@@ -57,8 +57,16 @@ const VENDORS = [
     label: "tools/dex's vendored Pokemon Showdown Champions learnsets (move legality)",
     manifest: path.join(REPO, 'tools', 'dex', 'VENDOR_MANIFEST.md'),
     manifestRel: 'tools/dex/VENDOR_MANIFEST.md',
-    api: 'https://api.github.com/repos/smogon/pokemon-showdown/commits/master',
-    commits: 'https://github.com/smogon/pokemon-showdown/commits/master',
+    // Scoped to the vendored file's path, not master HEAD: the upstream repo
+    // takes ~15 commits/week overall but data/mods/champions/learnsets.ts
+    // itself changes far less often, so comparing against master HEAD reports
+    // "behind upstream" almost permanently even when this exact file is
+    // current — noise that buries the regulation-drift line this check
+    // exists to surface. This endpoint returns an array of commits that
+    // actually touched the path; its first entry's "sha" is what matters,
+    // and the existing regex below matches it unchanged.
+    api: 'https://api.github.com/repos/smogon/pokemon-showdown/commits?path=data/mods/champions/learnsets.ts',
+    commits: 'https://github.com/smogon/pokemon-showdown/commits/master/data/mods/champions/learnsets.ts',
   },
 ];
 
@@ -151,7 +159,7 @@ async function main() {
   if (body) emit(body);
 }
 
-module.exports = { parsePin, parseActiveRegulation, driftNote, checkVendor };
+module.exports = { parsePin, parseActiveRegulation, driftNote, checkVendor, VENDORS };
 
 if (require.main === module) {
   main().catch(() => {}).finally(() => process.exit(0));

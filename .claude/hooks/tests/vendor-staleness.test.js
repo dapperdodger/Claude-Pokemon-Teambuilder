@@ -106,6 +106,20 @@ test('checkVendor reports no drift when the manifest has no Regulation line (dam
   }
 });
 
+// --- VENDORS config: regression against master-HEAD noise for the learnset
+// vendor. The upstream repo takes ~15 commits/week while
+// data/mods/champions/learnsets.ts changes far less often, so checking
+// against master HEAD reports "behind upstream" almost permanently and
+// buries the regulation-drift line this check exists to surface. The
+// learnset entry's API must be scoped to the file's own path instead. ---
+
+test('the learnset vendor entry is scoped to its file path, not master HEAD', () => {
+  const learnsetVendor = hook.VENDORS.find((v) => v.manifestRel === 'tools/dex/VENDOR_MANIFEST.md');
+  assert.ok(learnsetVendor, 'expected a tools/dex/VENDOR_MANIFEST.md entry in VENDORS');
+  assert.match(learnsetVendor.api, /\?path=data\/mods\/champions\/learnsets\.ts$/);
+  assert.notEqual(learnsetVendor.api, 'https://api.github.com/repos/smogon/pokemon-showdown/commits/master');
+});
+
 test('an unexpected throw in one vendor check does not suppress the other vendor\'s report', async () => {
   const dir = makeTmpDir();
   try {

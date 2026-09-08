@@ -5,7 +5,7 @@ License: MIT (see upstream LICENSE)
 
 ## Pin
 
-Commit: `6b4bc34e44cc2541929cc4b8fff96e756ab3f268` (master, 2026-09-06)
+Commit: `cc17bb7854931ce858ebb1836b9a4ea9418aa258` (last commit to touch `data/mods/champions/learnsets.ts`, 2026-07-09)
 Regulation: `M-B`
 
 Both fields are load-bearing. The commit answers "is this behind upstream";
@@ -49,8 +49,10 @@ Re-vendoring at a regulation rollover is a required step, not a judgement call.
 
 ## Re-vendoring
 
-1. Read the current upstream SHA:
-   `curl -s https://api.github.com/repos/smogon/pokemon-showdown/commits/master | grep '"sha"' | head -1`
+1. Read the SHA of the last commit that actually touched the vendored file —
+   NOT master HEAD, which moves on unrelated commits and makes drift
+   detection permanently noisy:
+   `curl -s "https://api.github.com/repos/smogon/pokemon-showdown/commits?path=data/mods/champions/learnsets.ts" | grep '"sha"' | head -1`
 2. Re-download: `curl -sL "https://raw.githubusercontent.com/smogon/pokemon-showdown/<sha>/data/mods/champions/learnsets.ts" -o tools/dex/vendor/learnsets.js`
 3. Re-apply the line-1 transform above.
 4. Update **both** the Commit and Regulation fields in this file, and add a changelog row.
@@ -63,3 +65,4 @@ Re-vendoring at a regulation rollover is a required step, not a judgement call.
 | Date | Change | Source |
 |---|---|---|
 | 2026-09-07 | Initial vendor at 6b4bc34e, regulation M-B | https://github.com/smogon/pokemon-showdown |
+| 2026-09-07 | Re-pinned Commit to `cc17bb7854931ce858ebb1836b9a4ea9418aa258` — the last commit that actually touched `data/mods/champions/learnsets.ts` (2026-07-09) — and scoped `.claude/hooks/vendor-staleness.js`'s upstream check to that path instead of master HEAD, since master HEAD drifts on unrelated commits and made "behind upstream" permanent noise. Content unchanged: no commit between cc17bb78 and the previous 6b4bc34e pin touched this path, so the vendored bytes are identical. | https://github.com/smogon/pokemon-showdown |
