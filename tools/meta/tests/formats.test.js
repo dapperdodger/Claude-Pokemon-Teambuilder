@@ -477,3 +477,52 @@ test('REGRESSION: check() reports etagStatus "changed" when upstream has drifted
     fs.unlinkSync(manifestPath);
   }
 });
+
+// --- Stamp-expiry: the one rollover hole the cross-stamp logic cannot see ---
+// reference/regulation.md carries TWO independent stamps (**Regulation:** and
+// **Pikalytics slug:**) plus the fetched page's own label, and any disagreement
+// among those three already surfaces as current:false. What none of them can
+// catch is nobody editing regulation.md AT ALL: both stamps then agree with
+// each other and both are wrong. The calendar catches that, and the end date
+// is already stamped in the file — it was simply never read.
+//
+// Dates are injected, never read from the clock, so these cannot rot.
+
+test('regulationHasEnded: false while the stamped regulation is still running', () => {
+  assert.equal(formats.regulationHasEnded('2026-09-09', '2026-09-08'), false);
+});
+
+test('regulationHasEnded: false on the end date itself — the cycle runs through it', () => {
+  assert.equal(formats.regulationHasEnded('2026-09-09', '2026-09-09'), false);
+});
+
+test('REGRESSION: regulationHasEnded is true once the end date has passed', () => {
+  // The hole: nobody updated regulation.md, so the slug still points at a
+  // finished cycle and every stamp agrees with every other stamp.
+  assert.equal(formats.regulationHasEnded('2026-09-09', '2026-09-10'), true);
+  assert.equal(formats.regulationHasEnded('2026-09-09', '2026-10-01'), true);
+});
+
+test('regulationHasEnded: a missing or unparseable end stamp is not an expiry claim', () => {
+  // Absence of a date is not evidence the regulation ended. Returning true
+  // here would cry wolf on every command in a repo whose stamp got dropped.
+  assert.equal(formats.regulationHasEnded(null, '2026-10-01'), false);
+  assert.equal(formats.regulationHasEnded('not-a-date', '2026-10-01'), false);
+});
+
+test('describe() reports stampExpired with the end date and days elapsed', () => {
+  const d = formats.describe(fx('ranked-index.md'), null, {
+    now: new Date('2026-09-19T00:00:00Z'),
+    regulationEnd: '2026-09-09',
+  });
+  assert.equal(d.stampExpired.endedOn, '2026-09-09');
+  assert.equal(d.stampExpired.daysAgo, 10);
+});
+
+test('describe() leaves stampExpired null while the regulation is still running', () => {
+  const d = formats.describe(fx('ranked-index.md'), null, {
+    now: new Date('2026-09-08T00:00:00Z'),
+    regulationEnd: '2026-09-09',
+  });
+  assert.equal(d.stampExpired, null);
+});

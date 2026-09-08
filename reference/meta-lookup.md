@@ -17,6 +17,7 @@ right now" — that's the `vgc-meta-lookup` skill's job, using this tool.
 - [Usage is reported per population, never blended](#usage-is-reported-per-population-never-blended)
 - [Freshness: Data Date is fake, the ETag is real](#freshness-data-date-is-fake-the-etag-is-real)
 - [The Mega naming convention — opposite of `tools/damage-calc`](#the-mega-naming-convention--opposite-of-toolsdamage-calc)
+- [The three rollover failures, and which check catches each](#the-three-rollover-failures-and-which-check-catches-each)
 - [What `check` verifies that the other commands don't](#what-check-verifies-that-the-other-commands-dont)
 - [Changelog](#changelog)
 
@@ -272,6 +273,37 @@ N/A, `Win Rate` N/A, `Common Abilities` "No Guard: undefined%").
 Full pitfall write-up, covering both tools and both failure directions:
 `reference/pitfalls.md`'s "Data source pitfalls" section.
 
+## The three rollover failures, and which check catches each
+
+A stale slug is this repo's oldest trap: a previous regulation's Pikalytics
+URL keeps serving complete, correctly-formatted, wrong data forever, and
+nothing about the response looks wrong. Three independent signals cover it,
+and it is worth knowing which covers what — the danger is narrower than it
+first appears, and concentrated in one specific case.
+
+`reference/regulation.md` carries **two independent stamps** — `**Regulation:**`
+and `**Pikalytics slug:**` — and the fetched page declares its own regulation
+in its label. That gives three sources that must agree:
+
+| What went wrong at the rollover | Caught by | How |
+|---|---|---|
+| Slug stale, `**Regulation:**` updated | **every command** | The fetched page's label says the old regulation, the active stamp says the new one → `current: false` plus a warning. No network call needed. |
+| Slug updated, `**Regulation:**` stale | **every command** | The mirror of the above, same mechanism. |
+| **Nobody edited `regulation.md` at all** | **every command**, via the end date | Both stamps agree with each other and both are wrong, so no comparison between them can help. The **calendar** catches it: if `**Regulation ends:**` has passed, `describe()` sets `stampExpired` and every command warns. |
+| Pikalytics changed its own default format code | **`check` only** | Requires asking `/llms-full.txt` what the site currently declares — the one check that costs a network round trip. |
+
+The third row is the one that used to be uncovered. The end date was already
+stamped in `regulation.md`; the tool simply never read it. It is a warning,
+never an error — deliberately reading a finished cycle is legitimate, and the
+`vgc-regulation-transition` skill's early-phase guidance explicitly calls for
+it. The warning states how many days ago the stamp expired and says outright
+that nothing else can detect the case, because the stamps agree with one
+another.
+
+What remains uncovered without `check`: only the fourth row — Pikalytics
+retiring or renaming a format code while your stamps stay internally
+consistent and in-date. That is why `check` still runs first.
+
 ## What `check` verifies that the other commands don't
 
 `mon`, `usage`, and `formats` all resolve the default format code from
@@ -328,3 +360,4 @@ exactly this reason.
 | 2026-09-08 | FIX 8 regression: format-code comparison is now case-insensitive. The index page echoes the requested code as-is; the per-Pokemon page normalizes to lowercase. Both now accept case-variant codes while still detecting genuinely different codes (redirects, aliases). Updated documentation to clarify that the page-format match check has strong force on the per-Pokemon page (independent normalization) and weaker force on the index page (echoes). | `tools/meta/{meta.js,formats.js}` and test cases in `tools/meta/tests/{meta.test.js,formats.test.js}` |
 | 2026-09-08 | Created file, documenting `tools/meta`'s command surface, the per-upstream metrics table, the per-population/no-blending rule, ETag-vs-Data-Date freshness, the Mega naming convention, and the `check`-only regulation-verification gap | `tools/meta/{cli.js,formats.js,meta.js,megas.js,fetch.js,validate.js,META_MANIFEST.md}`; `tools/meta/tests/fixtures/{ranked-raichu.md,ranked-raichu-mega-y.md,tournaments-garchomp.md,tournaments-index.md,filler-index.md}`; live `node tools/meta/cli.js` runs this session (`formats`, `usage`, `mon "Garchomp" --format championstournaments`, `mon "Staraptor-Mega"`, `check`) |
 | 2026-09-08 | Final whole-branch review fix wave: `check` and `report` now check HTTP status before parsing (a failed fetch used to parse as an all-null PASS); `check` now actually reads `META_MANIFEST.md` back and reports `pinnedEtag`/`etagStatus` (`unpinned`/`unchanged`/`changed`) — the ETag-drift capability this doc already claimed, now real instead of write-only; `mon`/`usage`/`formats`/`check` all assert the fetched page's own declared format code against what was requested; a Mega whose stub page slips past `megas.js`'s name matching now fails loudly instead of reporting `undefined%` fields as ordinary missing data; Mega name matching is case-insensitive | `tools/meta/{formats.js,meta.js,megas.js,validate.js,cli.js}` and their test files, this session's review-response task |
+| 2026-09-08 | Added the stamp-expiry check: `describe()` now reads `**Regulation ends:**` from `reference/regulation.md` and sets `stampExpired` once that date has passed, so every command warns instead of only `check`. This closes the one rollover failure the cross-stamp logic structurally cannot see — nobody editing `regulation.md` at all, where both stamps agree with each other and both are wrong. Costs no network call; the date was already stamped in the file and simply went unread. Added the three-rollover-failures table so the remaining `check`-only gap (Pikalytics renaming a format code) is stated rather than implied | Verified live: quiet on 2026-09-08 and 2026-09-09 (M-B's stamped end date), warns from 2026-09-10; `regulationHasEnded` is pure and its tests inject dates so they cannot rot |

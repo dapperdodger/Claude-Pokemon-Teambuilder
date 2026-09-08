@@ -34,13 +34,29 @@ function straddleWarning(d) {
     `Expect it to clear of the old regulation's data around ${s.clearsOn}.`;
 }
 
-// Both currency-driven warnings, in one call, so mon/usage/any future caller
+// The stamped cycle's end date has passed, so reference/regulation.md itself
+// is out of date. This fires independently of everything above: the other
+// checks all compare stamps against each other or against the fetched page,
+// and none of them can see the case where nobody edited regulation.md at all
+// — every stamp then agrees, and all of them are wrong.
+function stampExpiredWarning(d) {
+  const s = d.stampExpired;
+  return `reference/regulation.md stamps ${s.regulation || 'the active regulation'} as ending ` +
+    `${s.endedOn}, which was ${s.daysAgo} day${s.daysAgo === 1 ? '' : 's'} ago — the repo's own ` +
+    `regulation stamps are stale, so the Pikalytics slug may be fetching a finished cycle. ` +
+    `Nothing above can detect this, because the stamps agree with each other. ` +
+    `Run \`node tools/meta/cli.js check\` and the vgc-regulation-transition skill before ` +
+    `citing these numbers as current.`;
+}
+
+// Every currency-driven warning, in one call, so mon/usage/any future caller
 // stay identical by construction rather than by two call sites happening to
 // agree.
 function currencyWarnings(d) {
   const warnings = [];
   if (!d.current) warnings.push(offRegulationWarning(d));
   if (d.straddle) warnings.push(straddleWarning(d));
+  if (d.stampExpired) warnings.push(stampExpiredWarning(d));
   return warnings;
 }
 

@@ -42,6 +42,43 @@ function activeRegulationStart() {
   }
 }
 
+// The end date of the stamped cycle. This is the ONE rollover failure the
+// cross-stamp logic cannot see. reference/regulation.md carries two
+// independent stamps (**Regulation:** and **Pikalytics slug:**), and the
+// fetched page declares its own regulation in its label; any disagreement
+// among those three already surfaces as current:false without a network call.
+// But if nobody edits regulation.md at all, every stamp agrees with every
+// other stamp and all of them are wrong — the slug keeps fetching a finished
+// cycle, which returns complete, correctly-formatted, wrong data forever.
+// Only the calendar catches that, and the date was already stamped here.
+function activeRegulationEnd() {
+  try {
+    const p = path.join(repoRoot(), 'reference', 'regulation.md');
+    const m = fs.readFileSync(p, 'utf8').match(/^\*\*Regulation ends: (\d{4}-\d{2}-\d{2})\*\*/m);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+// Pure, so its tests inject dates instead of reading the clock and cannot rot.
+// A missing or unparseable stamp returns false: absence of a date is not
+// evidence a regulation ended, and claiming otherwise would cry wolf on every
+// command in a repo whose stamp got dropped.
+function regulationHasEnded(endISO, now) {
+  if (!endISO) return false;
+  const end = new Date(`${endISO}T00:00:00Z`);
+  const today = now instanceof Date ? now : new Date(`${now}T00:00:00Z`);
+  if (Number.isNaN(end.getTime()) || Number.isNaN(today.getTime())) return false;
+  return today > end;
+}
+
+function daysBetween(fromISO, now) {
+  const from = new Date(`${fromISO}T00:00:00Z`);
+  const today = now instanceof Date ? now : new Date(`${now}T00:00:00Z`);
+  return Math.round((today.getTime() - from.getTime()) / (24 * 60 * 60 * 1000));
+}
+
 // Champions regulations only. A VGC-2025/Scarlet-Violet format is not a
 // Champions regulation at all and must not be stamped as one.
 function regulationOf(label, code) {
@@ -183,6 +220,21 @@ function describe(indexText, expectedCode, opts = {}) {
     }
   }
 
+  // Independent of currency and of the stamps agreeing with each other: if the
+  // stamped cycle's end date has passed, regulation.md itself is stale and the
+  // slug may be fetching a finished regulation. A warning, never an error —
+  // reading a finished cycle deliberately is legitimate, and the transition
+  // skill explicitly calls for it.
+  const regulationEnd = opts.regulationEnd !== undefined ? opts.regulationEnd : activeRegulationEnd();
+  const nowForExpiry = opts.now || new Date();
+  const stampExpired = regulationHasEnded(regulationEnd, nowForExpiry)
+    ? {
+      regulation: active,
+      endedOn: regulationEnd,
+      daysAgo: daysBetween(regulationEnd, nowForExpiry),
+    }
+    : null;
+
   return {
     code: info.code,
     label: info.label,
@@ -190,6 +242,7 @@ function describe(indexText, expectedCode, opts = {}) {
     currency,
     current,
     straddle,
+    stampExpired,
     capabilities: detectCapabilities(indexText),
   };
 }
@@ -360,7 +413,8 @@ function report(fetchmod, opts = {}) {
 }
 
 module.exports = {
-  activeRegulation, activeRegulationStart, regulationOf, detectCapabilities, describe,
+  activeRegulation, activeRegulationStart, activeRegulationEnd, regulationHasEnded,
+  regulationOf, detectCapabilities, describe,
   defaultFormatCode, report, check, upsertManifestRow, readManifestRow,
   classifyCurrency, windowStraddlesRollover, ROLLING_WINDOW_FORMATS, ROLLING_WINDOW_DAYS,
 };

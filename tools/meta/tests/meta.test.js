@@ -277,3 +277,32 @@ test('mon and usage use identical straddle wording for the same describe input',
   });
   assert.deepEqual(monOut.warnings, usageOut.warnings);
 });
+
+test('REGRESSION: an expired regulation stamp warns even when every stamp agrees', () => {
+  // The one rollover hole the cross-stamp logic cannot see. Note current:true
+  // and straddle:null — by every other signal this data looks fine.
+  const out = meta.usageFromText(fx('ranked-index.md'), {
+    describe: {
+      code: 'battledataregmbs3', label: 'l', regulation: 'M-B', currency: 'regulation',
+      current: true, straddle: null,
+      stampExpired: { regulation: 'M-B', endedOn: '2026-09-09', daysAgo: 12 },
+      capabilities: formats.detectCapabilities(fx('ranked-index.md')),
+    },
+  });
+  const w = out.warnings.join(' ');
+  assert.match(w, /stale/i);
+  assert.match(w, /2026-09-09/);
+  assert.match(w, /12 days ago/);
+  assert.match(w, /check/);
+});
+
+test('no stamp-expiry warning while the stamped regulation is still running', () => {
+  const out = meta.usageFromText(fx('ranked-index.md'), {
+    describe: {
+      code: 'battledataregmbs3', label: 'l', regulation: 'M-B', currency: 'regulation',
+      current: true, straddle: null, stampExpired: null,
+      capabilities: formats.detectCapabilities(fx('ranked-index.md')),
+    },
+  });
+  assert.equal(out.warnings.some((x) => /stale/i.test(x)), false);
+});
