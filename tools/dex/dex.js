@@ -15,6 +15,7 @@
 // lookup; see the vgc-meta-lookup skill.
 
 const { getVendor } = require('../damage-calc/load-vendor');
+const { getLearnsets } = require('./load-learnsets');
 
 // The 18 real types. The vendored chart also carries Typeless/???/Stellar,
 // which are engine-internal and not answerable questions about a matchup.
@@ -179,4 +180,84 @@ function legal(kind, name) {
   throw new Error(`legal: kind must be "item" or "ability", got "${kind}"`);
 }
 
-module.exports = { TYPES, canonicalType, typeEffectiveness, mon, move, legal, isMegaForme };
+// Showdown keys everything by a lowercase-alphanumeric id: "Will-O-Wisp"
+// becomes "willowisp", "U-turn" becomes "uturn".
+function toId(s) {
+  return String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+// Map a roster display name onto its learnset key.
+//
+// This walks the vendored `formes` data rather than stripping a "Mega "
+// prefix, because prefix-stripping is silently wrong for at least one real
+// species: Mega Floette's base is Floette-Eternal, and no species called
+// "Floette" exists on the roster. Verified against the full roster — all 315
+// entries resolve (231 direct, 75 via mega-base, 9 via forme-shares-base).
+function resolveLearnsetId(v, species) {
+  const learnsets = getLearnsets();
+
+  // A Mega has no learnset of its own; it uses its base form's.
+  const base = isMegaForme(species) ? (baseFormeOf(v, species) || species) : species;
+  if (learnsets[toId(base)]) return toId(base);
+
+  // Cosmetic and battle formes (Gourgeist-Small, Palafin-Hero) share the
+  // base species' entry.
+  const stem = base.split('-')[0];
+  if (learnsets[toId(stem)]) return toId(stem);
+
+  return null;
+}
+
+// learnset(species) -> the full legal move list
+// learnset(species, move) -> a legality verdict for that one move
+//
+// Three verdicts, never two. A species missing from the vendored table is
+// "unknown" and must never be reported as "illegal": absence proves nothing,
+// the same discipline this file already applies to isPriority in move().
+function learnset(species, moveName) {
+  const v = getVendor();
+  const learnsets = getLearnsets();
+  const id = resolveLearnsetId(v, species);
+
+  if (!id) {
+    const out = {
+      species,
+      resolvedId: null,
+      verdict: 'unknown',
+      moveCount: null,
+      note:
+        `"${species}" is not in the vendored Champions learnset table. This is NOT evidence the move is illegal — ` +
+        'it means this species is uncovered here (a roster addition the learnset vendor has not caught up to, or a ' +
+        'naming mismatch). Verify live before ruling anything out, and check whether tools/dex/VENDOR_MANIFEST.md ' +
+        'needs re-vendoring.',
+    };
+    if (moveName !== undefined) out.move = moveName;
+    return out;
+  }
+
+  const moves = Object.keys(learnsets[id].learnset);
+
+  if (moveName === undefined) {
+    return {
+      species,
+      resolvedId: id,
+      moveCount: moves.length,
+      moves: moves.sort(),
+      note: 'Legality only. Every upstream source tag is "9M" — this data carries no level-up/TM/egg distinction.',
+    };
+  }
+
+  const known = moves.includes(toId(moveName));
+  return {
+    species,
+    resolvedId: id,
+    move: moveName,
+    verdict: known ? 'legal' : 'illegal',
+    moveCount: moves.length,
+    note: known
+      ? 'Legality only — this says the move is in the pool, not that it is worth running.'
+      : `${species} cannot learn ${moveName} in Champions. Do not build a role around it.`,
+  };
+}
+
+module.exports = { TYPES, canonicalType, typeEffectiveness, mon, move, legal, isMegaForme, learnset, resolveLearnsetId, toId };
