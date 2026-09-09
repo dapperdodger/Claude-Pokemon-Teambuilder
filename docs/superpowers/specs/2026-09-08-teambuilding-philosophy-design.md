@@ -65,10 +65,12 @@ absent from the vendored dex entirely, and `Rillaboom` exists in the broader
 dex but not in `POKEDEX_CHAMPIONS`. Localisation to Champions is therefore
 real work, not transcription.
 
-*(Separately noted, out of scope: `reference/mechanics.md`'s Grassy Terrain
-section cites Rillaboom's Grassy Surge, and Rillaboom is not in the Champions
-roster. Either the vendor is stale or the example is wrong. Flagged, not
-fixed here.)*
+*(Separately noted: `reference/mechanics.md`'s Grassy Terrain section cites
+Rillaboom's Grassy Surge, and Rillaboom is not in the current Champions roster.
+The Grassy Terrain mechanics themselves are verified and evergreen — only the
+setter's availability is regulation-specific. So this gets an availability
+mark, not a deletion, and not a substitution: the measured numbers in that
+section were computed against that example and stay valid.)*
 
 ## Key finding: candidate generation runs on recall
 
@@ -278,9 +280,27 @@ themselves so later edits inherit it:
    is durable (Torkoal's base-20 Speed plus Eruption will not drift).
 3. **Any example resting on current usage carries a date stamp and a verify
    marker**: `(as of 2026-09 — confirm with meta usage)`.
-4. **Examples that are not Champions-legal are replaced**, with the original
-   preserved in `sources/` and a footnote recording the substitution. Known:
-   Urshifu, Rillaboom. The rest get swept through the CLIs.
+4. **Examples that are not currently Champions-legal are MARKED, never deleted.**
+   Availability is a regulation-specific fact that reverts; the guidance about
+   what a thing does is evergreen. Losing the second because of the first
+   discards knowledge at every rollover, which is the opposite of what this
+   repo is for.
+   - Mark it: `*(not in the Champions pool as of <REG>, verified <DATE> — guidance holds for when it returns)*`
+   - Keep every caveat the source attached to it.
+   - Substitute an example only when the reader needs one they can actually
+     use *today* — and then name the original alongside the substitute rather
+     than erasing it.
+   - Verified 2026-09-09 as currently outside the pool: Assault Vest, Choice
+     Band, Choice Specs, and the four terrain seeds; Rillaboom, Amoonguss,
+     Indeedee, Barraskewda, Kingdra, Ludicolo, Lilligant, Sawsbuck, Shiftry,
+     Togekiss are outside the current roster. Re-check all of them after a
+     rollover — absence right after one means "not re-vendored yet," not
+     "not legal."
+
+**Three orthogonal marker axes, not a hierarchy.** A claim can carry one from
+each: **sourcing strength** (`vgc-format.md`'s `[official]`/`[consensus]`/
+`[unresolved]`), **scope** (`*(generic VGC — not Champions-verified)*`), and
+**availability** (rule 4 above).
 
 ## Tools
 

@@ -180,7 +180,7 @@ For each species name that appears anywhere in the file, run:
 node tools/dex/cli.js mon "<Species>"
 ```
 
-Expected: a JSON object with a `name` field. Any `error` response means the example is not Champions-legal — replace it with a verified Champions equivalent that demonstrates the same mechanic, and add a footnote in the form:
+Expected: a JSON object with a `name` field. An `error` response means the species is **not in the current roster** — which is a regulation-specific fact that reverts, NOT a reason to delete the guidance attached to it. Mark it `*(not in the Champions pool as of <REG>, verified <DATE> — guidance holds for when it returns)*` and keep the point it was illustrating. Add a substitute the reader can use today only if the passage needs a usable example, and name the original alongside it rather than erasing it. Footnote form:
 
 ```markdown
 [^1]: The source notes used <Original> here. <Original> is not in the Champions
@@ -189,7 +189,7 @@ Expected: a JSON object with a `name` field. Any `error` response means the exam
       `reference/sources/teambuilding-notes.md`.
 ```
 
-Known replacements required: **Rillaboom** (in the broader dex, not in `POKEDEX_CHAMPIONS`). Do not assume this is the only one — check every name.
+Known to be outside the current roster: **Rillaboom** (in the broader dex, not in `POKEDEX_CHAMPIONS`). Mark it; do not delete it. Do not assume it is the only one — check every name.
 
 - [ ] **Step 3: Verify the file has no unverified current-meta claim**
 
@@ -334,7 +334,7 @@ node tools/dex/cli.js legal --item "Leftovers"
 node tools/dex/cli.js legal --item "Focus Sash"
 ```
 
-**Do not assume any of them pass.** Verified 2026-09-09: Assault Vest, Choice Band, Choice Specs and all four terrain seeds report `championsLegal: false` — Champions' item pool is markedly narrower than standard VGC, and the list above was written from recall, which is precisely the failure this repo exists to prevent. Any item that is not legal must be removed from the table, with a footnote recording that the source named it.
+**Do not assume any of them pass.** Verified 2026-09-09: Assault Vest, Choice Band, Choice Specs and all four terrain seeds report `championsLegal: false` — Champions' item pool is markedly narrower than standard VGC, and the list above was written from recall, which is precisely the failure this repo exists to prevent. An item outside the current pool is **marked, never removed** — it keeps its row and every caveat the source attached to it, under `*(not in the Champions pool as of <REG>, verified <DATE> — guidance holds for when it returns)*`. The pool is regulation-specific and reverts; deleting the guidance loses it permanently.
 
 - [ ] **Step 4: Confirm no existing tests broke**
 
