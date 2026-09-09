@@ -39,7 +39,7 @@ One artifact is genuinely rollover-sensitive: `reference/format-knowledge.md`,
 generated in Task 10. Generated today it describes the outgoing regulation's
 field, and Task 17 regenerates it. It is still generated today, because a
 renderer that has never run is an untested renderer, and because Task 17
-Step 6 uses this exact file to confirm the staleness machinery fires for real.
+Step 2 uses this exact file to confirm the staleness machinery fires for real.
 
 That last point is why the rollover is a *task* rather than a gate. Building
 first means the two staleness warnings — `pinStatus` in Task 7 and
@@ -2111,7 +2111,22 @@ Everything before this task is regulation-agnostic *code and prose*: the tests a
 
 Invoke the **vgc-regulation-transition** skill and follow it. It already covers verifying the new regulation's rules, archiving the old cycle, and re-vendoring. Do not hand-roll this sequence.
 
-- [ ] **Step 2: Re-vendor BOTH datasets, not one**
+**Stop after `reference/regulation.md` names the new regulation, and before re-vendoring.** Updating the active regulation is what makes the pins stale, and Step 2 exists to watch the staleness warnings fire against that real mismatch. Re-vendoring first silences them permanently and destroys the only chance to confirm they work. Return to the skill's re-vendoring section at Step 3.
+
+- [ ] **Step 2: Observe the staleness machinery firing — before fixing it**
+
+`reference/regulation.md` now names the new regulation and both pins still name the old one. That mismatch is exactly what the two warnings built in Tasks 7 and 10 exist to detect, and this is the only moment it exists — the re-vendor in Step 3 removes it for good. Confirm they fire before you fix what they are pointing at.
+
+```bash
+node tools/dex/cli.js find --learns "Protect" --limit 1
+node .claude/hooks/vendor-staleness.js
+```
+
+Expected, at this moment and only at this moment: the `find` output carries a `STALE LEARNSET PIN` caveat naming both regulations, and the hook reports `reference/format-knowledge.md` as describing the previous regulation.
+
+**If either is silent, that is a real defect** — the warning that was supposed to protect against exactly this situation did not work. Fix it before continuing, and add the case that was missed to its unit tests.
+
+- [ ] **Step 3: Re-vendor BOTH datasets, not one**
 
 `tools/dex/vendor/learnsets.js` (move pools, from smogon/pokemon-showdown) and `tools/damage-calc/vendor/` (roster/moves/items/abilities, from NCP-VGC-Damage-Calculator) have **independent pins**. Re-vendoring either alone breaks the cross-vendor invariant in a different direction: a newer roster leaves new species with no move pool; newer learnsets can drop species the older roster still lists.
 
@@ -2129,11 +2144,11 @@ var CHAMPIONS_LEARNSETS = {
 
 Skipping it makes the file parse and define nothing, and `load-learnsets.js` throws a named error saying exactly that.
 
-- [ ] **Step 3: Update the Commit AND Regulation fields in both manifests**
+- [ ] **Step 4: Update the Commit AND Regulation fields in both manifests**
 
 Both fields are load-bearing: the commit answers "is this behind upstream", the regulation answers "is this describing the rules we are playing under". Add a changelog row to each manifest.
 
-- [ ] **Step 4: Run the cross-vendor gate**
+- [ ] **Step 5: Run the cross-vendor gate**
 
 Run: `npm test`
 Expected: PASS, including all three invariants in `tools/dex/tests/learnset-coverage-invariant.test.js`.
@@ -2142,7 +2157,7 @@ If `invariant: every roster species has a usable learnset` fails, **that is a re
 
 If `invariant: the stem-fallback resolution set matches the checked allowlist` fails with a species **added**, that is a required human check, not an auto-pass: verify that species' real Champions move pool actually matches the base species the stem fallback substituted, then update `ALLOWLIST`. A species **removed** from that set now resolves directly and can simply be dropped from the list.
 
-- [ ] **Step 5: Record the measured coverage**
+- [ ] **Step 6: Record the measured coverage**
 
 Run:
 
@@ -2159,19 +2174,6 @@ if (missing.length) console.log(missing.join(", "));
 ```
 
 Expected: `uncovered: 0`. Record the roster count in the `tools/dex/VENDOR_MANIFEST.md` changelog row — the baseline before this work was **315 entries, 0 uncovered** (measured 2026-09-08).
-
-- [ ] **Step 6: Observe the staleness machinery firing — before fixing it**
-
-Do this **first**, before re-vendoring. It is the only chance to confirm end to end that the two warnings built in Tasks 7 and 10 actually fire on a real regulation change rather than only in unit tests.
-
-```bash
-node tools/dex/cli.js find --learns "Protect" --limit 1
-node .claude/hooks/vendor-staleness.js
-```
-
-Expected, at this moment and only at this moment: the `find` output carries a `STALE LEARNSET PIN` caveat naming both regulations, and the hook reports `reference/format-knowledge.md` as describing the previous regulation.
-
-**If either is silent, that is a real defect** — the warning that was supposed to protect against exactly this situation did not work. Fix it before continuing, and add the case that was missed to its unit tests.
 
 - [ ] **Step 7: Regenerate format knowledge**
 
@@ -2217,7 +2219,7 @@ agree."
 
 **Spec coverage.** Every section of the spec maps to a task: reference layer → Tasks 1-5; examples policy → Task 2 Step 2, enforced per-file in Tasks 3-5; `dex find` → Tasks 6-7; `meta` subcommands and freshness → Tasks 8-10; workflow changes → Tasks 11-15; `CLAUDE.md` and wiring → Task 16; the rollover → Task 17.
 
-**Departure from the spec's sequencing, and why.** The spec made the rollover a hard gate blocking every tooling task. That was over-broad — it conflated *building* a tool with *trusting its output*. Only one artifact, the generated `format-knowledge.md`, is actually invalidated by the rollover; every test in Tasks 6-15 asserts properties rather than contents and survives a re-vendor. Building first is also strictly better for verification: it puts the two staleness warnings in place *before* the event they exist to detect, so Task 17 Step 6 can watch them fire rather than assert they would have. The spec's stated concern — shipping a tool that warns about itself from day one — does not apply, because today the pin and the active regulation match and the warning is correctly silent until the rollover.
+**Departure from the spec's sequencing, and why.** The spec made the rollover a hard gate blocking every tooling task. That was over-broad — it conflated *building* a tool with *trusting its output*. Only one artifact, the generated `format-knowledge.md`, is actually invalidated by the rollover; every test in Tasks 6-15 asserts properties rather than contents and survives a re-vendor. Building first is also strictly better for verification: it puts the two staleness warnings in place *before* the event they exist to detect, so Task 17 Step 2 can watch them fire rather than assert they would have. The spec's stated concern — shipping a tool that warns about itself from day one — does not apply, because today the pin and the active regulation match and the warning is correctly silent until the rollover.
 
 **Deviation from the spec, flagged for the reviewer.** The spec lists `--ability` as a plain `find` filter. Measured 2026-09-08: the vendored roster stores exactly **one** ability per species (`entry.ab` — Whimsicott reports only `Prankster`, Garchomp only `Rough Skin`), and `dex.mon`'s own `abilityNote` already states non-Megas legally have 2-3. So `--ability` produces **false negatives by construction** — it cannot see a species whose relevant ability sits in an unstored slot. Task 6 therefore ships it with a permanent, non-silenceable caveat in every `--ability` result, and a test asserting the caveat is always present. The honest alternative was to drop the filter; it is kept because it is still useful for the abilities the roster does store, and because `meta distribution --ability` (Task 9) answers the "what is actually run" half properly.
 
