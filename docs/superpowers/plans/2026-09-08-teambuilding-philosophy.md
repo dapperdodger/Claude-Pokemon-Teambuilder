@@ -136,7 +136,7 @@ Expected: `FOUNDATIONAL OK`. If the diff is non-empty, the header line count is 
 - [ ] **Step 5: Confirm no existing tests broke**
 
 Run: `npm test`
-Expected: PASS, same count as before (310).
+Expected: PASS, same count as before (318).
 
 - [ ] **Step 6: Commit**
 
