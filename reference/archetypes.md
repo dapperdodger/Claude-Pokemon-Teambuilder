@@ -25,21 +25,44 @@ below was run through that CLI on 2026-09-08 — see
 piece of work; a link that does not resolve yet means "not written yet," not
 "wrong path."
 
-**Two markers used throughout:**
+**Three marking schemes apply to claims in this file, and they are
+orthogonal axes — a single claim can legitimately carry one mark from each
+at once, and none of the three ranks or supersedes another:**
 
-- *(generic VGC — not Champions-verified)* — carried from the masterclass
-  notes. True of VGC doubles broadly; **not** separately verified against
-  Champions' roster or its current meta. Kept and marked rather than dropped,
-  because dropping is distilling. **This is a scope marker, not a confidence
-  marker** — it says *where a claim came from* (generic VGC vs. this file's own
-  Champions-specific verification), which is a different question from *how
-  well sourced* a claim is. It is written in italic parentheses, deliberately
-  distinct from `reference/vgc-format.md`'s `[official]` / `[consensus]` /
-  `[unresolved]` bracket tags (see that file's ["Confidence
-  marking"](vgc-format.md#confidence-marking) section) so the two schemes are
-  never mistaken for tiers of the same axis. A claim can legitimately carry
-  both — a generic-VGC heuristic can also be `[consensus]` among third-party
-  VGC sources while being unverified against Champions specifically.
+- **Sourcing strength** — `reference/vgc-format.md`'s `[official]` /
+  `[consensus]` / `[unresolved]` bracket tags (see that file's ["Confidence
+  marking"](vgc-format.md#confidence-marking) section). Answers *how well
+  established* a claim is.
+- **Scope** — *(generic VGC — not Champions-verified)*. Carried from the
+  masterclass notes; true of VGC doubles broadly but **not** separately
+  verified against Champions' roster or its current meta. Kept and marked
+  rather than dropped, because dropping is distilling. Answers *where a
+  claim came from* — generic VGC vs. this file's own Champions-specific
+  verification. It is written in italic parentheses, deliberately distinct
+  from the bracket tags above so the two schemes are never mistaken for
+  tiers of the same axis.
+- **Availability** — `*(not in the Champions pool as of <regulation id>,
+  verified <date> — guidance holds for when it returns)*`. Answers *is the
+  thing legal to use right now*. Attaches only to a species, item, or
+  ability this file actually ran through `node tools/dex/cli.js mon` /
+  `legal --item` / `legal --ability` and confirmed absent or
+  `championsLegal: false` — never applied from recall. **Guidance is never
+  deleted because the species, item, or ability it describes is currently
+  unavailable.** The roster and item pool are regulation-specific, both grow
+  and shrink at each transition, and revert; what the source says a role,
+  item, or strategy is *for* stays true for the entire time the thing it
+  names happens to be sitting outside the current pool. See
+  [Examples policy](#examples-policy) below for where this plays out for
+  this file's rejected-name sweep.
+
+A claim can be *(generic VGC — not Champions-verified)*, `[consensus]` among
+third-party sources, **and** carry an availability mark, all at the same
+time — each axis is answering a different question, so none of them
+substitutes for the others.
+
+A fourth, narrower marker also appears below, answering a different question
+again (current usage share, not sourcing, scope, or legality):
+
 - `(as of 2026-09 — confirm with meta usage)` — the claim rests on what is
   currently played, and what is currently played changes. Re-check with
   `node tools/meta/cli.js usage` before leaning on it.
@@ -543,17 +566,30 @@ the source names in the sections this file covers are Garchomp and Torkoal
 (both roster-legal; the source's spellings "garchaop" and "torkal" are
 typos, not different Pokémon) and Tyranitar.
 
-**Names that failed the sweep and therefore do not appear above.** Recorded so
-a sibling file does not re-derive them: `Rillaboom`, `Amoonguss`, `Indeedee`,
-`Barraskewda`, `Kingdra`, `Ludicolo`, `Lilligant`, `Sawsbuck`, `Shiftry` and
-`Togekiss` all exist in the broader dex but **not** in the Champions roster;
-`Urshifu` is absent from the vendored dex entirely. Each was a candidate
-example here — the standard generic-VGC redirector, Swift Swim body or
-Chlorophyll body — and each was replaced by a verified Champions equivalent
-before it reached the page. **Do not reintroduce any of them into a sibling
-file without re-running `dex mon`**, and note the converse: a species being
-absent locally right after a regulation rollover means "not re-vendored yet,"
-not "not legal" (`CLAUDE.md`).
+**Names outside the current roster, not wrong.** Recorded so a sibling file
+does not re-derive them: `Rillaboom`, `Amoonguss`, `Indeedee`, `Barraskewda`,
+`Kingdra`, `Ludicolo`, `Lilligant`, `Sawsbuck`, `Shiftry` and `Togekiss`
+*(not in the Champions pool as of M-B, verified 2026-09-09 — guidance holds
+for when they return)* all exist in the broader dex but **not** in the
+vendored Champions roster; `Urshifu` is absent from the vendored dex
+entirely, a different and narrower case — it has never been vendored under
+either name, rather than being a species currently sitting out a regulation.
+Each of the other ten was a candidate example here for a real archetype
+role — the standard generic-VGC redirector, Swift Swim body or Chlorophyll
+body — and a verified Champions equivalent stood in for it on the page
+instead. **The role these ten were reaching for is real; the species itself
+was just outside the current pool, which is a regulation-specific and
+reversible fact, not a verdict on the pick.** Rillaboom is the sharpest
+illustration of exactly that: it launches with Regulation M-C the same day
+this file was last re-verified, so its unavailability stops being true
+within hours of this check rather than at some indefinite future rollover.
+**If any of these ten returns to the roster, it is a candidate again with no
+re-reasoning needed about whether the role fits — re-run
+`node tools/dex/cli.js mon "<Species>"` first** to confirm it is actually
+back and pull its current stats and ability before reusing it, rather than
+assuming this note still applies verbatim. And note the converse, unchanged
+from before: a species being absent locally right after a regulation
+rollover means "not re-vendored yet," not "not legal" (`CLAUDE.md`).
 
 ## Changelog
 
@@ -561,3 +597,4 @@ not "not legal" (`CLAUDE.md`).
 |---|---|---|
 | 2026-09-08 | Created. The repo had no archetype taxonomy at all — `vgc-team-building` step 3 said "agree the archetype with the user" and nothing anywhere said what the archetypes were, what each required, or how to choose between them. Covers the three starting points, the two different targets for choosing one, the four archetypes with their requirements and failure modes, the weather whole-team rule, building around a single Pokémon, and Megas as centrepieces. Every named species/move/ability verified via `tools/dex/cli.js`; ten generic-VGC example candidates were rejected as not Champions-roster and replaced before publication | `reference/sources/teambuilding-notes.md` ("Team starting points", "Strategies", "Building Around Specific Pokémon", "Using an Existing Team", "Mega Pokémon Tips") and `reference/sources/teambuilding-notes-advanced.md` ("How to select a strong starting points?"), both vendored this session from masterclass notes by a Pokémon world champion; `docs/superpowers/specs/2026-09-08-teambuilding-philosophy-design.md` |
 | 2026-09-09 | Fix round 1: replaced all `[generic VGC]` bracket-tag occurrences (10, including the definition) with the italic parenthetical `*(generic VGC — not Champions-verified)*` so the scope marker cannot be mistaken for a fourth tier of `vgc-format.md`'s `[official]`/`[consensus]`/`[unresolved]` confidence axis; rewrote the marker's definition block to state it is orthogonal to that axis and link to it. Trimmed the Trick Room -7-priority and Tailwind ×2/4-turn restatements down to the archetype-relevant consequence, deferring the mechanic itself to `reference/mechanics.md` instead of restating it right after telling the reader not to. Added a one-line note in "Choosing a strong starting point" recording that the source's "is there a machine-usable niche-lookup tool" question is answered by `node tools/dex/cli.js find`, built in a later task of this plan. | Code review of this file, round 1 |
+| 2026-09-09 | Fix round 2 (user correction: mark availability, never delete evergreen guidance). The user flagged that removing Rillaboom-terrain-setting-style guidance for a currently-unavailable thing loses knowledge the roster will regain, and asked for a sweep of what had already been over-eagerly deleted, following `reference/roles.md`'s already-corrected precedent. Added **Availability** as a third orthogonal marking axis alongside Sourcing strength and Scope in the marker-definition block, copying `reference/roles.md`'s wording and structure: `*(not in the Champions pool as of <regulation id>, verified <date> — guidance holds for when it returns)*`, attached only after an actual `dex mon`/`legal --item`/`legal --ability` check, and never a reason to delete guidance. Reframed the "Names that failed the sweep" paragraph (Examples policy) to "Names outside the current roster, not wrong": re-ran `dex mon` fresh on all eleven names (`Rillaboom`, `Amoonguss`, `Indeedee`, `Barraskewda`, `Kingdra`, `Ludicolo`, `Lilligant`, `Sawsbuck`, `Shiftry`, `Togekiss`, `Urshifu`) — same verdicts as before, ten absent from the vendored roster and `Urshifu` never vendored under either name — and reframed the ten from "failed"/"rejected" to "outside the current pool," stating explicitly that the archetype role each was reaching for is real and that any of the ten is a candidate again with no re-reasoning needed if it returns, Rillaboom soonest since it launches with M-C the same day this file was last verified. The instruction to re-run `dex mon` before reintroducing one is kept, not removed. Swept the rest of the file (Edit 3) for the same class of error — anywhere something was dropped or called excluded for current illegality rather than marked — and found nothing else: Choice Scarf is the only item this file names and it is currently legal; no other mechanic figure or dropped guidance was found. Regulation used for the marker is **M-B**, read fresh from `reference/regulation.md`'s stamp block (still the active regulation as of this check; the vendored dex has not rolled over to M-C yet, confirmed by re-running `dex mon` on Rillaboom). `npm test` — 318/318, unchanged. | User correction on over-eager availability-based deletion |

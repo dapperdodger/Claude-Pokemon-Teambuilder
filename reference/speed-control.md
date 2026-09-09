@@ -29,21 +29,46 @@ Every species, move, and ability named below was run through
 piece of work; a link that does not resolve yet means "not written yet," not
 "wrong path" (same convention `reference/archetypes.md` uses).
 
-**Two markers used throughout, inherited from `reference/archetypes.md`:**
+**Three marking schemes apply to claims in this file, inherited from
+`reference/archetypes.md` and orthogonal to each other — a single claim can
+legitimately carry one mark from each at once, and none of the three ranks
+or supersedes another:**
 
-- *(generic VGC — not Champions-verified)* — carried from the masterclass
-  notes. True of VGC doubles broadly; **not** separately verified against
-  Champions' roster or its current meta. Kept and marked rather than dropped,
-  because dropping is distilling. **This is a scope marker, not a confidence
-  marker** — it says *where a claim came from* (generic VGC vs. this file's
-  own Champions-specific verification), which is a different question from
-  *how well sourced* a claim is. It is written in italic parentheses,
-  deliberately distinct from `reference/vgc-format.md`'s `[official]` /
+- **Sourcing strength** — `reference/vgc-format.md`'s `[official]` /
   `[consensus]` / `[unresolved]` bracket tags (see that file's ["Confidence
-  marking"](vgc-format.md#confidence-marking) section) so the two schemes are
-  never mistaken for tiers of the same axis. A claim can legitimately carry
-  both — a generic-VGC heuristic can also be `[consensus]` among third-party
-  VGC sources while being unverified against Champions specifically.
+  marking"](vgc-format.md#confidence-marking) section). Answers *how well
+  established* a claim is.
+- **Scope** — *(generic VGC — not Champions-verified)*, inherited from
+  `reference/archetypes.md`. Carried from the masterclass notes; true of VGC
+  doubles broadly but **not** separately verified against Champions' roster
+  or its current meta. Kept and marked rather than dropped, because dropping
+  is distilling. Answers *where a claim came from* — generic VGC vs. this
+  file's own Champions-specific verification. It is written in italic
+  parentheses, deliberately distinct from the bracket tags above so the two
+  schemes are never mistaken for tiers of the same axis.
+- **Availability** — `*(not in the Champions pool as of <regulation id>,
+  verified <date> — guidance holds for when it returns)*`. Answers *is the
+  thing legal to use right now*. Attaches only to a species, item, or
+  ability this file actually ran through `node tools/dex/cli.js mon` /
+  `legal --item` / `legal --ability` and confirmed absent or
+  `championsLegal: false` — never applied from recall. **Guidance is never
+  deleted because the species, item, or ability it describes is currently
+  unavailable.** The roster and item pool are regulation-specific, both grow
+  and shrink at each transition, and revert; what a form's mechanism *does*
+  for turn order stays true for the entire time the thing that provides it
+  happens to be sitting outside the current pool. No claim in this file
+  currently carries this mark — every species, move, and item named below
+  was checked and came back legal — but the axis is defined here so a future
+  addition marks correctly rather than getting silently dropped.
+
+A claim can be *(generic VGC — not Champions-verified)*, `[consensus]` among
+third-party sources, **and** carry an availability mark, all at the same
+time — each axis is answering a different question, so none of them
+substitutes for the others.
+
+A fourth, narrower marker also appears below, answering a different question
+again (current usage share, not sourcing, scope, or legality):
+
 - `(as of 2026-09 — confirm with meta usage)` — the claim rests on what is
   currently played, and what is currently played changes. Re-check with
   `node tools/meta/cli.js usage` before leaning on it. Written by calendar
@@ -311,3 +336,4 @@ numbers live elsewhere, and drift gets fixed there:
 | 2026-09-09 | Created. The repo had the Speed modifiers in `mechanics.md` and no strategy layer anywhere covering speed control as a build axis — `vgc-team-building` step 3 and `vgc-team-audit`'s speed step both referenced it without a target. Covers why speed control is ranked first (with the source's own "not mandatory" qualifier), all seven forms from the source with a cost for each, which forms compose vs. conflict (Tailwind/Trick Room named explicitly per the source), the backup-when-the-setter-is-removed audit question, and pointers to where the actual numbers live. Confirmed via `grep` that `mechanics.md` already carries Choice Scarf ×1.5, Tailwind ×2/4-turn, paralysis ×0.5, and Trick Room's -7 priority — no mechanic restated here, nothing added to `mechanics.md`. Every species, move, and item named was verified via `tools/dex/cli.js` on 2026-09-09; none failed. One generic-VGC claim (Electric-types immune to paralysis) is flagged unverified against Champions specifically rather than asserted or dropped. | `reference/sources/teambuilding-notes.md` ("Speed control is important, often the most important!"), vendored from masterclass notes by a Pokémon world champion; `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-3-brief.md` |
 | 2026-09-09 | Fix round 1 (review findings). The Turn-order-changers row was the one row of seven with no real cost in its cell — it deferred entirely to `archetypes.md`. Added a stated cost (a team slot plus the turn spent setting it up, and Trick Room turning your own Tailwind boost into a liability if both are run) while keeping the cross-link. Fixed a misattributed pointer: the priority-moves subsection cited "the same file" (`mechanics.md`, from the preceding clause) for Trick Room's "How it fails" list, but that heading and the Armor-Tail bullet live in `reference/archetypes.md`, which has no such heading in `mechanics.md` — corrected the file name. Fixed the Backup section's reference to `vgc-team-audit`, written with a `reference/` prefix though it is a skill at `.claude/skills/vgc-team-audit/`, not a `reference/` file — now named as a skill, matching this file's own Changelog convention. Swept every `reference/*.md` and `.claude/skills/*` mention plus all in-file and cross-file anchors in the file for the same class of error; found no others — all resolve to real files/headings, and the three forward references to not-yet-written files (`roles.md`, `team-evaluation.md`, `format-knowledge.md`) are intentional and unchanged. `npm test` — 318/318, unchanged. | `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-3-report.md` review findings 1-3 |
 | 2026-09-09 | Compress Turn-order-changers row cell (What it costs you) from 58 to 35 words while preserving both the concrete cost and archetype reference, by folding the pointer to `reference/archetypes.md` into the cost sentence rather than leaving it as a separate sentence. | Single-cell text trim task |
+| 2026-09-09 | Fix round 2 (user correction: mark availability, never delete evergreen guidance). Same controller ruling applied to `reference/roles.md` and `reference/archetypes.md`: current unavailability of a thing is a regulation-specific, reversible fact, not grounds to delete or omit the evergreen guidance about what it does. Added **Availability** as a third orthogonal marking axis alongside Sourcing strength and Scope in the marker-definition block, copying `reference/roles.md`'s wording and structure. Swept the rest of the file (Edit 3) for anywhere a form, move, or item was dropped or presented as excluded for current illegality rather than marked — found nothing: every species, move and item this file names (Fake Out, Choice Scarf, Thunder Wave/Nuzzle/Glare, Body Slam/Discharge, Icy Wind/Cotton Spore, Aerodactyl, Dragapult) is currently legal, so no claim in the file carries the new availability mark yet — the axis is defined here so a future addition marks correctly instead of being silently dropped. Regulation used for the marker's example wording is **M-B**, read fresh from `reference/regulation.md`'s stamp block, still the active regulation as of this check. `npm test` — 318/318, unchanged. | User correction on over-eager availability-based deletion |
