@@ -152,14 +152,81 @@ async function checkVendor(v, active, fetchSha = fetchUpstreamSha) {
   }
 }
 
+const FORMAT_KNOWLEDGE = path.join(REPO, 'reference', 'format-knowledge.md');
+
+// Pure so it can be tested without a filesystem. The caller reads the file and
+// passes what it found; this decides only whether that constitutes stale.
+//
+// A regulation mismatch is stale at ANY age: the file can be generated
+// minutes ago and still describe a field that no longer exists.
+function formatKnowledgeStatus({ exists, generatedAt, regulation, activeRegulation }) {
+  if (!exists) {
+    return {
+      stale: true,
+      reason:
+        'reference/format-knowledge.md has never been generated. Speed tiers and key-move ' +
+        'distributions are unavailable. Generate with: node tools/meta/cli.js speed-tiers --write',
+    };
+  }
+  if (regulation && activeRegulation && regulation !== activeRegulation) {
+    return {
+      stale: true,
+      reason:
+        `reference/format-knowledge.md describes regulation ${regulation}, but the active ` +
+        `regulation is ${activeRegulation}. Regenerate: node tools/meta/cli.js speed-tiers --write`,
+    };
+  }
+  const days = generatedAt
+    ? Math.floor((Date.now() - Date.parse(generatedAt)) / (24 * 60 * 60 * 1000))
+    : null;
+  if (days === null) {
+    return { stale: true, reason: 'reference/format-knowledge.md has no parseable generated-on stamp. Regenerate it.' };
+  }
+  if (days > 7) {
+    return {
+      stale: true,
+      reason:
+        `reference/format-knowledge.md is ${days} days old. Usage moves within a regulation. ` +
+        'Regenerate: node tools/meta/cli.js speed-tiers --write',
+    };
+  }
+  return { stale: false, days };
+}
+
+// Reads reference/format-knowledge.md's own stamps off disk and hands them to
+// formatKnowledgeStatus. Kept separate from that pure function (mirrors the
+// checkVendor/driftNote split above) so the filesystem read stays isolated
+// from the decision it feeds.
+function readFormatKnowledgeStatus(active) {
+  try {
+    if (!fs.existsSync(FORMAT_KNOWLEDGE)) {
+      return formatKnowledgeStatus({ exists: false });
+    }
+    const text = fs.readFileSync(FORMAT_KNOWLEDGE, 'utf8');
+    const generatedAt = (text.match(/^\*\*Generated:\*\*\s*(\d{4}-\d{2}-\d{2})/m) || [])[1] || null;
+    const regulation = (text.match(/^\*\*Regulation:\*\*\s*(\S+)/m) || [])[1] || null;
+    return formatKnowledgeStatus({ exists: true, generatedAt, regulation, activeRegulation: active });
+  } catch (err) {
+    // Same rule as checkVendor: an unexpected read failure must still report,
+    // never resolve to a silent "nothing to say" that reads as current.
+    const message = err && err.message ? err.message : String(err);
+    return {
+      stale: true,
+      reason: `Could not read reference/format-knowledge.md: ${message}. Treat this as stale, not current.`,
+    };
+  }
+}
+
 async function main() {
   const active = activeRegulation();
   const results = await Promise.all(VENDORS.map((v) => checkVendor(v, active)));
+  const fk = readFormatKnowledgeStatus(active);
+  if (fk.stale) results.push(fk.reason);
   const body = results.filter(Boolean).join('\n\n---\n\n');
   if (body) emit(body);
 }
 
-module.exports = { parsePin, parseActiveRegulation, driftNote, checkVendor, VENDORS };
+module.exports = { parsePin, parseActiveRegulation, driftNote, checkVendor, VENDORS, formatKnowledgeStatus };
 
 if (require.main === module) {
   main().catch(() => {}).finally(() => process.exit(0));

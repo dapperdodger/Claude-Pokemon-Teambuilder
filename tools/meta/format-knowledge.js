@@ -132,4 +132,85 @@ function distribution(entries, opts) {
   };
 }
 
-module.exports = { speedTiers, distribution, KEY_MOVES, KEY_ABILITIES };
+// Markdown body for reference/format-knowledge.md. Mirrors META_MANIFEST.md's
+// do-not-hand-edit convention: this file is computed, never edited by hand,
+// because what is common changes and a hand-maintained list looks exactly as
+// authoritative as a correct one right up until it's wrong.
+//
+// `distributions` is an array of `distribution()` results (one per KEY_MOVES
+// / KEY_ABILITIES subject), each carrying its own `of`/`carrying`/`unresolved`
+// via the caller (cli.js attaches `unresolved` the same way the `distribution`
+// command does).
+function render(speedTiers, distributions) {
+  const lines = [];
+  lines.push('# Format knowledge — generated');
+  lines.push('');
+  lines.push('**Do not hand-edit.** Regenerate with `node tools/meta/cli.js speed-tiers --write`.');
+  lines.push('');
+  lines.push(`**Generated:** ${speedTiers.generatedAt}`);
+  lines.push(`**Format:** ${speedTiers.format}`);
+  lines.push(`**Regulation:** ${speedTiers.regulation}`);
+  lines.push('');
+  lines.push(
+    'This file answers "what does the field look like" — the questions\n' +
+    '`reference/sources/teambuilding-notes-advanced.md` lists under *Important\n' +
+    'Format Knowledge*. It is computed, never written by hand, because what is\n' +
+    'common changes and a hand-maintained list looks exactly as authoritative as\n' +
+    'it is wrong.'
+  );
+  lines.push('');
+
+  lines.push('## Speed tiers');
+  lines.push('');
+  lines.push('| Species | Base Speed | Usage % | ×1.5 (Scarf) | ×2 (Tailwind) |');
+  lines.push('|---|---|---|---|---|');
+  for (const t of speedTiers.tiers) {
+    // usage is a validate.toNumber() result ({value, reason}), not a bare
+    // number: this format's upstream (the official ladder) carries no usage
+    // weighting at all, so `value` is null and `reason` explains why — never
+    // stringify the object itself into the table.
+    const usage = t.usage && t.usage.value !== null && t.usage.value !== undefined
+      ? `${t.usage.value}%`
+      : 'n/a';
+    lines.push(`| ${t.species} | ${t.baseSpeed} | ${usage} | ${t.scarfed} | ${t.tailwind} |`);
+  }
+  lines.push('');
+
+  lines.push('## Key move and ability distributions');
+  lines.push('');
+  lines.push('| Subject | Carried by | Share |');
+  lines.push('|---|---|---|');
+  for (const d of distributions) {
+    lines.push(`| ${d.subject} | ${d.carrying}/${d.of} | ${d.share}% |`);
+  }
+  lines.push('');
+
+  // Distributions share one fetch of the top-N species (see cli.js), so their
+  // `unresolved` lists are identical across subjects — collapse them into one
+  // set of species-level notes instead of repeating each species once per
+  // subject.
+  const unresolvedSet = new Set();
+  for (const s of speedTiers.unresolved || []) {
+    unresolvedSet.add(`Speed tiers: could not resolve "${s}" against the dex.`);
+  }
+  for (const d of distributions) {
+    for (const u of d.unresolved || []) {
+      const reason = typeof u === 'string' ? u : `${u.species}: ${u.reason}`;
+      unresolvedSet.add(`Distributions: ${reason}`);
+    }
+  }
+  const unresolved = [...unresolvedSet];
+
+  lines.push('## Unresolved');
+  lines.push('');
+  if (unresolved.length) {
+    for (const u of unresolved) lines.push(`- ${u}`);
+  } else {
+    lines.push('None.');
+  }
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+module.exports = { speedTiers, distribution, KEY_MOVES, KEY_ABILITIES, render };

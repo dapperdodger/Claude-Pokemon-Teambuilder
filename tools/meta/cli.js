@@ -2,6 +2,8 @@
 'use strict';
 // CLI over tools/meta. One JSON object per invocation, mirroring tools/dex.
 
+const fs = require('node:fs');
+const path = require('node:path');
 const fetchmod = require('./fetch');
 const formats = require('./formats');
 const megas = require('./megas');
@@ -12,7 +14,9 @@ const USAGE = `Usage:
   node tools/meta/cli.js formats [--write]      list formats, capabilities, regulation
   node tools/meta/cli.js mon <Species> [--format <code>]   per-Pokemon data
   node tools/meta/cli.js usage [--format <code>]           ranked list
-  node tools/meta/cli.js speed-tiers [--top N] [--format <code>]  base-Speed tiers of the field
+  node tools/meta/cli.js speed-tiers [--top N] [--format <code>] [--write]  base-Speed tiers of the field
+                                                 --write also runs a KEY_MOVES/KEY_ABILITIES
+                                                 distribution and (re)generates reference/format-knowledge.md
   node tools/meta/cli.js distribution --move <Move> | --ability <Ability> [--top N] [--format <code>]
                                                  how much of the field carries a move/ability
   node tools/meta/cli.js check                  slug agreement and ETag drift
@@ -52,6 +56,34 @@ function loadIndex(code) {
   const r = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${code}`);
   if (r.status !== 200) throw new Error(`Format "${code}" returned HTTP ${r.status}`);
   return r;
+}
+
+// Shared by the `distribution` command and `speed-tiers --write`: fetches the
+// per-Pokemon page for each of the top-N usage rows and builds the
+// {species, usage, mon} entries fk.distribution() needs. A single species
+// failing to fetch is recorded under `unresolved`, same as `distribution`'s
+// own contract, rather than aborting the whole run.
+function fetchDistributionEntries(usage, code, describe, top) {
+  const entries = [];
+  const unresolved = [];
+  for (const row of usage.rows.slice(0, top)) {
+    try {
+      const megaInfo = megas.resolve(row.species);
+      const lookup = megaInfo.isMega ? megaInfo.base : row.species;
+      const r = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${code}/${encodeURIComponent(lookup)}`);
+      if (r.status !== 200) {
+        unresolved.push({ species: row.species, reason: `HTTP ${r.status} fetching "${lookup}"` });
+        continue;
+      }
+      const mon = meta.monFromText(r.text, {
+        formatCode: code, capabilities: describe.capabilities, megaInfo, describe, lookupName: lookup,
+      });
+      entries.push({ species: row.species, usage: row.usage, mon });
+    } catch (err) {
+      unresolved.push({ species: row.species, reason: err.message });
+    }
+  }
+  return { entries, unresolved };
 }
 
 function main() {
@@ -94,9 +126,39 @@ function main() {
 
     if (command === 'speed-tiers') {
       const idx = loadIndex(code);
-      const usage = meta.usageFromText(idx.text, { describe: formats.describe(idx.text, code) });
+      const describe = formats.describe(idx.text, code);
+      const usage = meta.usageFromText(idx.text, { describe });
       const topRaw = flagValue(argv, '--top');
-      return ok(fk.speedTiers(usage, { top: topRaw ? Number(topRaw) : 20 }));
+      const top = topRaw ? Number(topRaw) : 20;
+      const tiers = fk.speedTiers(usage, { top });
+
+      if (!argv.includes('--write')) return ok(tiers);
+
+      // --write additionally runs a distribution over every KEY_MOVES /
+      // KEY_ABILITIES subject (the source notes' "Important Format
+      // Knowledge" list) and renders both halves to
+      // reference/format-knowledge.md. Regeneration is a manual command,
+      // never something the SessionStart hook triggers itself.
+      // Fetched once and reused across every subject below — the per-Pokemon
+      // pages don't change between a Trick Room check and a Prankster check,
+      // so re-fetching per subject would multiply N+1 requests by the
+      // subject count for no new information.
+      const { entries, unresolved } = fetchDistributionEntries(usage, code, describe, top);
+      const subjects = [
+        ...fk.KEY_MOVES.map((move) => ({ move })),
+        ...fk.KEY_ABILITIES.map((ability) => ({ ability })),
+      ];
+      const distributions = subjects.map((subj) => {
+        const d = fk.distribution(entries, subj);
+        d.unresolved = unresolved;
+        return d;
+      });
+
+      const body = fk.render(tiers, distributions);
+      const outPath = path.join(__dirname, '..', '..', 'reference', 'format-knowledge.md');
+      fs.writeFileSync(outPath, body);
+
+      return ok({ ...tiers, distributions, written: { path: outPath } });
     }
 
     if (command === 'distribution') {
@@ -111,29 +173,11 @@ function main() {
       const topRaw = flagValue(argv, '--top');
       const top = topRaw ? Number(topRaw) : 20;
 
-      const entries = [];
-      const unresolved = [];
-      for (const row of usage.rows.slice(0, top)) {
-        try {
-          // Same Mega-aggregation rule as `mon`: Pikalytics logs a Mega's
-          // battles under its base species, so the fetch must go out under
-          // the base name even though the usage row itself may already be
-          // the base (pikaToDex/resolve is a no-op for a non-Mega name).
-          const megaInfo = megas.resolve(row.species);
-          const lookup = megaInfo.isMega ? megaInfo.base : row.species;
-          const r = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${code}/${encodeURIComponent(lookup)}`);
-          if (r.status !== 200) {
-            unresolved.push({ species: row.species, reason: `HTTP ${r.status} fetching "${lookup}"` });
-            continue;
-          }
-          const mon = meta.monFromText(r.text, {
-            formatCode: code, capabilities: describe.capabilities, megaInfo, describe, lookupName: lookup,
-          });
-          entries.push({ species: row.species, usage: row.usage, mon });
-        } catch (err) {
-          unresolved.push({ species: row.species, reason: err.message });
-        }
-      }
+      // Same Mega-aggregation rule as `mon`: Pikalytics logs a Mega's battles
+      // under its base species, so the fetch must go out under the base name
+      // even though the usage row itself may already be the base
+      // (pikaToDex/resolve is a no-op for a non-Mega name).
+      const { entries, unresolved } = fetchDistributionEntries(usage, code, describe, top);
 
       const out = fk.distribution(entries, move ? { move } : { ability });
       out.format = describe.code;
