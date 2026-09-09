@@ -352,4 +352,137 @@ function defensiveProfile(defendingInputs) {
   };
 }
 
-module.exports = { TYPES, canonicalType, typeEffectiveness, defensiveProfile, mon, move, legal, isMegaForme, learnset, resolveLearnsetId, toId };
+// Maps the unambiguous long stat names this repo's CLIs use onto the vendor's
+// two-letter keys. The Speed entry is the reason this map exists: the vendor
+// keys Speed as `sp`, while `SP` means Stat Points everywhere else in this
+// repo. Exposing `sp` as a Speed flag would collide with the single most
+// load-bearing term in the domain, so the public name is always `spe`.
+const STAT_KEYS = { hp: 'hp', atk: 'at', def: 'df', spa: 'sa', spd: 'sd', spe: 'sp' };
+
+const ABILITY_FILTER_CAVEAT =
+  'The vendored roster stores exactly one ability per species, so --ability can only match that ' +
+  'single slot. Non-Mega Pokemon legally have 2-3 abilities, and a species whose relevant ability ' +
+  'sits in an unstored slot will NOT appear here. This filter therefore produces false negatives by ' +
+  'construction. For what is actually being run, use tools/meta (per-Pokemon ability distribution).';
+
+function longStats(bs) {
+  const out = {};
+  for (const [long, short] of Object.entries(STAT_KEYS)) out[long] = bs[short];
+  return out;
+}
+
+// find(filters) -> a candidate list, with everything it could not see reported.
+//
+// This exists because vgc-team-building requires 3-5 verified candidates per
+// roster gap, and until now the FACTS about each candidate were verified while
+// the candidate LIST itself came from recall — the one thing this repo's whole
+// architecture exists to prevent. A derived-looking list invites more trust
+// than a remembered one, so anything this cannot see has to be said out loud.
+function find(filters) {
+  const f = filters || {};
+  const v = getVendor();
+  const learnsets = getLearnsets();
+  const caveats = [];
+
+  const wantTypes = (f.types || []).map(canonicalType);
+  const wantMoves = f.learns || [];
+  const wantAbility = f.ability ? toId(f.ability) : null;
+  const min = f.min || {};
+  const max = f.max || {};
+
+  for (const stat of [...Object.keys(min), ...Object.keys(max)]) {
+    if (!STAT_KEYS[stat]) {
+      throw new Error(
+        `Unknown stat "${stat}". Valid stats are: ${Object.keys(STAT_KEYS).join(', ')}. ` +
+        'Note Speed is "spe" — "sp" is not accepted, because SP means Stat Points in this repo.'
+      );
+    }
+  }
+
+  // A move nobody in the whole vendored table has ever been seen with is
+  // almost certainly newer than the learnset pin, not universally unlearnable.
+  // Returning an empty list here would read as "nothing learns it", which is a
+  // confident wrong answer. Fail instead.
+  const known = allVendoredMoveIds();
+  for (const m of wantMoves) {
+    if (!known.has(toId(m))) {
+      throw new Error(
+        `"${m}" is not present anywhere in the vendored learnset table. This is NOT evidence no ` +
+        'Pokemon learns it — it most likely means the move is newer than the learnset pin. Verify ' +
+        'live, and check whether tools/dex/VENDOR_MANIFEST.md needs re-vendoring.'
+      );
+    }
+  }
+
+  if (wantAbility) caveats.push(ABILITY_FILTER_CAVEAT);
+
+  const results = [];
+  const notInLearnsetTable = [];
+
+  for (const [name, entry] of Object.entries(v.POKEDEX_CHAMPIONS)) {
+    const types = [entry.t1, entry.t2].filter(Boolean);
+    if (wantTypes.length && !wantTypes.every((t) => types.includes(t))) continue;
+
+    let statOk = true;
+    for (const [stat, bound] of Object.entries(min)) {
+      if (!(entry.bs[STAT_KEYS[stat]] >= bound)) { statOk = false; break; }
+    }
+    if (statOk) {
+      for (const [stat, bound] of Object.entries(max)) {
+        if (!(entry.bs[STAT_KEYS[stat]] <= bound)) { statOk = false; break; }
+      }
+    }
+    if (!statOk) continue;
+
+    if (wantAbility && toId(entry.ab || '') !== wantAbility) continue;
+
+    let learnsetFrom = null;
+    if (wantMoves.length) {
+      const id = resolveLearnsetId(v, name);
+      if (!id || !learnsets[id] || !learnsets[id].learnset) {
+        notInLearnsetTable.push(name);
+        continue;
+      }
+      const pool = learnsets[id].learnset;
+      if (!wantMoves.every((m) => pool[toId(m)])) continue;
+      learnsetFrom = id;
+    }
+
+    results.push({
+      name,
+      types,
+      baseStats: longStats(entry.bs),
+      ability: entry.ab || null,
+      abilityIsMegaFixed: isMegaForme(name),
+      isMega: isMegaForme(name),
+      learnsetFrom,
+    });
+  }
+
+  if (f.sort) {
+    if (!STAT_KEYS[f.sort]) {
+      throw new Error(`Unknown sort stat "${f.sort}". Valid: ${Object.keys(STAT_KEYS).join(', ')}.`);
+    }
+    results.sort((a, b) => b.baseStats[f.sort] - a.baseStats[f.sort] || a.name.localeCompare(b.name));
+  } else {
+    results.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  if (notInLearnsetTable.length) {
+    caveats.push(
+      `${notInLearnsetTable.length} roster species could not be checked against the learnset table ` +
+      'and were EXCLUDED from these results. Absence from that table is never evidence a move is ' +
+      'illegal — see notInLearnsetTable. Re-vendor per tools/dex/VENDOR_MANIFEST.md.'
+    );
+  }
+
+  const count = results.length;
+  return {
+    count,
+    results: f.limit ? results.slice(0, f.limit) : results,
+    notInLearnsetTable,
+    caveats,
+  };
+}
+
+module.exports = { TYPES, canonicalType, typeEffectiveness, defensiveProfile, mon, move, legal, isMegaForme, learnset, resolveLearnsetId, toId, find };
