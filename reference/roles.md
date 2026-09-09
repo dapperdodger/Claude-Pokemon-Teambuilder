@@ -23,11 +23,15 @@ named below was run through `node tools/dex/cli.js` on 2026-09-09 — see
 [Examples policy](#examples-policy).
 
 **A note on timing.** Regulation M-B ends the day this file was written and
-M-C replaces it (`reference/regulation.md`). The item-legality facts below —
-including two that surprised the sweep — come from the vendored M-B item
-pool. Nothing here should be read as a permanent Champions rule; re-run the
-`legal --item` checks after the M-C re-vendor before trusting this table
-past today.
+M-C replaces it (`reference/regulation.md`). The item-availability facts
+below — several items the source names are currently outside the pool —
+come from the vendored M-B item pool as checked on 2026-09-09. **That is a
+regulation-pool snapshot, not a verdict on the guidance itself**: an item
+marked unavailable keeps its full row, because the item pool is
+regulation-specific and reverts, while the reasoning about what the item
+does for a role does not expire. Re-run the `legal --item` checks (or run
+the `vgc-regulation-transition` skill) after the M-C re-vendor before
+trusting any availability mark in this file past today.
 
 **Forward references.** This file links `reference/archetypes.md`,
 `reference/speed-control.md`, `reference/methodology.md`,
@@ -37,21 +41,40 @@ the same piece of work; a link that does not resolve yet means "not written
 yet," not "wrong path" (same convention `reference/archetypes.md` and
 `reference/speed-control.md` use).
 
-**Two markers used throughout, inherited from `reference/archetypes.md`:**
+**Three marking schemes apply to claims in this file, and they are
+orthogonal axes — a single claim can legitimately carry one mark from each
+at once, and none of the three ranks or supersedes another:**
 
-- *(generic VGC — not Champions-verified)* — carried from the masterclass
-  notes. True of VGC doubles broadly; **not** separately verified against
-  Champions' roster or its current meta. Kept and marked rather than dropped,
-  because dropping is distilling. **This is a scope marker, not a confidence
-  marker** — it says *where a claim came from* (generic VGC vs. this file's
-  own Champions-specific verification), which is a different question from
-  *how well sourced* a claim is. It is written in italic parentheses,
-  deliberately distinct from `reference/vgc-format.md`'s `[official]` /
+- **Sourcing strength** — `reference/vgc-format.md`'s `[official]` /
   `[consensus]` / `[unresolved]` bracket tags (see that file's ["Confidence
-  marking"](vgc-format.md#confidence-marking) section) so the two schemes are
-  never mistaken for tiers of the same axis. A claim can legitimately carry
-  both — a generic-VGC heuristic can also be `[consensus]` among third-party
-  VGC sources while being unverified against Champions specifically.
+  marking"](vgc-format.md#confidence-marking) section). Answers *how well
+  established* a claim is.
+- **Scope** — *(generic VGC — not Champions-verified)*, inherited from
+  `reference/archetypes.md`. Carried from the masterclass notes; true of VGC
+  doubles broadly but **not** separately verified against Champions' roster
+  or its current meta. Kept and marked rather than dropped, because dropping
+  is distilling. Answers *where a claim came from* — generic VGC vs. this
+  file's own Champions-specific verification.
+- **Availability** — `*(not in the Champions pool as of <regulation id>,
+  verified <date> — guidance holds for when it returns)*`. Answers *is the
+  thing legal to use right now*. Attaches only to an item, ability, or
+  species this file actually ran through `node tools/dex/cli.js legal
+  --item` / `--ability` and got `championsLegal: false` back — never applied
+  from recall. **Guidance is never deleted because the item, ability, or
+  species it describes is currently unavailable.** The item pool is
+  regulation-specific and reverts; what a masterclass source says an item is
+  *for* stays true for the entire time that item happens to be sitting out a
+  regulation. See the standing note under [Items by role](#items-by-role)
+  for the re-check obligation this mark carries.
+
+A claim can be *(generic VGC — not Champions-verified)*, `[consensus]` among
+third-party sources, **and** carry an availability mark, all at the same
+time — each axis is answering a different question, so none of them
+substitutes for the others.
+
+A fourth, narrower marker also appears below, answering a different question
+again (current usage share, not sourcing, scope, or legality):
+
 - `(as of 2026-09 — confirm with meta usage)` — the claim rests on what is
   currently played, and what is currently played changes. Re-check with
   `node tools/meta/cli.js usage` before leaning on it.
@@ -187,9 +210,23 @@ type: a single axis looked at alone misses half the picture.
 The source names several item classes. Every one below was checked against
 the Champions item pool with `node tools/dex/cli.js legal --item` on
 2026-09-09, and **the sweep found real gaps between what the source assumes
-and what Champions currently ships** — see the footnotes. `reference/
-mechanics.md` owns item mechanics generally (including exactly what Focus
-Sash blocks); this table carries only the role-fit consequence.
+and what Champions currently ships.** Every item class the source names is
+still in this table regardless of what the sweep found — the ones the sweep
+returned `championsLegal: false` for carry the availability mark defined
+above rather than being cut. `reference/mechanics.md` owns item mechanics
+generally (including exactly what Focus Sash blocks); this table carries
+only the role-fit consequence.
+
+**Standing note — re-check after every rollover.** The availability marks in
+this table are a snapshot pinned to Regulation M-B, verified 2026-09-09.
+They are not a permanent verdict on any item: the Champions item pool is
+regulation-specific and both grows and shrinks at each transition, so an
+item marked unavailable today can become legal again — silently, with no
+flag beyond the regulation notes — the moment a new regulation launches. Do
+not carry an availability mark forward past a rollover on the strength of
+this file alone; re-run `node tools/dex/cli.js legal --item "<Item>"` for
+anything marked here, or run the full `vgc-regulation-transition` skill,
+which re-vendors the item pool as part of its normal handover.
 
 *(The source also states a team-wide budget — "most teams run 1-3 offensive
 items, format specific, i.e. fewer when megas are in." That is a constraint
@@ -200,30 +237,34 @@ as of this file's writing.)*
 
 | Item class | Best on | Watch out for |
 |---|---|---|
-| Choice items[^1] | A Pokémon that wants the guarantee of ×1.5 Speed and is fine committing to one move per switch-in; spread moves pair well since the lock-in cost doesn't change with the number of targets. | Locked into the first move used until switching out. **A Choice item should not also carry Protect** — Protect used once locks the holder into Protect for the rest of its time on the field, which is usually a worse trade than the flexibility Protect exists to buy in the first place. |
+| Choice items — Choice Scarf, Choice Band, Choice Specs[^1] | A Pokémon that wants the guarantee of ×1.5 Speed (Scarf) or ×1.5 damage (Band on physical, Specs on special) and is fine committing to one move per switch-in; spread moves pair well since the lock-in cost doesn't change with the number of targets. | Locked into the first move used until switching out. **A Choice item should not also carry Protect** — Protect used once locks the holder into Protect for the rest of its time on the field, which is usually a worse trade than the flexibility Protect exists to buy in the first place. **Choice Band and Choice Specs** *(not in the Champions pool as of M-B, verified 2026-09-09 — guidance holds for when they return)* **— only Choice Scarf is currently legal**; see footnote. |
 | Life Orb | A Pokémon that wants every attack boosted rather than one item-matched type. | Recoil adds up over a game; **some abilities ignore it** — `reference/mechanics.md` owns ability interactions, check there before assuming a given holder takes the recoil. |
 | Type-boosting items — Mystic Water, Charcoal, and the rest of the family (all verified Champions-legal) | A Pokémon running several moves of one type — the source's own example is Aqua Jet (40 BP, priority) and Wave Crash (120 BP) on the same Water attacker, both verified — or one that mostly clicks a single move, such as Torkoal running Charcoal for its own signature Eruption (150 BP spread Fire; Torkoal's learnset was re-verified for this file). | Narrower than Life Orb — it does nothing for a move of any other type, so it is a weaker pick on a Pokémon whose moveset is genuinely mixed-type. |
 | Focus Sash | A frail Pokémon whose whole job is surviving to take exactly one action. | It is a one-action item, not a one-turn-of-safety item — the gap between those two is real and situational. Multi-hit-move mechanics: `reference/mechanics.md`'s Item mechanics section. Double-targeting risk: `reference/methodology.md`'s Focus-Sash-support case. Don't re-derive either here. |
+| **Assault Vest** *(not in the Champions pool as of M-B, verified 2026-09-09 — guidance holds for when it returns)* | The source lists it alongside Focus Sash under "Defensive items" damage reduction: a bulky Pokémon that plans to just absorb hits and doesn't need a status move on the turns it's doing so. | **Cannot run status moves at all** while holding it — the source's own caveat, and a hard one: a set that also wants Will-O-Wisp, Thunder Wave, Taunt, or a screen has picked an item that forecloses that plan entirely, not merely discourages it. |
 | Super-effective-reducing berries — Chople, Occa, Shuca, and the rest of the family (all verified Champions-legal) | A Pokémon with one predictable, high-value weakness it expects to be attacked into. | Consumed on the first qualifying hit, and only helps against the one type it's keyed to — guessing the wrong type wastes the slot entirely, and it does nothing against any other attack. |
+| **Terrain seeds** — Electric Seed, Grassy Seed, Misty Seed, Psychic Seed *(all four not in the Champions pool as of M-B, verified 2026-09-09 — guidance holds for when they return)* | The source lists this class as "Seeds (activate on terrain)" under Defensive-items damage reduction: a Pokémon on a team that is already committed to setting the matching terrain. | Each seed answers only its own terrain — an Electric Seed does nothing without Electric Terrain up, and so on for the other three. The exact stat boost and trigger timing aren't detailed in the source or documented elsewhere in this repo yet; verify live before building a set around a specific seed. |
 | Sitrus Berry | See the Sitrus-vs-Leftovers comparison below. | One-time use, and only triggers once the holder is already below half HP — it does not prevent the hit that brought it there. |
 | Leftovers | See the Sitrus-vs-Leftovers comparison below. | Passive and slow relative to Sitrus — see below for the actual math. |
 
 [^1]: The source's "Choice items" bullet describes the class generically as
 "1.5x damage or speed, but stuck in move" — generic VGC has all three members
-(Band, Specs, Scarf). **The sweep found only Choice Scarf in the Champions
-item pool; Choice Band and Choice Specs are both `championsLegal: false`**
-(verified 2026-09-09 via `dex legal --item`, checked directly against the
-vendored item list rather than inferred). This is not a vendoring gap in the
-sense a missing species is — the tool's own note is explicit that a `false`
-here means genuinely unavailable, not merely un-vendored — but the pool is
-per-regulation and M-C launches the same day this file was written, so
-re-check before assuming this stays true. **Practically: in current
-Champions, "a Choice item" means Choice Scarf specifically** — the ×1.5
-*damage* half of the source's description does not currently have a legal
-item behind it at all.
+(Band, Specs, Scarf). **The sweep found only Choice Scarf currently in the
+Champions item pool; Choice Band and Choice Specs both came back
+`championsLegal: false`** (verified 2026-09-09 via `dex legal --item`,
+checked directly against the vendored item list rather than inferred). This
+is not a vendoring gap in the sense a missing species is — the tool's own
+note is explicit that a `false` here means genuinely unavailable right now,
+not merely un-vendored — but the pool is per-regulation and reverts, and
+M-C launches the same day this file was written, so re-check before trusting
+this past today. **Practically: in current Champions, a legal Choice item
+means Choice Scarf specifically** — the ×1.5 *damage* half of the source's
+description (Band, Specs) is currently unavailable, not gone; their row
+above keeps their full guidance for when the pool includes them again.
 
-**Two items named in the source did not survive the sweep and are not in the
-table above:**
+**Two item classes the source names are currently unavailable in their
+entirety, and are marked as such directly in the table above rather than
+excluded from it:**
 
 - **Assault Vest** — the source lists it under "Defensive items" alongside
   Focus Sash, explicitly noting it "cannot run status moves." Verified
@@ -232,17 +273,19 @@ table above:**
   missing a vendoring update — the same tool call that confirmed Focus Sash,
   Life Orb, Leftovers and Sitrus Berry are all legal returned `false`
   specifically and only for this one of the five items the task brief named.
-  Re-check after the M-C re-vendor; this file records the source named it and
-  the correction it warrants, exactly as `reference/archetypes.md`'s
-  substitution-footnote convention asks.
+  Its row above is not cut for that: the guidance about what it does for a
+  role is evergreen even though the item itself is sitting out this
+  regulation. Re-check after the M-C re-vendor.
 - **Terrain seeds** (Electric Seed, Grassy Seed, Misty Seed, Psychic Seed) —
   the source lists "Seeds (activate on terrain)" as a Defensive-items damage
   reduction option. **All four checked came back `championsLegal: false`.**
   No terrain seed currently exists in the Champions item pool, so the entire
-  item class the source describes has no legal member right now. If a
-  terrain-seed plan looks attractive from generic-VGC knowledge, re-run this
-  check before building around it — the answer may simply be "not yet, wait
-  for a later regulation."
+  item class the source describes has no legal member right now — but the
+  class stays in the table with an availability mark, not a removal, because
+  a regulation change is exactly the kind of event that can bring it back.
+  If a terrain-seed plan looks attractive from generic-VGC knowledge, re-run
+  this check before building around it — the current answer is "not yet,"
+  not "no."
 
 **Sitrus Berry vs. Leftovers — a genuine trade-off, not a ranking.** The
 source presents both, and this file does not pick a winner:
@@ -320,10 +363,14 @@ The rules this file obeys, inherited from `reference/archetypes.md`:
    item's real legality are durable; a species' current usage rate is not.
 3. **Any claim resting on current usage carries a date stamp and a verify
    marker**: `(as of 2026-09 — confirm with meta usage)`.
-4. **Examples that are not Champions-legal get replaced or removed**, the
-   original stays in `reference/sources/`, and the correction is recorded as
-   a footnote or a called-out paragraph — see the Items-by-role section above
-   for both forms this took in this file.
+4. **An item, ability, or species that fails a legality check is marked
+   unavailable in place with the availability marker — never deleted or
+   replaced.** The guidance about what it's for is evergreen even when the
+   specific thing currently is not; only a genuinely illustrative example
+   (not a role recommendation in its own right) would ever be swapped for a
+   legal stand-in, with the swap recorded as a footnote and the original
+   left in `reference/sources/`. See the Items-by-role section above for
+   how this played out for this file's items.
 
 **How this file was verified.** Every move, item and ability named above was
 run through `node tools/dex/cli.js` on 2026-09-09: `move` for base power and
@@ -332,15 +379,21 @@ legality, and `learnset --move` for the one move-on-species claim this file
 makes (Torkoal / Eruption). The one species named, Torkoal, was independently
 confirmed present in the Champions roster via `dex mon`.
 
-**Names that failed the sweep and therefore do not appear as recommendations
-above:** Choice Band, Choice Specs, Assault Vest, Electric Seed, Grassy Seed,
-Misty Seed and Psychic Seed are all real items the source names or implies
-that are **not** in the Champions item pool as verified this session — see
-the Items-by-role footnotes above for the detail on each. None of these are
+**Names the sweep marked unavailable rather than legal, and where they
+appear:** Choice Band, Choice Specs, Assault Vest, Electric Seed, Grassy
+Seed, Misty Seed and Psychic Seed are all real items the source names or
+implies that are **not** in the Champions item pool as of Regulation M-B,
+verified 2026-09-09 — see the Items-by-role table and footnotes above for
+each one's full guidance and its availability mark. None of these are
 missing-from-vendor cases the way an unreleased species would be; the tool's
 own item-legality note is explicit that a `false` here means genuinely
-unavailable now. Re-run the checks after the M-C re-vendor rather than
-assuming this holds past the regulation this file was written in.
+unavailable now. **None of the seven were removed from this file** — the
+user correction behind this round's edit is explicit that current
+unavailability is not a reason to lose evergreen guidance, since the item
+pool is regulation-specific and these items can become legal again with no
+warning beyond the regulation notes. Re-run the checks after the M-C
+re-vendor rather than assuming any availability mark holds past the
+regulation this file names.
 
 ## Changelog
 
@@ -348,3 +401,4 @@ assuming this holds past the regulation this file was written in.
 |---|---|---|
 | 2026-09-09 | Created. The repo had no role framework at all — `vgc-team-building` step 6 and `vgc-team-refining`'s role-fit check both needed a target and found none. Covers the role-before-moveset-before-spread ordering, the Offensive/Defensive moveset templates, offensive capability (including the +2-setup-pays-for-its-turn rule), the ≥80 BP (preferably ≥90) base-power floor with Icy Wind (55 BP) vs. Blizzard (110 BP) as the real-number worked example, coverage without over-fixating, an items-by-role table, non-item damage reduction, and a two-sentence pointer to `methodology.md` for judging support picks rather than restating it. The item sweep found four items the source names or implies (Assault Vest, Choice Band, Choice Specs, all four terrain seeds) that are not in the Champions item pool at all — removed from the recommendation table and footnoted rather than presented as available, per the task's own verification requirement. Every move, item and ability verified via `tools/dex/cli.js`; none of the failures were vendoring gaps — all were `championsLegal: false` against the current M-B item pool. `npm test` — 318/318, unchanged. | `reference/sources/teambuilding-notes.md` ("Choosing the right moveset / Roles") and `reference/sources/teambuilding-notes-advanced.md` ("Offensive Capabilities", "Offensive Coverage", "Offensive Items", "Defensive Capabilites", "Defensive items", "Other ways to reduce damage"), both vendored from masterclass notes by a Pokémon world champion; `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-4-brief.md` |
 | 2026-09-09 | Fix round 1 (review: spec ❌, 3 Important + 1 Minor). (1) Added a one-line provenance note near "Items by role" recording that the source's team-wide "1-3 offensive items" budget belongs in `reference/team-evaluation.md` (Task 5, not yet written) rather than here — a pointer, not a restated rule, per controller ruling. (2) "Damage reduction that is not an item" falsely claimed `reference/mechanics.md` "owns the mechanics" of screens/Intimidate/Friend Guard/Multiscale; verified directly that it holds none of them, and reworded both the section intro and the Friend-Guard/Multiscale bullet to say those mechanics are not yet documented anywhere in this repo and must be verified live, instead of sending the reader to an empty file. (3) The Focus Sash table cell restated two specific mechanics (blocks only the first hit of a multi-hit move; does nothing against double-targeting) and then said not to re-derive them — trimmed to the role-level consequence (a one-action item) plus two corrected pointers: the multi-hit fact to `reference/mechanics.md` (confirmed present, line 86) and the double-targeting fact to `reference/methodology.md` (confirmed present, line 178) rather than both going to `mechanics.md`, which only has the first. (4) Attached the `*(generic VGC — not Champions-verified)*` scope marker, which was defined but never used, to the four generic-VGC design-judgment claims the review named: role-determines-moveset ordering, "+2 is the same as attacking twice," "the best defense is a strong offense," and "you do not need a super-effective answer to everything" — none of the tool-verified facts (BP values, item/ability legality) were touched. `npm test` — 318/318, unchanged. | Code review of this file, round 1 |
+| 2026-09-09 | Fix round 2 (user correction, overriding fix round 1's removal ruling). The user reviewed fix round 1's outcome and explicitly overrode the prior ruling that Assault Vest, Choice Band, Choice Specs and the four terrain seeds be removed from "Items by role" for failing `legal --item`: the item pool is regulation-specific and these items "will be available at some point," so "the guidance in general is evergreen even if specifics aren't." Restored all seven to the table itself (not as excluded call-outs), each keeping its full "Best on"/"Watch out for" guidance from the source's "Offensive Items" and "Defensive items" sections — Assault Vest's "cannot run status moves" caveat, the Choice-item ×1.5 damage/speed trade-off, terrain seeds keyed to their own terrain. Re-ran `legal --item` fresh for all 17 items on 2026-09-09: every verdict matched fix round 1's (10 legal; 7 `championsLegal: false` — Choice Band, Choice Specs, Assault Vest, and all four terrain seeds) — no legality changed, only the file's treatment of the failures did. Regulation used for the new marker is **M-B**, read fresh from `reference/regulation.md`'s stamp block, the still-active regulation as of this check (the vendored dex data has not rolled over to M-C yet). Added the availability marker `*(not in the Champions pool as of M-B, verified 2026-09-09 — guidance holds for when it returns)*` to the marker-definition block near the top as a third axis, orthogonal to the pre-existing scope marker and to `vgc-format.md`'s sourcing-strength tags — stated explicitly that a claim can carry one from each axis and that guidance is never deleted for current unavailability. Added a standing note under "Items by role" pointing at `legal --item` and the `vgc-regulation-transition` skill as the required post-rollover re-check. Reworded fix round 1's "did not survive the sweep" framing (footnote 1, the Assault-Vest/terrain-seed call-out, and the Examples-policy closing paragraph) from "removed/excluded" to "marked unavailable, guidance kept." Fix round 1's four corrections were left untouched; no BP value or ability verdict was changed. `npm test` — 318/318, unchanged. | User correction on fix round 1's controller ruling |
