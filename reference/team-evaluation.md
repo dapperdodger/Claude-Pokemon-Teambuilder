@@ -1,10 +1,11 @@
 # Team evaluation: is this Pokémon good, and does the team fit together?
 
 **The rubric for a single candidate, and the thresholds for the six as a
-whole.** Read at `vgc-team-building` step 4 (filling a slot with 3-5
-candidates) — this file supplies the rubric each candidate gets run through
-before they're compared — and by `vgc-team-audit`, which judges an existing
-six directly against this file's [Design constraints](#design-constraints)
+whole.** Read at `vgc-team-building`'s per-slot candidate step (filling a
+slot with 3-5 candidates) — this file supplies the rubric each candidate
+gets run through before they're compared — and by `vgc-team-audit`, which
+judges an existing six directly against this file's [Design
+constraints](#design-constraints)
 checklist. This is the fourth and last of the strategy-layer files this body
 of work adds; the other three (`reference/archetypes.md`,
 `reference/speed-control.md`, `reference/roles.md`) answer "what to build"
@@ -107,9 +108,13 @@ again (current usage share, not sourcing, scope, or legality):
 
 A rubric, not a one-time check — apply it to **every** candidate for a slot,
 not just the one that gets picked. `reference/archetypes.md`'s "Building
-around a specific Pokémon" step 0 runs a narrower three-question version of
-this against a single centrepiece already chosen; this rubric is the general
-form, meant to be run per candidate while a slot is still open.
+around a specific Pokémon" section runs its own "know the piece" triage
+against a single centrepiece already chosen — a related but narrower
+question set (speed-control fit, type profile, and
+physical/special/support classification) for a piece that's already locked
+in, not a subset of this rubric. This rubric is the general form — matchups,
+stats/moves/ability, role, and whether a better legal Pokémon exists — meant
+to be run per candidate while a slot is still open.
 
 1. **How does it fare against common Pokémon?** Not a vibe — pull the
    current threat list (`vgc-meta-lookup`) and check real matchups
@@ -414,7 +419,8 @@ left the meta, as the actual failure mode — not the tech slot itself).
 
 | Date | Change | Source |
 |---|---|---|
-| 2026-09-09 | Created. The repo had no "is this Pokémon good" rubric and no team-wide design-constraints checklist anywhere — `vgc-team-building` step 4 and `vgc-team-audit`'s coverage/distribution checks both needed a target and found none. Covers the four-question good-Pokémon rubric (including the "is there a better legal Pokémon for this role" question, illustrated with a verified Grimmsnarl-vs-Whimsicott learnset check after Urshifu — the source's own example — turned out to be absent from the vendored dex entirely, footnoted per the substitution convention), inherent vs. relative strength, real verified numbers for "types are not equal" (Dragon offense resisted by 1 type vs. Bug offense resisted by 7; Steel defense resisting 10 types plus one immunity), a literal checkable Design-constraints list (closing the pointer `reference/roles.md` left open for the team-wide 1-3 offensive-item budget), multiplicative scaling, a dedicated Counterweights section carrying the judgement half of the source's "Stats/Damage Calculation re:Teambuilding" section (method left in `reference/methodology.md`, not duplicated here), and Meta awareness. One source claim was corrected rather than restated: "Aegislash/Hydreigon resists all types in the game" is false for either Pokémon individually (verified via `dex type --vs-mon` — Aegislash takes 2x+ from four types, Hydreigon is 4x weak to Fairy) but true as a *pair* in the sense that matters — every type that hits one hard is neutral-or-better for the other, verified in both directions. Every species named (Grimmsnarl, Whimsicott, Aegislash, Hydreigon, plus the rejected Urshifu) was checked via `dex mon`/`dex learnset`; none currently carry the availability mark — all are present in the vendored Champions roster. `npm test` — 318/318, unchanged. | `reference/sources/teambuilding-notes.md` ("Other Rules" → "Use 'Good' Pokémon") and `reference/sources/teambuilding-notes-advanced.md` ("Inherent Strength vs Relative Strength", "Types", "Defensive Coverage", "Offensive Capabilities Distribution", "Format Specific Teambuilding", "Relative Strength", "Stats/Damage Calculation re:Teambuilding"), both vendored from masterclass notes by a Pokémon world champion; `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-5-brief.md` |
+| 2026-09-09 | Created. The repo had no "is this Pokémon good" rubric and no team-wide design-constraints checklist anywhere — `vgc-team-building`'s per-slot candidate step and `vgc-team-audit`'s coverage/distribution checks both needed a target and found none. Covers the four-question good-Pokémon rubric (including the "is there a better legal Pokémon for this role" question, illustrated with a verified Grimmsnarl-vs-Whimsicott learnset check after Urshifu — the source's own example — turned out to be absent from the vendored dex entirely, footnoted per the substitution convention), inherent vs. relative strength, real verified numbers for "types are not equal" (Dragon offense resisted by 1 type vs. Bug offense resisted by 7; Steel defense resisting 10 types plus one immunity), a literal checkable Design-constraints list (closing the pointer `reference/roles.md` left open for the team-wide 1-3 offensive-item budget), multiplicative scaling, a dedicated Counterweights section carrying the judgement half of the source's "Stats/Damage Calculation re:Teambuilding" section (method left in `reference/methodology.md`, not duplicated here), and Meta awareness. One source claim was corrected rather than restated: "Aegislash/Hydreigon resists all types in the game" is false for either Pokémon individually (verified via `dex type --vs-mon` — Aegislash takes 2x+ from four types, Hydreigon is 4x weak to Fairy) but true as a *pair* in the sense that matters — every type that hits one hard is neutral-or-better for the other, verified in both directions. Every species named (Grimmsnarl, Whimsicott, Aegislash, Hydreigon, plus the rejected Urshifu) was checked via `dex mon`/`dex learnset`; none currently carry the availability mark — all are present in the vendored Champions roster. `npm test` — 318/318, unchanged. | `reference/sources/teambuilding-notes.md` ("Other Rules" → "Use 'Good' Pokémon") and `reference/sources/teambuilding-notes-advanced.md` ("Inherent Strength vs Relative Strength", "Types", "Defensive Coverage", "Offensive Capabilities Distribution", "Format Specific Teambuilding", "Relative Strength", "Stats/Damage Calculation re:Teambuilding"), both vendored from masterclass notes by a Pokémon world champion; `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-5-brief.md` |
+| 2026-09-09 | Cross-file cleanup ahead of `vgc-team-building`'s renumbering from 8 to 10 steps. Converted both cross-file step-number citations ("step 4" in the header pointer and in the Created changelog row) to "the per-slot candidate step," which survives renumbering. Reworded the "Is this Pokémon good?" intro's parallel to `reference/archetypes.md`'s "Building around a specific Pokémon" step-0 triage, which also cited that step by number and additionally overstated the parallel as "a narrower three-question version of this rubric" — the two question sets only loosely overlap (on "role"); that triage asks about speed-control fit, type profile, and physical/special/support classification for a piece already locked in, while this file's rubric asks about matchups, stats/moves/ability, role, and whether a better legal Pokémon exists for a slot still open. Reworded to describe it as a related but narrower question set, not a subset. No verified fact (BP, type-chart result, item/ability/learnset verdict) was touched. `npm test` — 318/318, unchanged. | Batch cross-reference cleanup across `archetypes.md`, `speed-control.md`, `roles.md`, `team-evaluation.md` |
 
 [^1]: The source's own example for this question is "Urshifu is mostly just
       a better Palafin." Urshifu is absent from the vendored dex entirely —
