@@ -10,6 +10,11 @@ to match a later rewrite would destroy the only copy of the original claim.
 Corrections to a source's factual content belong in the working file that
 cites it, with a note recording the substitution. Never here.
 
+This directory is marked `-text` in the repo-root `.gitattributes`, so git
+never normalizes line endings in these files on add or checkout. Removing
+that entry would let `core.autocrlf` silently rewrite the stored bytes again,
+breaking the byte-identical guarantee this README makes.
+
 | File | What it is | Working files built on it |
 |---|---|---|
 | `teambuilding-notes.md` | Masterclass notes, foundational, provided 2026-09-08 | `archetypes.md`, `speed-control.md`, `roles.md`, `team-evaluation.md` |
