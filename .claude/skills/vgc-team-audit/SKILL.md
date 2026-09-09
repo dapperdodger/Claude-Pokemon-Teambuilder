@@ -25,6 +25,7 @@ user decide what to change; if they want changes made, that's
 - [ ] 4. Offensive coverage
 - [ ] 5. Speed and speed control
 - [ ] 6. Threat matchups
+- [ ] 6b. Counterweights
 - [ ] 7. Report
 ```
 
@@ -59,16 +60,42 @@ node tools/dex/cli.js type <AttackingType> --vs <Def1[,Def2]>
 A type that hits 3+ of the six for 2x or more is a real shared weakness, not
 a quirk. Report the count, not an impression.
 
+Two thresholds from `reference/team-evaluation.md`'s design-constraints
+checklist attach here, and **they are different in kind — do not flatten them
+into two equally-weighted list items**:
+- **No more than 2 Pokémon of the same type.** This is close to a hard rule —
+  exceptions are rare and need a stated purpose, because a third Pokémon of a
+  shared type usually means a shared weakness got tripled rather than
+  covered.
+- **Aim for at least one resistance to every type**, as a rule of thumb, not
+  a requirement. Some real, strong sixes simply don't clear it, and forcing a
+  weaker pick into a slot solely to plug the last uncovered type is its own
+  mistake — see the counterweights step below.
+
 **4. Offensive coverage.** What can the team not meaningfully damage? Collect
 the actual attacking types across all six movesets and find the defensive
 typings that resist or wall the lot. Remember an unused coverage move is not
 coverage — check the moves actually listed.
 
+Also check the team-wide distribution, from the same design-constraints
+checklist:
+- **Offense/support split** — **1-2** support slots, the rest offensive or
+  hybrid.
+- **Offensive-item count** — **1-3** across the six, fewer when Megas are
+  registered (a Mega Stone occupies an item slot without being an "offensive
+  item" in this budget's sense).
+
 **5. Speed and speed control.** Compute real Speed stats from the listed SP
 spreads (`reference/champions-format.md` has the formula; the damage CLI
 reports `rawStats`). Identify where the team sits relative to the current
-meta's common speed tiers, and whether it has Tailwind/Trick Room and a
-backup if the setter is removed.
+meta's common speed tiers, and whether it has Tailwind/Trick Room.
+
+**Name the fallback.** `reference/speed-control.md`'s "Backup when the setter
+is removed" section has the audit-shaped question: *if this setter is
+removed or Taunted on turn 1, what does the team do instead, and does that
+still lead somewhere?* A team with exactly one source of speed control and no
+answer to that question has a single point of failure — report that as a
+**finding**, not an observation.
 
 **6. Threat matchups.** Derive the current threat list with the
 **vgc-meta-lookup** skill — never from a previous session's list or from
@@ -89,6 +116,17 @@ matchup; which four cover the win conditions while keeping speed control; and
 what the opponent's likely lead is. Name the four *and* the two you're sitting,
 with the reason for each.
 
+**6b. Apply the counterweights before writing the report.** This skill
+computes type multipliers precisely, and precision is not the same as
+importance. From `reference/team-evaluation.md`:
+- A weakness nobody in the current meta exploits is not a real finding.
+- Resistances do not compensate for bad stats.
+- Half of a big number is still a big number — a resisted hit from a real
+  threat can still be a 2HKO. Check the roll rather than assuming the
+  resistance settles it.
+Rank findings by what actually loses games, not by what the type chart
+counted.
+
 **7. Report.** Lead with anything illegal, then the biggest real
 vulnerability, then the rest. Be specific and quantified — "four of six take
 2x from Ground, and the two that don't are both Focus Sash" beats "weak to
@@ -107,6 +145,8 @@ Ground". Say plainly what you could not verify.
 - Calling a weakness "shared" without counting how many of the six it hits
 - Reusing a threat list from an earlier session instead of re-deriving it
 - Treating a listed move as coverage without checking it's actually run
+- Reporting every 2x multiplier as a finding without asking whether anything
+  in the current meta actually exploits it
 
 ## References
 - `reference/vgc-format.md` — clauses, Team Preview, OTS scope, Bo1 vs Bo3
@@ -114,3 +154,7 @@ Ground". Say plainly what you could not verify.
 - `reference/methodology.md` — matchup reasoning, when damage isn't the lens
 - `reference/champions-format.md` — SP/stat formulas, local-data limits
 - `reference/regulations/` — what was true when an older team was built
+- `reference/team-evaluation.md` — design-constraints thresholds and the
+  counterweights that keep them from over-fixating
+- `reference/speed-control.md` — the seven forms and the backup-setter
+  audit question

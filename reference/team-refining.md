@@ -42,6 +42,9 @@ full teambuilding):
   hand that back to a normal teambuilding conversation instead of picking
   something yourself.
 - Overriding the user's species/item/ability choices.
+- "Is this the right Pokémon for this role" — that is `vgc-team-building`.
+  "Is this move right for this role" **is** in scope; see the role-fit check
+  in [Process](#process) below.
 
 **Still bound by standing `CLAUDE.md` rules**: live-search verification
 (live meta lookup), roster-availability-vs-legality
@@ -70,6 +73,27 @@ the Scope section above rather than filling it.
    rarely appears on real sets, flag it and name what's commonly run
    instead. Do not auto-swap it — report the finding and let the user
    decide.
+
+### 1b. Role fit
+
+Ask what role this Pokémon plays on this team — the user states it, or you
+infer it and confirm before proceeding. Then check the moveset against
+`reference/roles.md`:
+
+- Does it match the template for that role (offensive: STAB / STAB /
+  coverage-setup-support / Protect; defensive: support / support / STAB /
+  support-Protect)? A deviation is fine **with a reason**; an unexplained one
+  is a finding.
+- Does every offensive move clear the **≥80 base power** floor (preferably
+  ≥90)? Check with `node tools/dex/cli.js move "<Move>"`, never from recall.
+- Is Protect listed alongside a Choice item? That is a wasted slot — Protect
+  used once locks a Choice holder into Protect for the rest of its time on
+  the field.
+
+Report; do not auto-swap. This does not breach the scope fence above: species,
+item and ability remain fixed inputs. "Is this move right for this role" is a
+moveset question and is in scope; "is this the right Pokémon for this role"
+is not — that question belongs to `vgc-team-building`.
 
 ### 2. Threat sourcing
 
@@ -125,3 +149,4 @@ Per Pokémon, the report includes:
 |---|---|---|
 | 2026-07-17 | Initial version | `docs/superpowers/specs/2026-07-17-team-refining-mode-design.md` |
 | 2026-09-07 | Replaced dangling `CLAUDE.md rules 3/6/7/10` references with named pointers to the relevant files and skills | docs/specs/2026-09-07-workflow-audit.md |
+| 2026-09-09 | Added a role-fit check (step 1b) between move verification and threat sourcing: the mode verified each move for legality and meta-usage but never asked whether the moveset fit the role the Pokémon plays. Checks the moveset against `reference/roles.md`'s two templates, the ≥80 BP (preferably ≥90) base-power floor via `node tools/dex/cli.js move`, and flags Protect alongside a Choice item as a wasted slot. Report only, no auto-swap — same discipline as move verification. Added one line to Scope making explicit that "is this move right for this role" is in scope while "is this the right Pokémon for this role" is `vgc-team-building`'s question, so the scope fence holds. | `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-12-brief.md` |

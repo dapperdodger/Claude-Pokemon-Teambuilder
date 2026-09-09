@@ -13,6 +13,9 @@ A narrower job than `vgc-team-building`. The user provides a mostly-complete six
 - Do **not** critique team synergy/overall strategy.
 - Fewer than 6 given? Flag the gap and hand it back to a normal teambuilding conversation — don't pick something yourself.
 - Don't override the user's species/item/ability choices.
+- Role fit is **in** scope: "is this move right for this role" is a moveset
+  question. "Is this the right Pokémon for this role" is not — that is
+  `vgc-team-building`.
 
 ## Process
 0. **Validate the input first.** `node tools/dex/cli.js team <file>` if the
@@ -20,6 +23,17 @@ A narrower job than `vgc-team-building`. The user provides a mostly-complete six
    Mega listed with its pre-Mega ability) makes every downstream number
    meaningless. Report those before optimising anything.
 1. **Move legality + meta-relevance**, per Pokémon per listed move — legal this regulation (`reference/regulation.md`), and actually run on real current sets (not just legal-but-obscure). Flag mismatches; don't auto-swap, report and let the user decide.
+1b. **Role fit.** Ask what role this Pokémon plays on this team — the user
+    states it, or you infer it and confirm before proceeding. Then check the
+    moveset against `reference/roles.md`:
+    - Does it match the template for that role (offensive: STAB / STAB /
+      coverage-setup-support / Protect; defensive: support / support / STAB /
+      support-Protect)? A deviation is fine **with a reason**; an unexplained
+      one is a finding.
+    - Does every offensive move clear the **≥80 BP** floor (preferably ≥90)?
+      Check with `node tools/dex/cli.js move "<Move>"`, never from recall.
+    - Is Protect listed alongside a Choice item? That is a wasted slot.
+    Report; do not auto-swap. Species, item and ability remain fixed inputs.
 2. **Threat sourcing** — default to live top-usage threats (roughly top 10-15) weighted by usage share, or use threats the user names directly. Use the **vgc-meta-lookup** skill to derive that list from all three Pikalytics surfaces (not per-mon usage rank alone), and the **vgc-threat-evaluation** skill for any individual counter/matchup call.
 3. **Verify every stated fact with the dex CLI, not recall** — a listed
    ability for a Mega (`node tools/dex/cli.js mon "Mega <Species>"`; its
@@ -41,9 +55,12 @@ A narrower job than `vgc-team-building`. The user provides a mostly-complete six
 - Auto-changing a flagged move instead of reporting and letting the user decide
 - Writing the result into the team's `teams/*.md` file — output is a
   standalone report unless the user separately says to save
+- Checking a move only for legality and usage, never for whether it fits
+  the role the Pokémon is playing
 
 ## References
 - `reference/team-refining.md` — full process, input/output format
+- `reference/roles.md` — moveset templates, the base-power floor, items by role
 - `reference/pitfalls.md` — the trap checklist
 - `reference/damage-calc.md` — CLI usage and caveats
 - `docs/case-studies.md` — the incidents these rules came from

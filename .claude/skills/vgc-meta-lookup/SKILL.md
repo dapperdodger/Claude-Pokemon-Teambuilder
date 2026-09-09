@@ -92,6 +92,37 @@ verified output) — fetch that URL directly and read them, but only *after*
 guessing a slug by hand. Do not substitute `usage`'s per-Pokémon ranking for
 this — see Common mistakes below.
 
+**Which Pokémon run together, and *why*.** Co-occurrence is a frequency
+signal, not proof of synergy — that warning already stands (see Common
+mistakes). The follow-up that turns the signal into an answer: when two
+Pokémon co-occur, name the actual mechanism — speed control, weather,
+redirection, a shared check — or say plainly you could not determine one.
+A pairing you cannot explain is a pairing you cannot counter, so don't hand
+a core onward as a threat without that explanation attached.
+
+**4. Format knowledge — the field's shape, not its names.** Usage tells you
+*who* you will face; this tells you *what they do*.
+
+```bash
+node tools/meta/cli.js speed-tiers --top 30
+node tools/meta/cli.js distribution --move "Fake Out" --top 20
+node tools/meta/cli.js distribution --ability Prankster --top 20
+```
+
+`reference/format-knowledge.md` holds the last generated snapshot. Check its
+`**Generated:**` and `**Regulation:**` stamps before citing it — the
+SessionStart hook reports it stale past 7 days or on a regulation mismatch. A
+stale snapshot is worse than none, because it reads as current.
+
+**Read `--top N` and `share` correctly — this is a real misreading risk.**
+`--top N` means "among the N most-**used**," not "the N most extreme
+overall": `speed-tiers --top 5` is not "the field's five fastest Pokémon,"
+and a faster but lower-usage species can sit outside that window entirely.
+Likewise `distribution`'s `share` is **not usage-weighted** — a species
+running Fake Out on 12% of its sets counts the same as one running it on
+98%, which is why the per-row `rate` (not `share` alone) is what actually
+tells you how committed a given user is to that move or ability.
+
 ## Which upstream carries which metric
 
 Copied from `reference/meta-lookup.md`, which has the full evidence:
@@ -183,6 +214,9 @@ Saved files under `teams/` are historical records, never a meta source.
 - `reference/meta-lookup.md` — full `tools/meta` command surface, the
   per-upstream metrics table, per-population/no-blending rule, ETag
   freshness, and the Mega naming convention
+- `reference/format-knowledge.md` — the last generated speed-tiers/
+  distribution snapshot; check its `Generated`/`Regulation` stamps before
+  citing it
 - `reference/pitfalls.md` — the trap checklist, including the paired Mega
   entity-convention entry and the alphabetical-filler-dataset entry
 - `reference/regulation.md` — regulation authority
