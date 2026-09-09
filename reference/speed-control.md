@@ -104,7 +104,7 @@ yet written) for that split.
 | Paralysis | Cuts the target's Speed by a fixed fraction, applied to *their* Pokémon rather than boosting yours (`reference/mechanics.md`, "Speed calculation") | Has to land first — via a status move or a damaging move's secondary chance — so it is never guaranteed; once it lands it persists until cured, unlike a stat-stage drop |
 | Abilities — Chlorophyll, Swift Swim | Multiplies the holder's Speed while the matching weather (Sun / Rain) is active | Entirely conditional on that weather being up; gone the instant it lapses or the opponent overwrites it — full treatment in `reference/archetypes.md`'s Weather section |
 | Speed-lowering moves — Icy Wind, Cotton Spore | Drops the target's Speed by a stat stage instead of raising yours | A stat stage, not a guarantee — a large enough Speed gap survives it, it has to land, and it clears the instant the target switches out |
-| Turn-order changers — Trick Room, Tailwind | Field-wide effects that change turn order itself: Tailwind raises Speed side-wide for a fixed window, Trick Room reverses the Speed comparison entirely (`reference/mechanics.md`, "Speed calculation" and "Priority & turn order") | The full requirements and failure modes are archetype-level — `reference/archetypes.md`'s Tailwind and Trick Room sections — including that the two conflict with each other; see [Choosing between them](#choosing-between-them) |
+| Turn-order changers — Trick Room, Tailwind | Field-wide effects that change turn order itself: Tailwind raises Speed side-wide for a fixed window, Trick Room reverses the Speed comparison entirely (`reference/mechanics.md`, "Speed calculation" and "Priority & turn order") | A full team slot plus the turn spent setting it up before it pays off; and the two are not free insurance together — Trick Room reverses turn order, so running both turns your own Tailwind boost into a liability (see [Choosing between them](#choosing-between-them)). Full requirements and failure modes are archetype-level — `reference/archetypes.md`'s Tailwind and Trick Room sections |
 | Raw Speed | Base Speed plus invested Stat Points, no item/ability/move/field effect required | Locked at registration with everything else about the set; only relative to the field, not absolute; and it actively backfires under an opposing Trick Room |
 
 ### Priority moves
@@ -122,8 +122,8 @@ shape, not just its own case:
 - **Priority can be blocked outright.** Armor Tail (Farigiraf's ability)
   blocks any priority-boosted move against its holder *and its ally*
   (`reference/mechanics.md`, "Priority & turn order") — a priority-dependent
-  setup plan is not unconditional, and the same file's "How it fails" list
-  for Trick Room already flags this cutting both ways.
+  setup plan is not unconditional, and `reference/archetypes.md`'s "How it
+  fails" list for Trick Room already flags this cutting both ways.
 - **As a class, priority moves trade power for the guarantee.** A fixed,
   usually modest base power is the standard price of a move that does not
   care what either side's Speed stat says.
@@ -242,7 +242,7 @@ at Team Preview.
 
 ## Backup when the setter is removed
 
-This is the question `reference/vgc-team-audit`'s Speed-and-speed-control
+This is the question the `vgc-team-audit` skill's Speed-and-speed-control
 step asks directly, so it needs to be concrete enough to check against an
 actual six, not just stated as a principle.
 
@@ -309,3 +309,4 @@ numbers live elsewhere, and drift gets fixed there:
 | Date | Change | Source |
 |---|---|---|
 | 2026-09-09 | Created. The repo had the Speed modifiers in `mechanics.md` and no strategy layer anywhere covering speed control as a build axis — `vgc-team-building` step 3 and `vgc-team-audit`'s speed step both referenced it without a target. Covers why speed control is ranked first (with the source's own "not mandatory" qualifier), all seven forms from the source with a cost for each, which forms compose vs. conflict (Tailwind/Trick Room named explicitly per the source), the backup-when-the-setter-is-removed audit question, and pointers to where the actual numbers live. Confirmed via `grep` that `mechanics.md` already carries Choice Scarf ×1.5, Tailwind ×2/4-turn, paralysis ×0.5, and Trick Room's -7 priority — no mechanic restated here, nothing added to `mechanics.md`. Every species, move, and item named was verified via `tools/dex/cli.js` on 2026-09-09; none failed. One generic-VGC claim (Electric-types immune to paralysis) is flagged unverified against Champions specifically rather than asserted or dropped. | `reference/sources/teambuilding-notes.md` ("Speed control is important, often the most important!"), vendored from masterclass notes by a Pokémon world champion; `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-3-brief.md` |
+| 2026-09-09 | Fix round 1 (review findings). The Turn-order-changers row was the one row of seven with no real cost in its cell — it deferred entirely to `archetypes.md`. Added a stated cost (a team slot plus the turn spent setting it up, and Trick Room turning your own Tailwind boost into a liability if both are run) while keeping the cross-link. Fixed a misattributed pointer: the priority-moves subsection cited "the same file" (`mechanics.md`, from the preceding clause) for Trick Room's "How it fails" list, but that heading and the Armor-Tail bullet live in `reference/archetypes.md`, which has no such heading in `mechanics.md` — corrected the file name. Fixed the Backup section's reference to `vgc-team-audit`, written with a `reference/` prefix though it is a skill at `.claude/skills/vgc-team-audit/`, not a `reference/` file — now named as a skill, matching this file's own Changelog convention. Swept every `reference/*.md` and `.claude/skills/*` mention plus all in-file and cross-file anchors in the file for the same class of error; found no others — all resolve to real files/headings, and the three forward references to not-yet-written files (`roles.md`, `team-evaluation.md`, `format-knowledge.md`) are intentional and unchanged. `npm test` — 318/318, unchanged. | `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-3-report.md` review findings 1-3 |
