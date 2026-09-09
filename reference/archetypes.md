@@ -234,11 +234,10 @@ turns it buys are worth the moveslot. The requirements below are for the team
 whose attackers do not function without the room.
 
 **What it needs.** A way to survive the setting turn. The setter must survive
-the turn it sets Trick Room — the move resolves at -7 priority, last
-regardless of its Speed, so the setter absorbs the turn's attacks before the
-room exists to protect it. Full mechanic in `reference/mechanics.md`,
-"Priority & turn order" — do not restate it from recall; that section is the
-authority.
+the turn it sets Trick Room — the move resolves last regardless of its Speed,
+so the setter absorbs the turn's attacks before the room exists to protect it.
+Full mechanic in `reference/mechanics.md`, "Priority & turn order" — do not
+restate it from recall; that section is the authority.
 
 The practical consequence is that **setup is a slot cost you pay up front**:
 
@@ -280,7 +279,7 @@ base 20 Speed; Mega Abomasnow at base 30 Speed. Two cautions:
   switching it in is spent out of a finite window. Plan the *sequence*
   (who leads, who sets, how the attacker arrives) at build time, not at
   Team Preview.
-- **The setter dies before it sets.** The -7 priority problem, unsolved.
+- **The setter dies before it sets.** The setup-turn problem, unsolved; see `reference/mechanics.md`, "Priority & turn order".
 - **Priority-blocking cuts both ways.** Armor Tail (Farigiraf's ability;
   Farigiraf learns Trick Room, verified) blocks priority-boosted moves against
   its holder *and its ally* — which protects a Trick Room setup, and equally
@@ -390,7 +389,7 @@ fixed to Thick Fat, so Mega Venusaur is *not* a Chlorophyll abuser
 tool call for).
 
 **Sand.** **The weakest payoff of the four, attached to the sturdiest
-setter.** Sand's own benefits are thin next to rain's ×1.5 Water or sun's
+setter.** *(generic VGC — not Champions-verified)* Sand's own benefits are thin next to rain's ×1.5 Water or sun's
 ×1.5 Fire; what buys sand a slot is the quality of the Pokémon setting it.
 Tyranitar (Rock/Dark, Sand Stream, base 100/110/100 bulk behind 134 Attack —
 verified) is a real Pokémon on its own terms whether or not the sand does
@@ -600,3 +599,4 @@ rollover means "not re-vendored yet," not "not legal" (`CLAUDE.md`).
 | 2026-09-09 | Fix round 1: replaced all `[generic VGC]` bracket-tag occurrences (10, including the definition) with the italic parenthetical `*(generic VGC — not Champions-verified)*` so the scope marker cannot be mistaken for a fourth tier of `vgc-format.md`'s `[official]`/`[consensus]`/`[unresolved]` confidence axis; rewrote the marker's definition block to state it is orthogonal to that axis and link to it. Trimmed the Trick Room -7-priority and Tailwind ×2/4-turn restatements down to the archetype-relevant consequence, deferring the mechanic itself to `reference/mechanics.md` instead of restating it right after telling the reader not to. Added a one-line note in "Choosing a strong starting point" recording that the source's "is there a machine-usable niche-lookup tool" question is answered by `node tools/dex/cli.js find`, built in a later task of this plan. | Code review of this file, round 1 |
 | 2026-09-09 | Fix round 2 (user correction: mark availability, never delete evergreen guidance). The user flagged that removing Rillaboom-terrain-setting-style guidance for a currently-unavailable thing loses knowledge the roster will regain, and asked for a sweep of what had already been over-eagerly deleted, following `reference/roles.md`'s already-corrected precedent. Added **Availability** as a third orthogonal marking axis alongside Sourcing strength and Scope in the marker-definition block, copying `reference/roles.md`'s wording and structure: `*(not in the Champions pool as of <regulation id>, verified <date> — guidance holds for when it returns)*`, attached only after an actual `dex mon`/`legal --item`/`legal --ability` check, and never a reason to delete guidance. Reframed the "Names that failed the sweep" paragraph (Examples policy) to "Names outside the current roster, not wrong": re-ran `dex mon` fresh on all eleven names (`Rillaboom`, `Amoonguss`, `Indeedee`, `Barraskewda`, `Kingdra`, `Ludicolo`, `Lilligant`, `Sawsbuck`, `Shiftry`, `Togekiss`, `Urshifu`) — same verdicts as before, ten absent from the vendored roster and `Urshifu` never vendored under either name — and reframed the ten from "failed"/"rejected" to "outside the current pool," stating explicitly that the archetype role each was reaching for is real and that any of the ten is a candidate again with no re-reasoning needed if it returns, Rillaboom soonest since it launches with M-C the same day this file was last verified. The instruction to re-run `dex mon` before reintroducing one is kept, not removed. Swept the rest of the file (Edit 3) for the same class of error — anywhere something was dropped or called excluded for current illegality rather than marked — and found nothing else: Choice Scarf is the only item this file names and it is currently legal; no other mechanic figure or dropped guidance was found. Regulation used for the marker is **M-B**, read fresh from `reference/regulation.md`'s stamp block (still the active regulation as of this check; the vendored dex has not rolled over to M-C yet, confirmed by re-running `dex mon` on Rillaboom). `npm test` — 318/318, unchanged. | User correction on over-eager availability-based deletion |
 | 2026-09-09 | Cross-file cleanup ahead of `vgc-team-building`'s renumbering from 8 to 10 steps. Converted this file's two cross-file step-number citations (the file header's "steps 1 and 4," and the Created changelog row's "step 3") to named pointers — "the starting-point step" and "the archetype step" — which survive renumbering; the file's own internal "Step 0/1" scaffolding (its own three-starting-points and Building-around-a-Pokémon headings) was left untouched, since those number the file's own structure, not another file's. Updated the "Forward references" note: `speed-control.md`, `roles.md` and `team-evaluation.md` are now written, so only `format-knowledge.md` remains a genuine forward reference (confirmed still absent); `dex find`, the other outstanding forward reference in this file, was independently confirmed still unbuilt (`node tools/dex/cli.js find` still errors "Unknown command") and left alone. `npm test` — 318/318, unchanged. | Batch cross-reference cleanup across `archetypes.md`, `speed-control.md`, `roles.md`, `team-evaluation.md` |
+| 2026-09-09 | Fix round 3 (cosmetic prose adjustments): Added missing scope marker `*(generic VGC — not Champions-verified)*` to Sand subsection's opening claim, matching sibling Rain/Sun/Snow markers. Removed bare `-7` priority numeral from Trick Room "How it fails" section, replacing with prose pointing to `reference/mechanics.md`, "Priority & turn order" to match Tailwind section's established discipline of deferring mechanics to that file rather than restating numerals. Fixed quote-style inconsistency in `tools/dex/cli.js` lines 198 and 203, changing double-quoted `require("./manifest")` and `require("./team")` to single quotes matching the file's convention. | Whole-branch review corrections |

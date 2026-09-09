@@ -195,12 +195,12 @@ function main() {
       // no longer playing: find generates the candidate SET, so a stale pool does
       // not produce one wrong answer, it seeds every downstream slot decision.
       if (learns.length) {
-        const manifest = require("./manifest");
+        const manifest = require('./manifest');
         const pin = manifest.learnsetPin();
         result.learnsetPin = pin;
         const status = manifest.pinStatus({
           pinRegulation: pin.regulation,
-          activeRegulation: require("./team").currentRegulation(),
+          activeRegulation: require('./team').currentRegulation(),
         });
         if (status.stale) result.caveats.push(status.caveat);
       }
