@@ -72,7 +72,8 @@ yet," not "wrong path" (same convention `reference/archetypes.md` and
 ## Role before moveset before spread
 
 **Decide the role first, then let the role choose the moveset, then let the
-moveset (and the matchups it has to survive) choose the SP spread.** Doing
+moveset (and the matchups it has to survive) choose the SP spread**
+*(generic VGC — not Champions-verified)*. Doing
 this in the other order — picking four moves that look good, or maximising a
 spread before the set is settled — produces a Pokémon that is good at nothing
 in particular, because "good" was never defined before the choices that
@@ -105,7 +106,8 @@ is a set nobody actually decided.
 What "Defensive" is optimising for, as the counterpart to
 [Offensive capability](#offensive-capability) below: the source's own framing
 is that **the best defense is a strong offense — don't obsess over defensive
-stats as an end in themselves.** A Defensive-template Pokémon still wants
+stats as an end in themselves** *(generic VGC — not Champions-verified)*.
+A Defensive-template Pokémon still wants
 high Def/SpD and hits that land as neutral or not-very-effective rather than
 super-effective, but those stats exist to buy it turns to use its two Support
 slots and its own STAB, not to make it unkillable. A defensive Pokémon that
@@ -126,7 +128,8 @@ What actually makes a Pokémon hit hard, per the source:
 - **Setup moves** — Swords Dance and Helping Hand for a partner are the
   source's own two examples (both verified legal Champions moves). **The
   source's rule: boosting to +2 is the same as attacking twice, so the setup
-  has to pay for the turn it cost.** A setup move that gets no follow-up
+  has to pay for the turn it cost** *(generic VGC — not Champions-verified)*.
+  A setup move that gets no follow-up
   attack in — because the setter faints, gets Taunted, or the game ends
   first — bought nothing. This is the same accounting
   `reference/archetypes.md` applies to a Tailwind or Trick Room setter that
@@ -160,11 +163,11 @@ slots — those are judged on whether their action goes off, not on power (see
 
 ## Coverage without over-fixating
 
-**You do not need a super-effective answer to everything.** Resistances
-matter, but half of a large number can still be a large number — a strong
-enough attacker clicking a neutral hit can still remove the target. Coverage
-is a tool for closing specific gaps, not a checklist to fill for its own
-sake.
+**You do not need a super-effective answer to everything** *(generic VGC —
+not Champions-verified)*. Resistances matter, but half of a large number can
+still be a large number — a strong enough attacker clicking a neutral hit can
+still remove the target. Coverage is a tool for closing specific gaps, not a
+checklist to fill for its own sake.
 
 **What actually matters: not being unable to hit the *key meta threats*
 hard.** This is a live-meta question, not a design-time guess — pull current
@@ -188,12 +191,19 @@ and what Champions currently ships** — see the footnotes. `reference/
 mechanics.md` owns item mechanics generally (including exactly what Focus
 Sash blocks); this table carries only the role-fit consequence.
 
+*(The source also states a team-wide budget — "most teams run 1-3 offensive
+items, format specific, i.e. fewer when megas are in." That is a constraint
+on the whole team's item distribution, not a single Pokémon's role, so it
+belongs in `reference/team-evaluation.md`'s team-wide distribution gates
+(written later in this same body of work) rather than here — not yet present
+as of this file's writing.)*
+
 | Item class | Best on | Watch out for |
 |---|---|---|
 | Choice items[^1] | A Pokémon that wants the guarantee of ×1.5 Speed and is fine committing to one move per switch-in; spread moves pair well since the lock-in cost doesn't change with the number of targets. | Locked into the first move used until switching out. **A Choice item should not also carry Protect** — Protect used once locks the holder into Protect for the rest of its time on the field, which is usually a worse trade than the flexibility Protect exists to buy in the first place. |
 | Life Orb | A Pokémon that wants every attack boosted rather than one item-matched type. | Recoil adds up over a game; **some abilities ignore it** — `reference/mechanics.md` owns ability interactions, check there before assuming a given holder takes the recoil. |
 | Type-boosting items — Mystic Water, Charcoal, and the rest of the family (all verified Champions-legal) | A Pokémon running several moves of one type — the source's own example is Aqua Jet (40 BP, priority) and Wave Crash (120 BP) on the same Water attacker, both verified — or one that mostly clicks a single move, such as Torkoal running Charcoal for its own signature Eruption (150 BP spread Fire; Torkoal's learnset was re-verified for this file). | Narrower than Life Orb — it does nothing for a move of any other type, so it is a weaker pick on a Pokémon whose moveset is genuinely mixed-type. |
-| Focus Sash | A frail Pokémon whose whole job is surviving to take exactly one action. | Full mechanics — including that it only blocks the *first* hit of a multi-hit move, and does nothing against being double-targeted by two separate attackers in the same turn — are in `reference/mechanics.md`'s Item mechanics section; don't re-derive them here. |
+| Focus Sash | A frail Pokémon whose whole job is surviving to take exactly one action. | It is a one-action item, not a one-turn-of-safety item — the gap between those two is real and situational. Multi-hit-move mechanics: `reference/mechanics.md`'s Item mechanics section. Double-targeting risk: `reference/methodology.md`'s Focus-Sash-support case. Don't re-derive either here. |
 | Super-effective-reducing berries — Chople, Occa, Shuca, and the rest of the family (all verified Champions-legal) | A Pokémon with one predictable, high-value weakness it expects to be attacked into. | Consumed on the first qualifying hit, and only helps against the one type it's keyed to — guessing the wrong type wastes the slot entirely, and it does nothing against any other attack. |
 | Sitrus Berry | See the Sitrus-vs-Leftovers comparison below. | One-time use, and only triggers once the holder is already below half HP — it does not prevent the hit that brought it there. |
 | Leftovers | See the Sitrus-vs-Leftovers comparison below. | Passive and slow relative to Sitrus — see below for the actual math. |
@@ -257,8 +267,14 @@ passive healing — not on one item being categorically stronger.
 ## Damage reduction that is not an item
 
 The source's list, organised: screens, stat drops, Intimidate, other
-abilities, and setup moves. `reference/mechanics.md` owns the mechanics of
-each; this section states only why each belongs on a role checklist.
+abilities, and setup moves. **The underlying mechanics of screens, Intimidate,
+Friend Guard and Multiscale — exact duration, reduction fraction, and
+interaction edge cases — are not yet documented anywhere in this repo.**
+`reference/mechanics.md` was checked directly and holds none of them (it does
+document Focus Sash's multi-hit interaction, cited where that comes up
+above). Verify any specific number live (Bulbapedia/Serebii) before relying
+on it; this section states only why each belongs on a role checklist, at the
+level of what it buys the role, not the numbers behind it.
 
 - **Screens** — Light Screen, Reflect, and Aurora Veil (all verified legal
   Champions status moves). One moveslot buys a side-wide damage reduction for
@@ -276,8 +292,9 @@ each; this section states only why each belongs on a role checklist.
 - **Other abilities** — Friend Guard and Multiscale, the source's own two
   named examples (both verified legal Champions abilities). Friend Guard
   reduces damage a Pokémon's *ally* takes rather than its own; Multiscale
-  reduces damage the holder itself takes, but only from full HP. Full
-  mechanics for both belong in `reference/mechanics.md`, not here.
+  reduces damage the holder itself takes, but only from full HP. The exact
+  reduction fraction for each is not yet documented in this repo — verify
+  live before relying on a specific number.
 - **Setup moves** — a defensive stat boost is the mirror image of the
   offensive setup rule in [Offensive capability](#offensive-capability)
   above: a +2 Defense boost is worth roughly halving incoming damage for as
@@ -330,3 +347,4 @@ assuming this holds past the regulation this file was written in.
 | Date | Change | Source |
 |---|---|---|
 | 2026-09-09 | Created. The repo had no role framework at all — `vgc-team-building` step 6 and `vgc-team-refining`'s role-fit check both needed a target and found none. Covers the role-before-moveset-before-spread ordering, the Offensive/Defensive moveset templates, offensive capability (including the +2-setup-pays-for-its-turn rule), the ≥80 BP (preferably ≥90) base-power floor with Icy Wind (55 BP) vs. Blizzard (110 BP) as the real-number worked example, coverage without over-fixating, an items-by-role table, non-item damage reduction, and a two-sentence pointer to `methodology.md` for judging support picks rather than restating it. The item sweep found four items the source names or implies (Assault Vest, Choice Band, Choice Specs, all four terrain seeds) that are not in the Champions item pool at all — removed from the recommendation table and footnoted rather than presented as available, per the task's own verification requirement. Every move, item and ability verified via `tools/dex/cli.js`; none of the failures were vendoring gaps — all were `championsLegal: false` against the current M-B item pool. `npm test` — 318/318, unchanged. | `reference/sources/teambuilding-notes.md` ("Choosing the right moveset / Roles") and `reference/sources/teambuilding-notes-advanced.md` ("Offensive Capabilities", "Offensive Coverage", "Offensive Items", "Defensive Capabilites", "Defensive items", "Other ways to reduce damage"), both vendored from masterclass notes by a Pokémon world champion; `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-4-brief.md` |
+| 2026-09-09 | Fix round 1 (review: spec ❌, 3 Important + 1 Minor). (1) Added a one-line provenance note near "Items by role" recording that the source's team-wide "1-3 offensive items" budget belongs in `reference/team-evaluation.md` (Task 5, not yet written) rather than here — a pointer, not a restated rule, per controller ruling. (2) "Damage reduction that is not an item" falsely claimed `reference/mechanics.md` "owns the mechanics" of screens/Intimidate/Friend Guard/Multiscale; verified directly that it holds none of them, and reworded both the section intro and the Friend-Guard/Multiscale bullet to say those mechanics are not yet documented anywhere in this repo and must be verified live, instead of sending the reader to an empty file. (3) The Focus Sash table cell restated two specific mechanics (blocks only the first hit of a multi-hit move; does nothing against double-targeting) and then said not to re-derive them — trimmed to the role-level consequence (a one-action item) plus two corrected pointers: the multi-hit fact to `reference/mechanics.md` (confirmed present, line 86) and the double-targeting fact to `reference/methodology.md` (confirmed present, line 178) rather than both going to `mechanics.md`, which only has the first. (4) Attached the `*(generic VGC — not Champions-verified)*` scope marker, which was defined but never used, to the four generic-VGC design-judgment claims the review named: role-determines-moveset ordering, "+2 is the same as attacking twice," "the best defense is a strong offense," and "you do not need a super-effective answer to everything" — none of the tool-verified facts (BP values, item/ability legality) were touched. `npm test` — 318/318, unchanged. | Code review of this file, round 1 |
