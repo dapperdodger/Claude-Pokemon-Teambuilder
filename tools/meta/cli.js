@@ -13,6 +13,8 @@ const USAGE = `Usage:
   node tools/meta/cli.js mon <Species> [--format <code>]   per-Pokemon data
   node tools/meta/cli.js usage [--format <code>]           ranked list
   node tools/meta/cli.js speed-tiers [--top N] [--format <code>]  base-Speed tiers of the field
+  node tools/meta/cli.js distribution --move <Move> | --ability <Ability> [--top N] [--format <code>]
+                                                 how much of the field carries a move/ability
   node tools/meta/cli.js check                  slug agreement and ETag drift
 
 Notes:
@@ -22,7 +24,17 @@ Notes:
 
   Pass a Mega by its Pikalytics name (e.g. "Staraptor-Mega"); it resolves to
   the base species plus the stone's share. This is the OPPOSITE convention to
-  tools/damage-calc, which needs "Mega Staraptor".`;
+  tools/damage-calc, which needs "Mega Staraptor".
+
+  speed-tiers and distribution both sample the top N BY USAGE, then answer
+  their question only within that sample — "top" means "among the N
+  most-used", not "the N most-extreme overall". A faster (or subject-running)
+  species sitting outside that usage cutoff is invisible to either command.
+
+  distribution makes N+1 network requests: one usage index fetch, plus one
+  per-Pokemon fetch for each of the top N species. --top defaults to 20, so a
+  bare call costs 21 requests. A single species failing to fetch is recorded
+  under "unresolved" rather than aborting the run.`;
 
 function fail(message) {
   process.stdout.write(JSON.stringify({ error: message }, null, 2) + '\n');
@@ -85,6 +97,50 @@ function main() {
       const usage = meta.usageFromText(idx.text, { describe: formats.describe(idx.text, code) });
       const topRaw = flagValue(argv, '--top');
       return ok(fk.speedTiers(usage, { top: topRaw ? Number(topRaw) : 20 }));
+    }
+
+    if (command === 'distribution') {
+      const move = flagValue(argv, '--move');
+      const ability = flagValue(argv, '--ability');
+      if (Boolean(move) === Boolean(ability)) {
+        return fail('distribution: pass exactly one of --move <Move> or --ability <Ability>.');
+      }
+      const idx = loadIndex(code);
+      const describe = formats.describe(idx.text, code);
+      const usage = meta.usageFromText(idx.text, { describe });
+      const topRaw = flagValue(argv, '--top');
+      const top = topRaw ? Number(topRaw) : 20;
+
+      const entries = [];
+      const unresolved = [];
+      for (const row of usage.rows.slice(0, top)) {
+        try {
+          // Same Mega-aggregation rule as `mon`: Pikalytics logs a Mega's
+          // battles under its base species, so the fetch must go out under
+          // the base name even though the usage row itself may already be
+          // the base (pikaToDex/resolve is a no-op for a non-Mega name).
+          const megaInfo = megas.resolve(row.species);
+          const lookup = megaInfo.isMega ? megaInfo.base : row.species;
+          const r = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${code}/${encodeURIComponent(lookup)}`);
+          if (r.status !== 200) {
+            unresolved.push({ species: row.species, reason: `HTTP ${r.status} fetching "${lookup}"` });
+            continue;
+          }
+          const mon = meta.monFromText(r.text, {
+            formatCode: code, capabilities: describe.capabilities, megaInfo, describe, lookupName: lookup,
+          });
+          entries.push({ species: row.species, usage: row.usage, mon });
+        } catch (err) {
+          unresolved.push({ species: row.species, reason: err.message });
+        }
+      }
+
+      const out = fk.distribution(entries, move ? { move } : { ability });
+      out.format = describe.code;
+      out.regulation = describe.regulation;
+      out.top = top;
+      out.unresolved = unresolved;
+      return ok(out);
     }
 
     if (command === 'formats') {

@@ -68,8 +68,68 @@ function speedTiers(usageResult, opts) {
     note:
       'Base Speed at level 50 before Stat Points. scarfed and tailwind are the ' +
       'raw multiplier applied to base Speed, for tier comparison only — they are not ' +
-      'real in-battle stats. Compute a real Speed stat with tools/damage-calc.',
+      'real in-battle stats. Compute a real Speed stat with tools/damage-calc. ' +
+      '"top" means fastest among the N most-USED species, not the N fastest overall — a ' +
+      'faster but lower-usage species outside the sample is invisible here.',
   };
 }
 
-module.exports = { speedTiers };
+// The source notes' "Important Format Knowledge" list: rough distributions of
+// Trick Room, Fake Out, Follow Me, Rage Powder, Wide Guard, Prankster. Held
+// as a named constant rather than hardcoded into the command, so it can grow
+// without touching the CLI.
+const KEY_MOVES = ['Trick Room', 'Fake Out', 'Follow Me', 'Rage Powder', 'Wide Guard'];
+const KEY_ABILITIES = ['Prankster'];
+
+function norm(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+// How common a move or ability is across a sampled slice of the field.
+// `entries` is [{species, usage, mon}] where `mon` is a meta.monFromText()
+// result (so `mon.moves` / `mon.abilities` are [{name, percent}] lists).
+//
+// `share` is deliberately NOT usage-weighted: it is carrying-count / sample
+// size, so a species running the subject on 12% of its sets counts exactly
+// the same as one running it on 98%. Read the per-row `rate` (that
+// percentage) to see the difference — share alone answers "how many of the
+// field run this at all", never "how much of the field's damage output/turns
+// involve this".
+function distribution(entries, opts) {
+  const o = opts || {};
+  if (Boolean(o.move) === Boolean(o.ability)) {
+    throw new Error('distribution: pass exactly one of { move } or { ability }.');
+  }
+  const kind = o.move ? 'move' : 'ability';
+  const subject = o.move || o.ability;
+  const target = norm(subject);
+
+  const rows = entries.map((e) => {
+    const list = (kind === 'move' ? e.mon.moves : e.mon.abilities) || [];
+    const hit = list.find((x) => norm(x.name) === target);
+    return {
+      species: e.species,
+      usage: e.usage,
+      carries: Boolean(hit),
+      rate: hit ? hit.percent : null,
+    };
+  });
+
+  const carrying = rows.filter((r) => r.carries).length;
+  return {
+    kind,
+    subject,
+    of: entries.length,
+    carrying,
+    share: entries.length ? Math.round((carrying / entries.length) * 1000) / 10 : 0,
+    rows,
+    note:
+      'Share is the fraction of the sampled top-N species that run this at all, not a ' +
+      'usage-weighted figure. A species carrying it on 12% of its sets counts the same as one ' +
+      'carrying it on 98% — read the per-row rate before treating this as prevalence. The ' +
+      'sample itself is also usage-biased: "top N" means the N most-USED species, not the N ' +
+      'most likely to run this — a low-usage carrier outside the sample is invisible here.',
+  };
+}
+
+module.exports = { speedTiers, distribution, KEY_MOVES, KEY_ABILITIES };

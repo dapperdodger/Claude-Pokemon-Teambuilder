@@ -57,3 +57,47 @@ test('speedTiers: carries the format and regulation through from the usage resul
   assert.equal(out.format, u.format);
   assert.equal(out.regulation, u.regulation);
 });
+
+function monFixture(file, name) {
+  const text = fs.readFileSync(path.join(FIXTURES, file), 'utf8');
+  return meta.monFromText(text, { lookupName: name, capabilities: { usage: true, winRate: true } });
+}
+
+test('distribution: counts how many of the field carry a move', () => {
+  const entries = [
+    { species: 'Incineroar', usage: 40, mon: monFixture('ranked-incineroar.md', 'Incineroar') },
+    { species: 'Whimsicott', usage: 20, mon: monFixture('ranked-whimsicott.md', 'Whimsicott') },
+  ];
+  const out = fk.distribution(entries, { move: 'Fake Out' });
+  assert.equal(out.kind, 'move');
+  assert.equal(out.subject, 'Fake Out');
+  assert.equal(out.of, 2);
+  assert.equal(typeof out.carrying, 'number');
+  assert.ok(out.carrying >= 0 && out.carrying <= 2);
+  assert.equal(out.share, Math.round((out.carrying / out.of) * 1000) / 10);
+});
+
+test('distribution: every row says whether that species carries it, and at what rate', () => {
+  const entries = [
+    { species: 'Whimsicott', usage: 20, mon: monFixture('ranked-whimsicott.md', 'Whimsicott') },
+  ];
+  const out = fk.distribution(entries, { ability: 'Prankster' });
+  assert.equal(out.kind, 'ability');
+  assert.equal(out.rows.length, 1);
+  assert.equal(out.rows[0].species, 'Whimsicott');
+  assert.equal(typeof out.rows[0].carries, 'boolean');
+});
+
+test('distribution: requires exactly one of move or ability', () => {
+  assert.throws(() => fk.distribution([], {}), /exactly one of/);
+  assert.throws(() => fk.distribution([], { move: 'a', ability: 'b' }), /exactly one of/);
+});
+
+test('distribution: matching is case- and punctuation-insensitive', () => {
+  const entries = [
+    { species: 'Whimsicott', usage: 20, mon: monFixture('ranked-whimsicott.md', 'Whimsicott') },
+  ];
+  const loose = fk.distribution(entries, { ability: 'prankster' });
+  const exact = fk.distribution(entries, { ability: 'Prankster' });
+  assert.equal(loose.carrying, exact.carrying);
+});
