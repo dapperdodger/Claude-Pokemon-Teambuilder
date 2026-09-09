@@ -334,7 +334,7 @@ node tools/dex/cli.js legal --item "Leftovers"
 node tools/dex/cli.js legal --item "Focus Sash"
 ```
 
-Expected: each reports legal. Any item that is not legal in Champions must be removed from the table, with a footnote recording that the source named it.
+**Do not assume any of them pass.** Verified 2026-09-09: Assault Vest, Choice Band, Choice Specs and all four terrain seeds report `championsLegal: false` — Champions' item pool is markedly narrower than standard VGC, and the list above was written from recall, which is precisely the failure this repo exists to prevent. Any item that is not legal must be removed from the table, with a footnote recording that the source named it.
 
 - [ ] **Step 4: Confirm no existing tests broke**
 
