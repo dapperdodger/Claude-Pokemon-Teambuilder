@@ -6,11 +6,13 @@ const fetchmod = require('./fetch');
 const formats = require('./formats');
 const megas = require('./megas');
 const meta = require('./meta');
+const fk = require('./format-knowledge');
 
 const USAGE = `Usage:
   node tools/meta/cli.js formats [--write]      list formats, capabilities, regulation
   node tools/meta/cli.js mon <Species> [--format <code>]   per-Pokemon data
   node tools/meta/cli.js usage [--format <code>]           ranked list
+  node tools/meta/cli.js speed-tiers [--top N] [--format <code>]  base-Speed tiers of the field
   node tools/meta/cli.js check                  slug agreement and ETag drift
 
 Notes:
@@ -76,6 +78,13 @@ function main() {
     if (command === 'usage') {
       const idx = loadIndex(code);
       return ok(meta.usageFromText(idx.text, { describe: formats.describe(idx.text, code) }));
+    }
+
+    if (command === 'speed-tiers') {
+      const idx = loadIndex(code);
+      const usage = meta.usageFromText(idx.text, { describe: formats.describe(idx.text, code) });
+      const topRaw = flagValue(argv, '--top');
+      return ok(fk.speedTiers(usage, { top: topRaw ? Number(topRaw) : 20 }));
     }
 
     if (command === 'formats') {
