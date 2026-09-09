@@ -27,9 +27,19 @@ piece of work; a link that does not resolve yet means "not written yet," not
 
 **Two markers used throughout:**
 
-- **[generic VGC]** — carried from the masterclass notes. True of VGC doubles
-  broadly; **not** separately verified against Champions' roster or its current
-  meta. Kept and marked rather than dropped, because dropping is distilling.
+- *(generic VGC — not Champions-verified)* — carried from the masterclass
+  notes. True of VGC doubles broadly; **not** separately verified against
+  Champions' roster or its current meta. Kept and marked rather than dropped,
+  because dropping is distilling. **This is a scope marker, not a confidence
+  marker** — it says *where a claim came from* (generic VGC vs. this file's own
+  Champions-specific verification), which is a different question from *how
+  well sourced* a claim is. It is written in italic parentheses, deliberately
+  distinct from `reference/vgc-format.md`'s `[official]` / `[consensus]` /
+  `[unresolved]` bracket tags (see that file's ["Confidence
+  marking"](vgc-format.md#confidence-marking) section) so the two schemes are
+  never mistaken for tiers of the same axis. A claim can legitimately carry
+  both — a generic-VGC heuristic can also be `[consensus]` among third-party
+  VGC sources while being unverified against Champions specifically.
 - `(as of 2026-09 — confirm with meta usage)` — the claim rests on what is
   currently played, and what is currently played changes. Re-check with
   `node tools/meta/cli.js usage` before leaning on it.
@@ -107,6 +117,12 @@ immediately split it into two targets that pull in different directions:
    matchup leaves you with nothing on the table. This optimises the *worst
    case* and accepts a lower ceiling in the matchups you were already winning.
 
+*(The source also asks whether a machine-usable tool exists for looking up
+Pokémon by niche — e.g. "a fast pokemon that learns a certain move" — the way
+Pokémon Showdown's own lookup does. That question is answered by
+`node tools/dex/cli.js find`, built in a later task of this same body of work
+— not yet present as of this file's writing.)*
+
 **These are different goals, and the choice belongs to the user, not to the
 assistant.** State the trade-off and ask which one is being built for. An
 assistant that quietly optimises for the average will keep arguing against the
@@ -136,10 +152,10 @@ to discover at slot five.
 
 **What it needs.** A setter that lives long enough to set it, and attackers
 whose damage actually converts the speed advantage into removed Pokémon.
-Tailwind is ×2 Speed for the whole side, lasting 4 turns
-(`reference/mechanics.md`, "Speed calculation") — a four-turn window, not a
-permanent state, so the question is always *what happens inside those four
-turns*.
+Tailwind's multiplier and duration are in `reference/mechanics.md`, "Speed
+calculation" — the archetype-relevant fact is that it is a fixed-length
+window, not a permanent state, so the question is always *what happens inside
+that window*.
 
 **Saving Tailwind for a later turn is often crucial.** Setting it on turn 1
 out of habit spends the window while the opponent still has every answer
@@ -148,7 +164,7 @@ the stronger line — and that has a build consequence, not just a play
 consequence: **the setter has to have something worth doing on the turns it is
 not setting Tailwind.**
 
-**How many setters.** Usually one **[generic VGC]**. Tailwind is a side-wide
+**How many setters.** Usually one *(generic VGC — not Champions-verified)*. Tailwind is a side-wide
 field effect, so a second setter does not stack — it buys the ability to
 re-set after the four turns lapse, and insurance against the first setter
 being removed. That is a redundancy purchase, not a power increase; price it
@@ -193,14 +209,12 @@ and much narrower thing: a panic button, judged on whether the one or two
 turns it buys are worth the moveslot. The requirements below are for the team
 whose attackers do not function without the room.
 
-**What it needs.** A way to survive the setting turn. **Trick Room has -7
-priority** and always resolves last on the turn it is used, regardless of the
-setter's Speed — so the setter absorbs every normal-priority attack that turn
-*before* the room exists. The full mechanic, including the fact that the
-opponent does not need to out-speed your setter to hit it first and that only
-the within-bracket Speed comparison flips afterwards, is in
-`reference/mechanics.md`, "Priority & turn order". Do not restate it from
-recall; that section is the authority.
+**What it needs.** A way to survive the setting turn. The setter must survive
+the turn it sets Trick Room — the move resolves at -7 priority, last
+regardless of its Speed, so the setter absorbs the turn's attacks before the
+room exists to protect it. Full mechanic in `reference/mechanics.md`,
+"Priority & turn order" — do not restate it from recall; that section is the
+authority.
 
 The practical consequence is that **setup is a slot cost you pay up front**:
 
@@ -215,7 +229,7 @@ The practical consequence is that **setup is a slot cost you pay up front**:
   depend on the opponent's typing.
 
 **How many setters.** Usually two, sometimes one depending on the meta
-**[generic VGC]** `(as of 2026-09 — confirm with meta usage)`. This is the
+*(generic VGC — not Champions-verified)* `(as of 2026-09 — confirm with meta usage)`. This is the
 opposite call from Tailwind's one, and for a structural reason: Tailwind
 upgrades attackers that already function, so losing the setter downgrades the
 plan. Hard Trick Room's attackers are individually outsped by the field, so
@@ -279,7 +293,7 @@ plausible bring, so the six should be chosen to make that true rather than to
 make one specific four strong.
 
 **Specific-matchup slots.** Typically **1-2 slots aimed at specific common
-matchups** **[generic VGC]** `(as of 2026-09 — confirm with meta usage)`. This
+matchups** *(generic VGC — not Champions-verified)* `(as of 2026-09 — confirm with meta usage)`. This
 is where a dedicated answer to one recurring problem lives, and it is
 legitimate — there is a counter to every Pokémon, however strong, and if you
 keep losing to one thing, building an answer to it is the correct response
@@ -304,7 +318,7 @@ which means a live meta pull, not recall (`vgc-meta-lookup`).
 **What it needs.** A setter, and a plan for the turns when the weather is not
 up.
 
-- **Set by ability (most common) or by move** **[generic VGC]**
+- **Set by ability (most common) or by move** *(generic VGC — not Champions-verified)*
   `(as of 2026-09 — confirm with meta usage)`. An ability
   setter puts the weather up on switch-in for free; a move costs a turn and a
   moveslot, and can be Taunted or simply never get its turn.
@@ -322,7 +336,7 @@ up.
   `--weather` flag to the damage CLI; it silently no-ops on a lowercase
   mismatch (`reference/pitfalls.md`, "Weather effects on move power").
 
-**How many setters.** Usually one **[generic VGC]** — for the same reason as
+**How many setters.** Usually one *(generic VGC — not Champions-verified)* — for the same reason as
 Tailwind: weather is a field effect that does not stack. A second setter is
 insurance and a re-set, not a stronger effect.
 
@@ -331,7 +345,7 @@ are Champions-legal (setters and abilities verified 2026-09-08); which of them
 is *good right now* is a meta question this file does not answer
 `(as of 2026-09 — confirm with meta usage)`.
 
-**Rain.** **Trends bulkier than the other weathers** **[generic VGC]**. Water
+**Rain.** **Trends bulkier than the other weathers** *(generic VGC — not Champions-verified)*. Water
 STAB at ×1.5 with Fire coverage halved is already a large swing, so rain teams
 buy staying power rather than more damage. Drizzle setters in the Champions
 roster include Pelipper (Water/Flying) and Politoed (Water) — both verified.
@@ -340,7 +354,7 @@ Swim by the Mega forme, which is a durable fact rather than a usage one
 (verified via `dex mon`, and see `reference/mechanics.md` on Mega-fixed
 abilities).
 
-**Sun.** Usually about **one Chlorophyll abuser** **[generic VGC]** — one, not
+**Sun.** Usually about **one Chlorophyll abuser** *(generic VGC — not Champions-verified)* — one, not
 three. Chlorophyll's Speed doubling is conditional on the sun, so each
 additional Chlorophyll body increases how much of the team switches off at
 once when the weather changes; that is the whole-team rule below, applied
@@ -368,7 +382,7 @@ redirection, Intimidate, a Fighting-resist partner — as part of the cost of
 choosing sand, not as an optional extra.
 
 **Snow.** **Earns its place through Aurora Veil or Blizzard**, not through the
-weather's own chip effect **[generic VGC]**. Aurora Veil is one moveslot that
+weather's own chip effect *(generic VGC — not Champions-verified)*. Aurora Veil is one moveslot that
 does what Reflect and Light Screen do together, and it requires the snow to be
 up; Blizzard is 110 BP spread Ice (verified via `dex move`). *Unverified
 locally:* the commonly-cited perfect-accuracy interaction between Blizzard and
@@ -494,7 +508,7 @@ so it is present.
   detailed in `reference/vgc-format.md` — read them there. Do not present the
   limit as a flaw in a plan that registers two. The source's own guidance is
   the same in weaker form: two is fine, more probably is not, and at least one
-  in a Mega-legal format **[generic VGC]**.
+  in a Mega-legal format *(generic VGC — not Champions-verified)*.
 
 ## Examples policy
 
@@ -546,3 +560,4 @@ not "not legal" (`CLAUDE.md`).
 | Date | Change | Source |
 |---|---|---|
 | 2026-09-08 | Created. The repo had no archetype taxonomy at all — `vgc-team-building` step 3 said "agree the archetype with the user" and nothing anywhere said what the archetypes were, what each required, or how to choose between them. Covers the three starting points, the two different targets for choosing one, the four archetypes with their requirements and failure modes, the weather whole-team rule, building around a single Pokémon, and Megas as centrepieces. Every named species/move/ability verified via `tools/dex/cli.js`; ten generic-VGC example candidates were rejected as not Champions-roster and replaced before publication | `reference/sources/teambuilding-notes.md` ("Team starting points", "Strategies", "Building Around Specific Pokémon", "Using an Existing Team", "Mega Pokémon Tips") and `reference/sources/teambuilding-notes-advanced.md` ("How to select a strong starting points?"), both vendored this session from masterclass notes by a Pokémon world champion; `docs/superpowers/specs/2026-09-08-teambuilding-philosophy-design.md` |
+| 2026-09-09 | Fix round 1: replaced all `[generic VGC]` bracket-tag occurrences (10, including the definition) with the italic parenthetical `*(generic VGC — not Champions-verified)*` so the scope marker cannot be mistaken for a fourth tier of `vgc-format.md`'s `[official]`/`[consensus]`/`[unresolved]` confidence axis; rewrote the marker's definition block to state it is orthogonal to that axis and link to it. Trimmed the Trick Room -7-priority and Tailwind ×2/4-turn restatements down to the archetype-relevant consequence, deferring the mechanic itself to `reference/mechanics.md` instead of restating it right after telling the reader not to. Added a one-line note in "Choosing a strong starting point" recording that the source's "is there a machine-usable niche-lookup tool" question is answered by `node tools/dex/cli.js find`, built in a later task of this plan. | Code review of this file, round 1 |
