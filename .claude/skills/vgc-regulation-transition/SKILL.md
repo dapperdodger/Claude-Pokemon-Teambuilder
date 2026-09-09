@@ -31,6 +31,7 @@ Pokémon and Megas, which live in vendored data that lags), and the **meta**
 - [ ] 5. Re-vendor the roster data and run tests
 - [ ] 5b. Re-resolve the Pikalytics format slug
 - [ ] 5c. Re-vendor the learnsets and re-pin the regulation
+- [ ] 5d. Regenerate format knowledge
 - [ ] 6. Flag teams built for the old regulation
 - [ ] 7. Set expectations with the user
 ```
@@ -116,6 +117,19 @@ node tools/dex/cli.js learnset "<A New Species>"
 roster contains species the learnsets do not cover. That is a real finding: it
 means the two vendors have drifted, not that the test is broken.
 
+**5d. Regenerate format knowledge.** The speed tiers and key-move
+distributions in `reference/format-knowledge.md` describe the *previous*
+field.
+
+```bash
+node tools/meta/cli.js speed-tiers --write
+```
+
+Confirm the regenerated file's `**Regulation:**` stamp matches the new active
+regulation before moving on. Re-vendoring both datasets (steps 5 and 5c) is a
+prerequisite — speed tiers join usage against the vendored dex, so a stale
+roster produces a stale tier list that looks fine.
+
 **6. Flag teams built for the old regulation — in chat, not in the files.**
 The phase hook lists team files whose `Regulation:` stamp no longer matches.
 **Write nothing to `teams/`.** A team file is a historical record of what was
@@ -151,3 +165,4 @@ without it. Don't present provisional numbers as settled.
 - `reference/champions-format.md` — what does *not* change at a rollover
 - `reference/regulations/` — the archive, and its index
 - `tools/damage-calc/VENDOR_MANIFEST.md` — re-vendoring procedure
+- `reference/format-knowledge.md` (generated) — regenerated in step 5d

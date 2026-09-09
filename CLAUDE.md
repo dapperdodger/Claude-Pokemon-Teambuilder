@@ -42,6 +42,15 @@ them is the wrong answer. Full detail and sourcing in
   banned in every regulation.**
 - **Clocks:** Team Preview 90s, move 45s, player time 7 min, game 20 min.
 
+## Teambuilding defaults — these change a build's shape from its first move
+
+- **Speed control is often the first question, not a later slot.** Name the
+  form, the Pokémon providing it, and the fallback if that Pokémon is removed.
+- **Role, then moveset, then spread — in that order.** A spread solved before
+  the role is named is a spread solved for the wrong job.
+- **Verifiable is not the same as good.** Every fact about a pick can check out
+  while the pick is still wrong for the slot. See `reference/team-evaluation.md`.
+
 ## Never state these from recall — run the command
 
 | Claim | Command |
@@ -57,6 +66,8 @@ them is the wrong answer. Full detail and sourcing in
 | Is this team legal? (items, SP, abilities, regulation) | `node tools/dex/cli.js team teams/<file>.md` |
 | What is *used* in the current meta | `node tools/meta/cli.js usage` |
 | A Pokémon's real moves/items/abilities distribution | `node tools/meta/cli.js mon "<Species>"` |
+| Candidates for a roster gap | `node tools/dex/cli.js find --type <T> --learns "<Move>" --min-spe <N>` |
+| How fast is the field / how common is Fake Out | `node tools/meta/cli.js speed-tiers`, `node tools/meta/cli.js distribution --move "<Move>"` |
 
 Every claim in that table has been stated wrong from recall in this repo
 **while the correct answer was already written down here**. The command costs
@@ -193,4 +204,10 @@ Scope: legality only. The data carries no level-up/TM/egg distinction.
 | Priority, speed modifiers, item and ability mechanics | `reference/mechanics.md` |
 | Damage-calc CLI usage and its caveats | `reference/damage-calc.md` |
 | Meta usage-lookup CLI usage and its caveats | `reference/meta-lookup.md` |
+| Which archetype, and what it needs | `reference/archetypes.md` |
+| Speed control — forms, trade-offs, fallbacks | `reference/speed-control.md` |
+| Role templates, movesets, items by role | `reference/roles.md` |
+| Is this Pokémon good / is this team good | `reference/team-evaluation.md` |
+| Speed tiers, Fake Out / Trick Room / Prankster distributions | `reference/format-knowledge.md` (generated) |
+| Just played games — "why did I lose" | `vgc-post-game` skill |
 | Why a rule exists — the incident behind it | `docs/case-studies.md` |

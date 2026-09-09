@@ -45,6 +45,7 @@ node tools/dex/cli.js legal --item "Choice Band"
 node tools/dex/cli.js learnset "Mega Altaria" --move "Calm Mind"  # move legality
 node tools/dex/cli.js team teams/my-team.md     # validate a team file
 node tools/dex/cli.js team --all                # validate every saved team
+node tools/dex/cli.js find --type Flying --learns "Tailwind" --min-spe 100  # candidates for a roster gap
 ```
 
 `team` checks the things that are mechanically decidable and had been prose
@@ -72,7 +73,7 @@ be ten separate calls), and `optimize-bulk-cli.js` for the minimum HP/Def/SpD
 that survives a named attack. Needs Node.js.
 
 ```bash
-npm test   # 310 tests across the tools and the hooks
+npm test   # 356 tests across the tools and the hooks
 ```
 
 ### `tools/meta/` — live usage and win-rate lookups
@@ -87,6 +88,8 @@ node tools/meta/cli.js usage --format championstournaments
 node tools/meta/cli.js mon "Garchomp" --format championstournaments
 node tools/meta/cli.js mon "Staraptor-Mega"            # resolves to base + real Mega item share
 node tools/meta/cli.js formats --write                 # capabilities + manifest row
+node tools/meta/cli.js speed-tiers --top 30            # field speed tiers, Scarf/Tailwind breakpoints
+node tools/meta/cli.js distribution --move "Fake Out" --top 20  # how common a move/ability is
 ```
 
 Which metrics a format carries is a property of its **upstream**, not of
@@ -119,6 +122,11 @@ command surface and why `check` has to run first.
 | [`reference/damage-calc.md`](reference/damage-calc.md) | Damage-calc CLI usage, flags, and its real caveats. |
 | [`reference/meta-lookup.md`](reference/meta-lookup.md) | `tools/meta` CLI usage: command surface, per-upstream metrics table, per-population/ETag freshness rules, and the Mega naming convention. |
 | [`reference/team-refining.md`](reference/team-refining.md) | The narrower refine-an-existing-team workflow. |
+| [`reference/archetypes.md`](reference/archetypes.md) | The starting-point decisions and the four archetypes with their requirements and failure modes. |
+| [`reference/speed-control.md`](reference/speed-control.md) | The forms of speed control, how they compose or conflict, and the backup-when-the-setter-is-removed question. |
+| [`reference/roles.md`](reference/roles.md) | Role-before-moveset-before-spread, the two moveset templates, the base-power floor, and items by role. |
+| [`reference/team-evaluation.md`](reference/team-evaluation.md) | The "is this Pokémon good" rubric and the team-wide design-constraints checklist plus its counterweights. |
+| [`reference/format-knowledge.md`](reference/format-knowledge.md) (generated) | Speed tiers and key-move/ability distributions computed from the vendored dex and live usage — regenerate with `node tools/meta/cli.js speed-tiers --write`, never hand-edit. |
 
 The 18×18 type chart markdown was **removed** — `tools/dex/cli.js type`
 replaces it. All 324 cells were confirmed identical to the vendored chart
@@ -140,6 +148,7 @@ one hop out to reference files — never a chain through several of them.
 | [`vgc-team-audit`](.claude/skills/vgc-team-audit/SKILL.md) | "What does my team lose to", "is this legal", "which four do I bring". |
 | [`vgc-meta-lookup`](.claude/skills/vgc-meta-lookup/SKILL.md) | "What's the meta" with no specific Pokémon or team named yet — including what to do early in a regulation when there is no data. |
 | [`vgc-regulation-transition`](.claude/skills/vgc-regulation-transition/SKILL.md) | A regulation ended or is about to. The rollover runbook. |
+| [`vgc-post-game`](.claude/skills/vgc-post-game/SKILL.md) | "I lost with this", "I keep losing to X" — triages a played game into bad luck, a misplay, or a genuinely missing tool before touching the team. |
 
 ## Hooks
 

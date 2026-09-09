@@ -92,13 +92,14 @@ verified output) — fetch that URL directly and read them, but only *after*
 guessing a slug by hand. Do not substitute `usage`'s per-Pokémon ranking for
 this — see Common mistakes below.
 
-**Which Pokémon run together, and *why*.** Co-occurrence is a frequency
-signal, not proof of synergy — that warning already stands (see Common
-mistakes). The follow-up that turns the signal into an answer: when two
-Pokémon co-occur, name the actual mechanism — speed control, weather,
-redirection, a shared check — or say plainly you could not determine one.
-A pairing you cannot explain is a pairing you cannot counter, so don't hand
-a core onward as a threat without that explanation attached.
+Once you have those groupings, the real follow-up is **which Pokémon run
+together, and *why*.** Co-occurrence is a frequency signal, not proof of
+synergy — that warning already stands (see Common mistakes). The follow-up
+that turns the signal into an answer: when two Pokémon co-occur, name the
+actual mechanism — speed control, weather, redirection, a shared check — or
+say plainly you could not determine one. A pairing you cannot explain is a
+pairing you cannot counter, so don't hand a core onward as a threat without
+that explanation attached.
 
 **4. Format knowledge — the field's shape, not its names.** Usage tells you
 *who* you will face; this tells you *what they do*.

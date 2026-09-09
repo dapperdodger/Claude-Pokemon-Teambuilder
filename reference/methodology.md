@@ -192,6 +192,10 @@ control Pokémon's viability question is "does its support action reliably
 happen," not "how much punishment can it take." Ask which question actually
 applies before reaching for the damage-calc tool.
 
+For the role templates and per-role judgment this section's method implies —
+what a support pick is judged on, item choices by role, the base-power floor
+for an attacker — see `reference/roles.md`.
+
 ## Team-building is collaborative, not a solo deliverable
 
 Even for a "just build me something" request (e.g. an off-meta/anti-meta
@@ -223,6 +227,9 @@ presenting only Noivern would have skipped real, legitimately different
 alternatives (Pelipper, Staraptor) with their own trade-offs (Electric
 4x-weak vs. Fighting-neutral-not-resisted vs. new Ice 4x-weak) that the user
 should get to weigh.
+
+For the starting-point/archetype decision this collaborative checkpoint
+applies to, see `reference/archetypes.md`.
 
 ## Live meta lookup: Pikalytics per-Pokémon pages
 
@@ -313,3 +320,4 @@ actually win, topteams gives concrete real builds to test against.
 | 2026-09-07 | Added a Contents list. Type-matchup steps now point at `node tools/dex/cli.js type` (the markdown type chart was deleted after all 324 cells were confirmed identical to the vendored chart, which is now guarded by `tools/dex/tests/type-chart-invariant.test.js`). Hook paths updated for the move to `.claude/hooks/` | docs/specs/2026-09-07-repo-reorganization.md |
 | 2026-09-07 | Replaced dangling `CLAUDE.md rule N` cross-references with named pointers — CLAUDE.md stopped being a numbered rule list in the reorganization and every number became dead. Named pointers survive restructuring; numbers do not | docs/specs/2026-09-07-workflow-audit.md |
 | 2026-09-07 | Live meta lookup now requires verifying the fetched page's own format label names the current regulation, not just picking a slug — a previous regulation's slug keeps returning complete, correctly-labelled data instead of failing, so a stale slug is silently wrong rather than obviously broken | Live Pikalytics fetches this session; see reference/regulation.md's "Live usage data" section |
+| 2026-09-09 | Added cross-links, no content moved: "A Pokémon's value isn't always damage" now points to `reference/roles.md` for the role templates and per-role judgment (item choices by role, the base-power floor, what a support pick is judged on) that this section's method implies; "Team-building is collaborative" now points to `reference/archetypes.md` for the starting-point/archetype decision the collaborative checkpoint applies to. Both files were created after this file and needed wiring in, per the strategy-layer routing task | `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-16-brief.md` |

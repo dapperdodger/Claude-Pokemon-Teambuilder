@@ -33,6 +33,10 @@ settles a matchup:
   Trick Room bullet above for what it actually does (reverses turn order,
   doesn't touch the stat itself).
 
+For the strategy layer built on these modifiers — which form of speed
+control to run, how they compose or conflict, and the fallback question if
+the setter is removed — see `reference/speed-control.md`.
+
 ## Mega Evolution ability changes
 **Check this section (or grep `tools/damage-calc/vendor/pokedex.js` for the
 exact `"Mega <Species>"` entry's `.ab` field) BEFORE stating any Mega
@@ -49,7 +53,11 @@ opening the file at the moment of stating it.
 
 ## Terrain mechanics
 
-- **Grassy Terrain** (Rillaboom's Grassy Surge, or the move) — verified
+- **Grassy Terrain** (Rillaboom's Grassy Surge, or the move) — Rillaboom
+  itself is *(not in the Champions pool as of M-B, verified 2026-09-09 —
+  guidance holds for when it returns)*; the terrain numbers below were
+  measured against it and stay valid regardless — only the setter's
+  availability is regulation-specific, not the mechanics. Verified
   2026-09-07 against the vendored calc via `--terrain "Grassy"` (exact
   capitalisation, same silent-no-op risk as `--weather`):
   - Grass-type moves **+30%** in Gen 9 — down from 50% in earlier gens, so
@@ -107,3 +115,4 @@ opening the file at the moment of stating it.
 | 2026-09-07 | Replaced a dangling `CLAUDE.md rule 13` reference with a named pointer to CLAUDE.md's lookup table | docs/specs/2026-09-07-workflow-audit.md |
 | 2026-09-07 | Added a "Terrain mechanics" section with Grassy Terrain's verified numbers (Gen 9 Grass boost is +30%, not the older 50%; EQ/Bulldoze/Magnitude halved; 1/16 end-of-turn heal to *both* sides; the Grass boost also applies to the opponent). Prompted by evaluating a Milotic/Rillaboom/Incineroar core, where the terrain both halves Garchomp Earthquake into Incineroar and turns Sinistcha Matcha Gotcha into Milotic from a 3HKO into a 2HKO — the file had no terrain entry at all | `tools/damage-calc/cli.js --terrain "Grassy"` before/after runs this session; Bulbapedia Grassy Terrain (move) and Pokemon Database for the Gen 9 +30% figure |
 | 2026-09-07 | Added an "Ability interactions (non-Mega)" section recording that No Guard covers only its holder and moves targeting it — allies get no benefit — and that Coil's accuracy boost does apply to Hypnosis (60% -> 80% at +1, 100% at +2, via the Gen 5+ (3+stage)/3 accuracy formula). Both came up evaluating a Coil/Hypnosis Milotic alongside Mega Raichu Y, where the tempting inference is that the Mega's No Guard makes the ally's Hypnosis reliable. It does not | Bulbapedia No Guard (Ability) and Accuracy/Stat modifier pages via live search; `dex mon "Mega Raichu Y"` for the Mega-fixed No Guard |
+| 2026-09-09 | Added a cross-link from "Speed calculation" to `reference/speed-control.md` for the strategy layer (which form to run, composition/conflict, the removed-setter fallback) — no modifier numbers moved. Also marked the Grassy Terrain section's Rillaboom example with the availability marker after confirming via `dex mon "Rillaboom"` that it is not in the vendored Champions roster; the measured terrain numbers were computed against that example and stay valid, only the setter's availability is regulation-specific — per prior user correction (see `roles.md`/`archetypes.md` changelogs), the example is marked, not deleted or substituted | `dex mon "Rillaboom"` (exists in the broader dex, absent from `POKEDEX_CHAMPIONS`); `reference/regulation.md`'s stamp block for the live regulation id (M-B); `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-16-brief.md` |

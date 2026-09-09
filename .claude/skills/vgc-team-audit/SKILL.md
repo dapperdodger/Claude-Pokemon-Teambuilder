@@ -1,6 +1,6 @@
 ---
 name: vgc-team-audit
-description: Use when the user has an existing team and wants to know what's wrong with it — what it loses to, where its coverage gaps and shared weaknesses are, whether it's legal, or which four to bring against a specific opponent. Not for building a new team (vgc-team-building) and not for the narrower move-and-SP pass (vgc-team-refining).
+description: Use when the user has an existing team and wants to know what's wrong with it — what it loses to, where its coverage gaps and shared weaknesses are, whether it's legal, or which four to bring against a specific opponent. Not for building a new team (vgc-team-building), not for the narrower move-and-SP pass (vgc-team-refining), and not for triaging a specific game that was just lost — that is vgc-post-game.
 ---
 
 # VGC Team Audit
