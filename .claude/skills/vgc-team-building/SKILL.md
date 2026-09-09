@@ -150,16 +150,10 @@ choose.** Researching one option and presenting it as the answer is the
 documented failure here, whether the slot came from a strategy gap or from
 building around a favourite.
 
-**6. Moveset from the role template.** `reference/roles.md`'s two starting
-shapes:
-
-| Role | Slot 1 | Slot 2 | Slot 3 | Slot 4 |
-|---|---|---|---|---|
-| Offensive | STAB | STAB | Coverage / setup / support | Protect |
-| Defensive | Support | Support | STAB | Support / Protect |
-
-These are starting shapes, not laws — a deviation is fine with a stated
-reason; a set that deviates with no reason is a set nobody actually decided.
+**6. Moveset from the role template.** The role determines the template — see
+`reference/roles.md`'s "The two templates" section. A deviation is fine with a
+stated reason; a set that deviates with no reason is a set nobody actually
+decided.
 Two checkable gates on top of the template:
 
 - **The base-power floor.** An attacking move should be **≥80 base power,
@@ -178,16 +172,8 @@ the *current* meta (`vgc-meta-lookup`), and check a coverage move's damage
 category (physical/special) alongside its type, not just its type alone.
 
 **7. Team-level gates: coverage, item spread, offense/support distribution.**
-Apply `reference/team-evaluation.md`'s Design-constraints checklist to the
-six as a whole:
-
-```markdown
-- [ ] No more than 2 Pokémon of the same type. Exceptions are rare and need a stated purpose.
-- [ ] At least one resistance to every type — a rule of thumb, not a requirement. More than one against common threats.
-- [ ] 1-2 support slots; the rest offensive or hybrid.
-- [ ] 1-3 offensive items, fewer when Megas are in the format.
-- [ ] Speed control present, and a fallback if its setter is removed.
-```
+Run `reference/team-evaluation.md`'s Design-constraints checklist on the six as
+a whole.
 
 **Then apply that file's counterweights — the checklist is a prompt, not a
 scoring system.** A shared weakness nobody in the current meta actually
