@@ -108,3 +108,44 @@ test('find: no filters returns the whole roster', () => {
   const r = dex.find({});
   assert.equal(r.count, Object.keys(getVendor().POKEDEX_CHAMPIONS).length);
 });
+
+const { execFileSync } = require('node:child_process');
+const path = require('node:path');
+const CLI = path.join(__dirname, '..', 'cli.js');
+
+function run(args) {
+  return JSON.parse(execFileSync(process.execPath, [CLI, ...args], { encoding: 'utf8' }));
+}
+
+test('cli find: --min-spe filters on base Speed', () => {
+  const out = run(['find', '--min-spe', '130']);
+  assert.ok(out.count > 0);
+  for (const m of out.results) assert.ok(m.baseStats.spe >= 130);
+});
+
+test('cli find: --min-sp is rejected, because SP means Stat Points', () => {
+  let out;
+  try {
+    out = JSON.parse(execFileSync(process.execPath, [CLI, 'find', '--min-sp', '100'], { encoding: 'utf8' }));
+  } catch (err) {
+    out = JSON.parse(err.stdout);
+  }
+  assert.match(out.error, /Speed is "spe"/);
+});
+
+test('cli find: a --learns query stamps the learnset pin', () => {
+  const out = run(['find', '--learns', 'Protect', '--limit', '1']);
+  assert.ok(out.learnsetPin, 'a --learns query must stamp the pin it relied on');
+  assert.ok(out.learnsetPin.regulation);
+});
+
+test('cli find: a query with no --learns does not stamp a pin it did not use', () => {
+  const out = run(['find', '--type', 'Fire', '--limit', '1']);
+  assert.equal(out.learnsetPin, undefined);
+});
+
+test('cli find: --limit truncates results without falsifying count', () => {
+  const capped = run(['find', '--type', 'Water', '--limit', '2']);
+  assert.equal(capped.results.length, 2);
+  assert.ok(capped.count >= 2);
+});

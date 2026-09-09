@@ -24,12 +24,15 @@ const USAGE = `Usage:
   node tools/dex/cli.js learnset <Species> [--move <Move>]  move legality
   node tools/dex/cli.js team <file.md>           validate a team file
   node tools/dex/cli.js team --all               validate every file in teams/
+  node tools/dex/cli.js find [filters]           search the roster
 
 Examples:
   node tools/dex/cli.js mon "Mega Raichu Y"
   node tools/dex/cli.js type Electric --vs Grass
   node tools/dex/cli.js type Fire --vs Rock,Flying
   node tools/dex/cli.js type --vs-mon "Mega Froslass"
+  node tools/dex/cli.js find --type Flying --learns "Tailwind" --min-spe 100
+  node tools/dex/cli.js find --learns "Trick Room" --max-spe 50 --min-atk 100
 
 "What is X weak to" is one call, not a shell loop over 18 types: use
 --vs-mon (or --vs) with no attacking type. Never loop this CLI and grep its
@@ -48,6 +51,26 @@ function flagValue(argv, flag) {
   const i = argv.indexOf(flag);
   if (i === -1) return undefined;
   return argv[i + 1];
+}
+
+function flagValues(argv, flag) {
+  const out = [];
+  for (let i = 0; i < argv.length; i++) if (argv[i] === flag && argv[i + 1]) out.push(argv[i + 1]);
+  return out;
+}
+
+function statBounds(argv, prefix) {
+  const out = {};
+  for (let i = 0; i < argv.length; i++) {
+    const m = /^--(min|max)-([a-z]+)$/.exec(argv[i]);
+    if (!m || m[1] !== prefix) continue;
+    const value = Number(argv[i + 1]);
+    if (!Number.isFinite(value)) {
+      throw new Error(`${argv[i]} needs a number, got ${JSON.stringify(argv[i + 1])}`);
+    }
+    out[m[2]] = value;
+  }
+  return out;
 }
 
 function main() {
@@ -152,6 +175,37 @@ function main() {
       if (item) return ok(dex.legal('item', item));
       if (ability) return ok(dex.legal('ability', ability));
       return fail('legal: --item <Item> or --ability <Ability> is required');
+    }
+
+    if (command === 'find') {
+      const learns = flagValues(argv, '--learns');
+      const limitRaw = flagValue(argv, '--limit');
+      const result = dex.find({
+        types: flagValues(argv, '--type'),
+        learns,
+        ability: flagValue(argv, '--ability') || null,
+        min: statBounds(argv, 'min'),
+        max: statBounds(argv, 'max'),
+        sort: flagValue(argv, '--sort') || null,
+        limit: limitRaw ? Number(limitRaw) : null,
+      });
+
+      // A --learns query is only as good as the move pools behind it. Stamp the
+      // pin on every one, and say so loudly when it describes a regulation we are
+      // no longer playing: find generates the candidate SET, so a stale pool does
+      // not produce one wrong answer, it seeds every downstream slot decision.
+      if (learns.length) {
+        const manifest = require("./manifest");
+        const pin = manifest.learnsetPin();
+        result.learnsetPin = pin;
+        const status = manifest.pinStatus({
+          pinRegulation: pin.regulation,
+          activeRegulation: require("./team").currentRegulation(),
+        });
+        if (status.stale) result.caveats.push(status.caveat);
+      }
+
+      return ok(result);
     }
 
     return fail(`Unknown command: "${command}".\n\n${USAGE}`);
