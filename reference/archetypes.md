@@ -577,24 +577,26 @@ the source names in the sections this file covers are Garchomp and Torkoal
 typos, not different Pokémon) and Tyranitar.
 
 **Names outside the current roster, not wrong.** Recorded so a sibling file
-does not re-derive them: `Rillaboom`, `Amoonguss`, `Indeedee`, `Barraskewda`,
-`Kingdra`, `Ludicolo`, `Lilligant`, `Sawsbuck`, `Shiftry` and `Togekiss`
-*(not in the Champions pool as of M-B, verified 2026-09-09 — guidance holds
+does not re-derive them: `Amoonguss`, `Barraskewda`, `Kingdra`, `Ludicolo`,
+`Lilligant`, `Sawsbuck`, `Shiftry` and `Togekiss`
+*(not in the Champions pool as of M-C, verified 2026-09-09 — guidance holds
 for when they return)* all exist in the broader dex but **not** in the
 vendored Champions roster; `Urshifu` is absent from the vendored dex
 entirely, a different and narrower case — it has never been vendored under
 either name, rather than being a species currently sitting out a regulation.
-Each of the other ten was a candidate example here for a real archetype
-role — the standard generic-VGC redirector, Swift Swim body or Chlorophyll
-body — and a verified Champions equivalent stood in for it on the page
-instead. **The role these ten were reaching for is real; the species itself
-was just outside the current pool, which is a regulation-specific and
-reversible fact, not a verdict on the pick.** Rillaboom is the sharpest
-illustration of exactly that: it launches with Regulation M-C the same day
-this file was last re-verified, so its unavailability stops being true
-within hours of this check rather than at some indefinite future rollover.
-**If any of these ten returns to the roster, it is a candidate again with no
-re-reasoning needed about whether the role fits — re-run
+**`Rillaboom` and `Indeedee` have come back and are off this list**: both
+resolve cleanly via `dex mon` as of the M-B → M-C rollover (re-verified
+2026-09-09) and are ordinary roster-legal candidates again, no different
+from any species that was never marked — Rillaboom launched with M-C and is
+already Champions' #1 most-used species at 36.64% (see
+`reference/regulation.md`'s usage snapshot). Each of the other eight was a
+candidate example here for a real archetype role — the standard generic-VGC
+redirector, Swift Swim body or Chlorophyll body — and a verified Champions
+equivalent stood in for it on the page instead. **The role these eight were
+reaching for is real; the species itself is just outside the current pool,
+which is a regulation-specific and reversible fact, not a verdict on the
+pick.** **If any of these eight returns to the roster, it is a candidate
+again with no re-reasoning needed about whether the role fits — re-run
 `node tools/dex/cli.js mon "<Species>"` first** to confirm it is actually
 back and pull its current stats and ability before reusing it, rather than
 assuming this note still applies verbatim. And note the converse, unchanged
@@ -611,3 +613,4 @@ rollover means "not re-vendored yet," not "not legal" (`CLAUDE.md`).
 | 2026-09-09 | Cross-file cleanup ahead of `vgc-team-building`'s renumbering from 8 to 10 steps. Converted this file's two cross-file step-number citations (the file header's "steps 1 and 4," and the Created changelog row's "step 3") to named pointers — "the starting-point step" and "the archetype step" — which survive renumbering; the file's own internal "Step 0/1" scaffolding (its own three-starting-points and Building-around-a-Pokémon headings) was left untouched, since those number the file's own structure, not another file's. Updated the "Forward references" note: `speed-control.md`, `roles.md` and `team-evaluation.md` are now written, so only `format-knowledge.md` remains a genuine forward reference (confirmed still absent); `dex find`, the other outstanding forward reference in this file, was independently confirmed still unbuilt (`node tools/dex/cli.js find` still errors "Unknown command") and left alone. `npm test` — 318/318, unchanged. | Batch cross-reference cleanup across `archetypes.md`, `speed-control.md`, `roles.md`, `team-evaluation.md` |
 | 2026-09-09 | Fix round 3 (cosmetic prose adjustments): Added missing scope marker `*(generic VGC — not Champions-verified)*` to Sand subsection's opening claim, matching sibling Rain/Sun/Snow markers. Removed bare `-7` priority numeral from Trick Room "How it fails" section, replacing with prose pointing to `reference/mechanics.md`, "Priority & turn order" to match Tailwind section's established discipline of deferring mechanics to that file rather than restating numerals. Fixed quote-style inconsistency in `tools/dex/cli.js` lines 198 and 203, changing double-quoted `require("./manifest")` and `require("./team")` to single quotes matching the file's convention. | Whole-branch review corrections |
 | 2026-09-09 | Framing correction (user instruction, two parts). First: "*(generic VGC — not Champions-verified)* still sounds too negative and as if it's not something to consider at all... The source notes were for general VGC, they weren't ever supposed to be extremely narrowed down to Champions." General-VGC provenance is the normal case for this file, not a deficiency worth flagging on every claim — Champions *is* VGC doubles. Removed all 12 instances of the `*(generic VGC — not Champions-verified)*` marker (2 in the definition block, 10 on individual claims: Tailwind/weather setter counts, Good Stuff tech-slot count, weather-setting method, Rain/Sun/Sand/Snow openers, the two-Mega-Stones closer) without touching the claims themselves. Replaced the removed **Scope** axis with a preamble stating the file applies to Champions unless a note says otherwise. Second instruction: "these champions specific exceptions should be reevaluated on regulation change to see if it's still true." Collapsed **Scope** and **Availability** into one **Champions departure** axis (alongside `vgc-format.md`'s unchanged Sourcing-strength axis), generalised to cover roster, item-pool, *and* learnset departures — a learnset-departure shape (`*(cannot learn <Move> in Champions as of <regulation id>, verified <date> — guidance holds for when that changes)*`) was added to the definition alongside the existing pool-absence shape, which keeps its exact prior wording and instances unchanged. Stated the re-check obligation directly in the axis definition, naming the commands (`dex legal --item`/`--ability`, `dex mon`, `dex learnset`). Checked this file's own worked example against the learnset-departure case named in the task: `node tools/dex/cli.js learnset "Torkoal" --move "Trick Room"` returns `illegal` ("Torkoal cannot learn Trick Room in Champions"), but this file only ever uses Torkoal as a Trick Room *attacker*, never claims it can set the room itself — no existing prose here asserts the departure, so per the "reframe, not a research pass" instruction none was added. `npm test` — 356/356, unchanged. | User correction: over-marking of ordinary general-VGC provenance, and a request that Champions-departure marks be pinned to and re-checked at each regulation |
+| 2026-09-09 | Regulation-transition step 5e: re-ran `dex mon` fresh on all eleven previously-marked names against the newly re-vendored M-C dex. Two resolved: `Rillaboom` (launched with M-C, already the meta's #1 species at 36.64% usage) and `Indeedee` — both removed from the "not in the Champions pool" list entirely rather than restamped, per the rule that a departure which no longer holds gets unmarked, not re-dated; the surrounding prose now states plainly that both are ordinary roster-legal candidates again. The remaining eight (`Amoonguss`, `Barraskewda`, `Kingdra`, `Ludicolo`, `Lilligant`, `Sawsbuck`, `Shiftry`, `Togekiss`) are still absent from `POKEDEX_CHAMPIONS` — restamped their shared marker from M-B to M-C (date unchanged, 2026-09-09, since the rollover landed the same day as the original check). `Urshifu` is unchanged: still never vendored under either name, a distinct case from the other ten and not itself a Champions-departure marker. `npm test` — 371/371, unchanged | `node tools/dex/cli.js mon` re-run on all eleven names; `reference/regulation.md`'s M-C usage snapshot for the Rillaboom figure |
