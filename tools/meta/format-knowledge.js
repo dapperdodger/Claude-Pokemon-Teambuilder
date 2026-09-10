@@ -18,6 +18,7 @@
 
 const dex = require('../dex/dex');
 const megas = require('./megas');
+const validate = require('./validate');
 
 function speedTiers(usageResult, opts) {
   const top = (opts && opts.top) || 20;
@@ -132,6 +133,64 @@ function distribution(entries, opts) {
   };
 }
 
+// Common Team Cores — Pikalytics' own pre-computed 2/3/4-Pokemon groupings,
+// carried through from parse.parseCores()'s raw output the same way
+// speedTiers() carries usageFromText()'s rows: this function's job is
+// turning raw/validated numbers into a bounded, format/regulation-stamped
+// view, not re-parsing text. `format`/`regulation` are threaded in via
+// `opts` (there is no per-core network fetch to read them off, unlike
+// speedTiers' usageResult).
+//
+// `usage` and `teams` come back as validate.toNumber() envelopes ({value,
+// reason}), never bare numbers — see render()'s handling below, which
+// exists because the speed-tiers renderer once stringified this exact shape
+// straight into a table cell as "[object Object]".
+//
+// Species are passed through in Pikalytics' own convention (e.g.
+// "Charizard-Mega-Y") untouched — exactly like speedTiers' row.species.
+// Anything that needs the dex form must go through megas.pikaToDex itself;
+// this function does no name resolution of its own.
+function cores(parsed, opts) {
+  const o = opts || {};
+  const top = (o.top) || 5;
+  const base = {
+    format: o.format,
+    regulation: o.regulation,
+    generatedAt: new Date().toISOString().slice(0, 10),
+    top,
+  };
+
+  if (parsed.reason) {
+    return { ...base, groups: [], reason: parsed.reason };
+  }
+
+  const groups = parsed.groups.map((g) => {
+    if (g.reason) {
+      return { size: g.size, cores: [], reason: g.reason };
+    }
+    return {
+      size: g.size,
+      reason: null,
+      cores: g.cores.slice(0, top).map((c) => ({
+        rank: c.rank,
+        species: c.species,
+        teams: validate.toNumber(c.teamsRaw, 'not reported for this core'),
+        usage: validate.toNumber(c.usageRaw, 'not reported for this core'),
+      })),
+    };
+  });
+
+  return {
+    ...base,
+    groups,
+    reason: null,
+    note:
+      'Cores are Pikalytics\' own 2/3/4-Pokemon groupings ranked by how many sampled teams run ' +
+      'them, read off the same pokedex index page `usage` already fetches — no extra network ' +
+      'request. "top" bounds each group\'s own already-ranked list; it does not re-sort.',
+  };
+}
+
 // Markdown body for reference/format-knowledge.md. Mirrors META_MANIFEST.md's
 // do-not-hand-edit convention: this file is computed, never edited by hand,
 // because what is common changes and a hand-maintained list looks exactly as
@@ -141,7 +200,7 @@ function distribution(entries, opts) {
 // / KEY_ABILITIES subject), each carrying its own `of`/`carrying`/`unresolved`
 // via the caller (cli.js attaches `unresolved` the same way the `distribution`
 // command does).
-function render(speedTiers, distributions) {
+function render(speedTiers, distributions, cores) {
   const lines = [];
   lines.push('# Format knowledge — generated');
   lines.push('');
@@ -185,6 +244,38 @@ function render(speedTiers, distributions) {
   }
   lines.push('');
 
+  lines.push('## Common team cores');
+  lines.push('');
+  const c = cores || { reason: 'not computed', groups: [] };
+  if (c.reason) {
+    lines.push(`_${c.reason}_`);
+    lines.push('');
+  } else {
+    for (const g of c.groups) {
+      lines.push(`### ${g.size}-Pokemon Cores`);
+      lines.push('');
+      if (g.reason) {
+        lines.push(`_${g.reason}_`);
+        lines.push('');
+        continue;
+      }
+      lines.push('| Rank | Core | Teams | Usage |');
+      lines.push('|---|---|---|---|');
+      for (const row of g.cores) {
+        // Same {value, reason} envelope as speed tiers' usage column above —
+        // never stringify the object itself into the table.
+        const teams = row.teams && row.teams.value !== null && row.teams.value !== undefined
+          ? row.teams.value
+          : 'n/a';
+        const usage = row.usage && row.usage.value !== null && row.usage.value !== undefined
+          ? `${row.usage.value}%`
+          : 'n/a';
+        lines.push(`| ${row.rank} | ${row.species.join(', ')} | ${teams} | ${usage} |`);
+      }
+      lines.push('');
+    }
+  }
+
   // Distributions share one fetch of the top-N species (see cli.js), so their
   // `unresolved` lists are identical across subjects — collapse them into one
   // set of species-level notes instead of repeating each species once per
@@ -213,4 +304,4 @@ function render(speedTiers, distributions) {
   return lines.join('\n');
 }
 
-module.exports = { speedTiers, distribution, KEY_MOVES, KEY_ABILITIES, render };
+module.exports = { speedTiers, distribution, KEY_MOVES, KEY_ABILITIES, cores, render };

@@ -68,3 +68,66 @@ test('parseUsageTable reads real usage from the tournament index', () => {
   assert.equal(rows[0].usageRaw, '35.59%');
   assert.equal(rows[0].winRateRaw, '51.397%');
 });
+
+test('parseCores: all three group sizes parse from the real M-B cores section, sizes derived from headings', () => {
+  const out = parse.parseCores(fx('ranked-index.md'));
+  assert.equal(out.reason, null);
+  assert.deepEqual(out.groups.map((g) => g.size), [2, 3, 4]);
+});
+
+test('parseCores: species are split correctly from the comma-separated Core cell', () => {
+  const out = parse.parseCores(fx('ranked-index.md'));
+  const two = out.groups.find((g) => g.size === 2);
+  assert.deepEqual(two.cores[0].species, ['Charizard-Mega-Y', 'Garchomp']);
+  const three = out.groups.find((g) => g.size === 3);
+  assert.deepEqual(three.cores[0].species, ['Charizard-Mega-Y', 'Garchomp', 'Kingambit']);
+});
+
+test('parseCores: team counts and usage come through as raw strings, untouched', () => {
+  const out = parse.parseCores(fx('ranked-index.md'));
+  const two = out.groups.find((g) => g.size === 2);
+  assert.equal(two.cores[0].rank, 1);
+  assert.equal(two.cores[0].teamsRaw, '2155');
+  assert.equal(two.cores[0].usageRaw, '16.3%');
+});
+
+test('parseCores: real M-C fixture splits a Mega-named core member using Pikalytics\' own convention', () => {
+  // Floette-Eternal-Mega must come through verbatim here — resolving it to
+  // the dex form ("Mega Floette Eternal") is a job for whoever consumes this
+  // against the dex, via megas.pikaToDex, never a parser-level transform.
+  const out = parse.parseCores(fx('ranked-index-mc.md'));
+  const three = out.groups.find((g) => g.size === 3);
+  assert.deepEqual(three.cores[0].species, ['Floette-Eternal-Mega', 'Incineroar', 'Rillaboom']);
+});
+
+test('parseCores: a placeholder "no curated data yet" group is empty with a reason, not a throw', () => {
+  const out = parse.parseCores(fx('filler-index.md'));
+  assert.equal(out.reason, null);
+  assert.deepEqual(out.groups.map((g) => g.size), [2, 3, 4]);
+  for (const g of out.groups) {
+    assert.deepEqual(g.cores, []);
+    assert.match(g.reason, /no curated core data/);
+  }
+});
+
+test('parseCores: a page with no Common Team Cores section yields an empty result with a reason, not a throw', () => {
+  const out = parse.parseCores(fx('ranked-raichu.md'));
+  assert.deepEqual(out.groups, []);
+  assert.match(out.reason, /no "Common Team Cores" section/);
+});
+
+test('parseCores: a group whose heading parses but whose table row does not match must surface, not vanish', () => {
+  const text = [
+    '## Common Team Cores',
+    '',
+    '### 2-Pokemon Cores',
+    '',
+    '| Rank | Core | Teams | Usage |',
+    '|------|------|-------|-------|',
+    '| 1 | Charizard-Mega-Y, Garchomp | 2155 | 16.3% |',
+    '| Charizard-Mega-Y, Garchomp | 2155 | 16.3% |',
+    '',
+    '## Recent Top Teams',
+  ].join('\n');
+  assert.throws(() => parse.parseCores(text), /did not match the expected/);
+});

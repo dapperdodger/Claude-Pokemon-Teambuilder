@@ -48,6 +48,38 @@ it is wrong.
 | Wide Guard | 1/20 | 5% |
 | Prankster | 0/20 | 0% |
 
+## Common team cores
+
+### 2-Pokemon Cores
+
+| Rank | Core | Teams | Usage |
+|---|---|---|---|
+| 1 | Rillaboom, Sneasler | 159 | 24.3% |
+| 2 | Incineroar, Rillaboom | 155 | 23.7% |
+| 3 | Rillaboom, Salamence-Mega | 134 | 20.5% |
+| 4 | Salamence-Mega, Sneasler | 131 | 20.1% |
+| 5 | Kingambit, Sneasler | 118 | 18.1% |
+
+### 3-Pokemon Cores
+
+| Rank | Core | Teams | Usage |
+|---|---|---|---|
+| 1 | Floette-Eternal-Mega, Incineroar, Rillaboom | 81 | 12.4% |
+| 2 | Incineroar, Rillaboom, Sneasler | 80 | 12.3% |
+| 3 | Rillaboom, Salamence-Mega, Sneasler | 78 | 11.9% |
+| 4 | Incineroar, Rillaboom, Salamence-Mega | 66 | 10.1% |
+| 5 | Floette-Eternal-Mega, Rillaboom, Sneasler | 63 | 9.6% |
+
+### 4-Pokemon Cores
+
+| Rank | Core | Teams | Usage |
+|---|---|---|---|
+| 1 | Floette-Eternal-Mega, Incineroar, Rillaboom, Sneasler | 46 | 7% |
+| 2 | Floette-Eternal-Mega, Incineroar, Rillaboom, Salamence-Mega | 41 | 6.3% |
+| 3 | Floette-Eternal-Mega, Rillaboom, Salamence-Mega, Sneasler | 38 | 5.8% |
+| 4 | Incineroar, Rillaboom, Salamence-Mega, Sneasler | 38 | 5.8% |
+| 5 | Basculegion, Floette-Eternal-Mega, Incineroar, Rillaboom | 34 | 5.2% |
+
 ## Unresolved
 
 None.

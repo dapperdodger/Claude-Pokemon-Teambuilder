@@ -8,6 +8,7 @@ const fetchmod = require('./fetch');
 const formats = require('./formats');
 const megas = require('./megas');
 const meta = require('./meta');
+const parse = require('./parse');
 const fk = require('./format-knowledge');
 
 const USAGE = `Usage:
@@ -16,9 +17,13 @@ const USAGE = `Usage:
   node tools/meta/cli.js usage [--format <code>]           ranked list
   node tools/meta/cli.js speed-tiers [--top N] [--format <code>] [--write]  base-Speed tiers of the field
                                                  --write also runs a KEY_MOVES/KEY_ABILITIES
-                                                 distribution and (re)generates reference/format-knowledge.md
+                                                 distribution and a cores lookup, and (re)generates
+                                                 reference/format-knowledge.md
   node tools/meta/cli.js distribution --move <Move> | --ability <Ability> [--top N] [--format <code>]
                                                  how much of the field carries a move/ability
+  node tools/meta/cli.js cores [--top N] [--format <code>]  2/3/4-Pokemon "Common Team Cores" —
+                                                 read off the same page \`usage\` fetches, no extra
+                                                 network request
   node tools/meta/cli.js check                  slug agreement and ETag drift
 
 Notes:
@@ -56,6 +61,15 @@ function loadIndex(code) {
   const r = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${code}`);
   if (r.status !== 200) throw new Error(`Format "${code}" returned HTTP ${r.status}`);
   return r;
+}
+
+// Shared by the `cores` command and `speed-tiers --write`: the cores section
+// lives on the same index page `usage`/`speed-tiers` already fetch, so this
+// costs no extra network request — see docs/superpowers/specs/
+// 2026-09-09-team-level-meta-design.md.
+function computeCores(idxText, describe, top) {
+  const parsed = parse.parseCores(idxText);
+  return fk.cores(parsed, { format: describe.code, regulation: describe.regulation, top });
 }
 
 // Shared by the `distribution` command and `speed-tiers --write`: fetches the
@@ -154,11 +168,23 @@ function main() {
         return d;
       });
 
-      const body = fk.render(tiers, distributions);
+      // Cores come off the same index page fetched above (`idx.text`) — see
+      // computeCores's own note. No new network request.
+      const coresOut = computeCores(idx.text, describe, top);
+
+      const body = fk.render(tiers, distributions, coresOut);
       const outPath = path.join(__dirname, '..', '..', 'reference', 'format-knowledge.md');
       fs.writeFileSync(outPath, body);
 
-      return ok({ ...tiers, distributions, written: { path: outPath } });
+      return ok({ ...tiers, distributions, cores: coresOut, written: { path: outPath } });
+    }
+
+    if (command === 'cores') {
+      const idx = loadIndex(code);
+      const describe = formats.describe(idx.text, code);
+      const topRaw = flagValue(argv, '--top');
+      const top = topRaw ? Number(topRaw) : 5;
+      return ok(computeCores(idx.text, describe, top));
     }
 
     if (command === 'distribution') {

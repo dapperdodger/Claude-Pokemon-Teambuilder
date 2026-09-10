@@ -6,9 +6,14 @@ const path = require('node:path');
 const fk = require('../format-knowledge');
 const meta = require('../meta');
 const formats = require('../formats');
+const parse = require('../parse');
 
 const FIXTURES = path.join(__dirname, 'fixtures');
 const rankedIndex = fs.readFileSync(path.join(FIXTURES, 'ranked-index.md'), 'utf8');
+
+function coresFixture(file) {
+  return parse.parseCores(fs.readFileSync(path.join(FIXTURES, file), 'utf8'));
+}
 
 function usageFixture() {
   const describe = formats.describe(rankedIndex, 'battledataregmbs3');
@@ -100,4 +105,60 @@ test('distribution: matching is case- and punctuation-insensitive', () => {
   const loose = fk.distribution(entries, { ability: 'prankster' });
   const exact = fk.distribution(entries, { ability: 'Prankster' });
   assert.equal(loose.carrying, exact.carrying);
+});
+
+test('cores: all three group sizes come through, carrying format and regulation from opts', () => {
+  const parsed = coresFixture('ranked-index.md');
+  const out = fk.cores(parsed, { format: 'battledataregmbs3', regulation: 'M-B', top: 5 });
+  assert.equal(out.format, 'battledataregmbs3');
+  assert.equal(out.regulation, 'M-B');
+  assert.equal(out.reason, null);
+  assert.deepEqual(out.groups.map((g) => g.size), [2, 3, 4]);
+});
+
+test('cores: usage and teams arrive as validate.toNumber envelopes, not bare numbers', () => {
+  const parsed = coresFixture('ranked-index.md');
+  const out = fk.cores(parsed, { format: 'x', regulation: 'M-B', top: 5 });
+  const two = out.groups.find((g) => g.size === 2);
+  assert.equal(two.cores[0].usage.value, 16.3);
+  assert.equal(two.cores[0].usage.reason, null);
+  assert.equal(two.cores[0].teams.value, 2155);
+  assert.deepEqual(two.cores[0].species, ['Charizard-Mega-Y', 'Garchomp']);
+});
+
+test('cores: --top bounds each group\'s own list', () => {
+  const parsed = coresFixture('ranked-index.md');
+  const out = fk.cores(parsed, { format: 'x', regulation: 'M-B', top: 2 });
+  for (const g of out.groups) {
+    assert.ok(g.cores.length <= 2, `group ${g.size} has ${g.cores.length} cores, expected <= 2`);
+  }
+});
+
+test('cores: a missing/empty cores section yields an empty result with a reason, not a throw', () => {
+  const parsed = coresFixture('filler-index.md');
+  const out = fk.cores(parsed, { format: 'x', regulation: 'M-B', top: 5 });
+  assert.equal(out.reason, null);
+  assert.ok(out.groups.length > 0);
+  for (const g of out.groups) {
+    assert.deepEqual(g.cores, []);
+    assert.match(g.reason, /no curated core data/);
+  }
+});
+
+test('cores: a page with no cores section at all yields an empty result with a top-level reason', () => {
+  const parsed = { groups: [], reason: 'no "Common Team Cores" section in this page' };
+  const out = fk.cores(parsed, { format: 'x', regulation: 'M-B', top: 5 });
+  assert.deepEqual(out.groups, []);
+  assert.match(out.reason, /no "Common Team Cores" section/);
+});
+
+test('render: emits a Common team cores section with real data and no [object Object]', () => {
+  const u = usageFixture();
+  const tiers = fk.speedTiers(u, { top: 5 });
+  const distributions = [fk.distribution([], { move: 'Fake Out' })];
+  const cores = fk.cores(coresFixture('ranked-index.md'), { format: u.format, regulation: u.regulation, top: 5 });
+  const body = fk.render(tiers, distributions, cores);
+  assert.match(body, /## Common team cores/i);
+  assert.match(body, /Charizard-Mega-Y, Garchomp/);
+  assert.ok(!body.includes('[object Object]'), 'render() must not stringify the {value, reason} envelope');
 });
