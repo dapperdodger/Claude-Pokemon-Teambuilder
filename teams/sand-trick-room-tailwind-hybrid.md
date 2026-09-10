@@ -1,6 +1,6 @@
 # Team: Sand / Trick Room / Tailwind Hybrid (Tyranitar-Mega + Excadrill core)
 
-**Status:** Finalized
+**Status:** Archived
 **Built for:** Ladder — user brought a pre-built six, this session covered matchup verification and SP-spread optimization
 **Regulation:** M-B (as of `reference/regulation.md`'s 2026-07-09 last-verified date)
 **Last updated:** 2026-07-17
@@ -166,3 +166,4 @@ Moonblast, Kingambit Sucker Punch).
 | Date | Change | Reasoning |
 |---|---|---|
 | 2026-07-17 | Initial save. User brought a pre-built six; this session corrected Mega Staraptor's ability (Contrary, not Intimidate — Intimidate is only the pre-Mega switch-in ability) and typing (Fighting/Flying, not Normal/Flying), pulled real current threat data via Pikalytics topteams/team-usage/pokedex-cores, ran real damage-calc matchups against the top ~8 threats, and solved SP spreads via `optimize-bulk.js`. Found three unconditional (spread-proof) OHKO threats against Gholdengo and two each against Sinistcha/Staraptor/Milotic/Excadrill — see "Known weaknesses" | Pikalytics (topteams/team-usage/pokedex live fetches), vendored Champions pokedex.js (Mega Staraptor ability/type), tools/damage-calc/cli.js and optimize-bulk-cli.js runs this session |
+| 2026-09-09 | Archived at the M-B → M-C regulation rollover, per explicit user instruction that old teams "can be marked as legacy." Status: Finalized → Archived. Nothing else in this file was touched — `Regulation:` stamp, picks, spreads and prior reasoning are left exactly as they were under M-B | User instruction, `vgc-regulation-transition` skill step 6 |

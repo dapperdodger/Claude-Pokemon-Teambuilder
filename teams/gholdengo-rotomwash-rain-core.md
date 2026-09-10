@@ -1,6 +1,6 @@
 # Team: Gholdengo / Rotom-Wash Rain Core
 
-**Status:** Testing
+**Status:** Archived
 **Built for:** Ladder / tournament prep, built around a Whimsicott + Gholdengo + Rotom-Wash favorite core (Whimsicott was later swapped for Archaludon — see Changelog)
 **Regulation:** M-B (verified as of 2026-07-09/07-10 — Mega Evolution only, no Tera/Dynamax/Z-Move)
 **Last updated:** 2026-07-10
@@ -264,3 +264,4 @@ session" note in `methodology.md`), not theorized.
 | 2026-07-10 | Corrected the Sun/Charizard-Y matchup entirely — the prior entry used Flare Blitz, a physical move that isn't in Charizard-Y's real set at all (95.4% usage is Heat Wave/Solar Beam/Weather Ball, a special Drought set). Real check found Solar Beam (fires without a charge turn in Sun) is 4x on Swampert (guaranteed kill, screens don't help) and 2x on Rotom-Wash (guaranteed kill unscreened, survives with Grimmsnarl's Light Screen). Archaludon quad-resists it. User pushed back that "we don't have a real plan" against Charizard, which is what triggered re-checking the actual moveset instead of reusing the earlier assumption | tools/damage-calc/cli.js; Pikalytics real Charizard-Y moveset; doubles screen-reduction mechanic (~1/3, confirmed via web search) applied to the results |
 | 2026-07-10 | Checked the Sun archetype's other three real pieces (Sylveon, Garchomp, Aerodactyl) with the same rigor, and validated a user-proposed tech: swapping Pelipper in after Light Screen is up to overwrite their Sun with Rain, stripping Solar Beam's no-charge-turn trick and cutting Heat Wave's real damage roughly in half | tools/damage-calc/cli.js; real Pikalytics movesets for Sylveon/Garchomp/Aerodactyl |
 | 2026-07-10 | Fixed a duplicate item — Rotom-Wash and Archaludon both had Leftovers, which isn't legal (no two Pokémon on a team can hold the same item). Archaludon kept Leftovers (its real 88.6% dominant item); Rotom-Wash switched to Sitrus Berry, its actual real second-most-common item (39.1%) rather than an arbitrary replacement | User caught it directly; logged as a standing "Team-finalization check" in reference/pitfalls.md |
+| 2026-09-09 | Archived at the M-B → M-C regulation rollover, per explicit user instruction that old teams "can be marked as legacy." Status: Testing → Archived. Nothing else in this file was touched — `Regulation:` stamp, picks, spreads and prior reasoning are left exactly as they were under M-B | User instruction, `vgc-regulation-transition` skill step 6 |

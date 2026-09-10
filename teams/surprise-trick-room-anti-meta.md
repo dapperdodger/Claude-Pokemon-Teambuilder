@@ -1,6 +1,6 @@
 # Team: Surprise Trick Room Anti-Meta (Reuniclus / Klefki / Corviknight / Toxapex / Mega Camerupt / Aegislash)
 
-**Status:** Draft
+**Status:** Archived
 **Built for:** Ladder/tournament prep — explicitly built to beat the current top meta archetypes while using six Pokémon that don't appear on any top-usage or top-team list, so a prepared opponent's counter-team doesn't line up in team preview
 **Regulation:** M-B (verified as of 2026-07-14 — Mega Evolution only, no Tera/Dynamax/Z-Move; active 17 June – 2 Sept 2026)
 **Last updated:** 2026-07-14
@@ -250,3 +250,4 @@ Based on the verified matchup data above, not theorized:
 | Date | Change | Reasoning |
 |---|---|---|
 | 2026-07-14 | Initial build. Live-searched current top archetypes (Pikalytics topteams, ChampTeams.gg Week 3 meta report) and cross-checked the real Champions roster (Serebii) before selecting six Pokémon that appear on none of the top-usage/top-team lists. Verified every ability against the vendored pokedex (catching the same pre-Mega-ability-selection trap this repo already knew about, this time before it caused an error) and ran real damage-calc numbers against real presets for Charizard-Mega-Y, Archaludon, Excadrill, Mega Tyranitar, Mega Swampert, Garchomp, Sneasler, Kingambit, and Sinistcha | Pikalytics `/topteams`; ChampTeams.gg Reg M-B Week 3 meta report; Serebii Champions roster list; `tools/damage-calc/cli.js` against vendored `SETDEX_GEN10` presets throughout |
+| 2026-09-09 | Archived at the M-B → M-C regulation rollover, per explicit user instruction that old teams "can be marked as legacy." Status: Draft → Archived. Nothing else in this file was touched, including its two known legality errors (Toxapex cannot learn Scald; Camerupt cannot learn Trick Room in Champions) — left wrong, uncorrected, as a historical record; not authorized to fix | User instruction, `vgc-regulation-transition` skill step 6 |

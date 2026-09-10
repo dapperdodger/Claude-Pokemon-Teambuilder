@@ -1,6 +1,6 @@
 # Team: Dual Speed-Control (Trick Room / Tailwind) — Drampa & Blastoise Sweepers
 
-**Status:** Finalized
+**Status:** Archived
 **Built for:** Exploring a concept — built around Mega Drampa as a favorite/chosen centerpiece, then generalized into a flexible dual-mode ladder team
 **Regulation:** M-B (as of `reference/regulation.md`'s 2026-07-09 last-verified date)
 **Last updated:** 2026-07-14
@@ -216,3 +216,4 @@ Speed investment to act before an incoming threat either.
 | Date | Change | Reasoning |
 |---|---|---|
 | 2026-07-14 | Initial build, saved after extensive collaborative session covering Altaria→Delphox→Drampa centerpiece pivots, Whimsicott→Maushold+Talonflame support restructuring, full learnset verification pass, and real speed-tier/bulk-optimization checks | See "Why these six" and "Intentional exclusions" for full reasoning chain and sources |
+| 2026-09-09 | Archived at the M-B → M-C regulation rollover, per explicit user instruction that old teams "can be marked as legacy." Status: Finalized → Archived. Nothing else in this file was touched — `Regulation:` stamp, picks, spreads and prior reasoning are left exactly as they were under M-B | User instruction, `vgc-regulation-transition` skill step 6 |
