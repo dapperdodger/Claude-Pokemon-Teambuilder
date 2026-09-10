@@ -82,18 +82,21 @@ event with a defined workflow, not an emergency.
   checked (pokemon.com, Victory Road, Pikalytics). Recorded as "none found
   as of this check", not as "none exists" — a later source could still
   surface one.
+- **Expanded item pool for M-C:** Rocky Helmet, Air Balloon, Terrain Extender,
+  and all four terrain Seeds (Electric, Grassy, Misty, Psychic) are now legal.
+  Verified via `dex legal --item "<Item>"` against the M-C-re-vendored item
+  pool on 2026-09-09.
 
 ## Unverified mechanics — do not build around these yet
 
-Each regulation tends to introduce a mechanic (or, this cycle, a new item
-pool) before its exact ruleset is publicly pinned down. Anything listed here
-is **known to exist but not verified enough to build on**. Resolve it with a
-live lookup and move it into "Active mechanics" with the answer, or drop it —
-don't leave a build depending on an entry that is still here.
+Each regulation tends to introduce a mechanic before its exact ruleset is
+publicly pinned down. Anything listed here is **known to exist but not
+verified enough to build on**. Resolve it with a live lookup and move it into
+"Active mechanics" with the answer, or drop it — don't leave a build
+depending on an entry that is still here.
 
-| Mechanic | Open question | Blocks |
-|---|---|---|
-| New item pool — Rocky Helmet, Air Balloon, Terrain Extender, and all four terrain Seeds (Electric/Grassy/Misty/Psychic) | **[unresolved]**, not [consensus] — only a single search summary reports these as added, and it is not corroborated by a second independent source (see `reference/vgc-format.md`'s confidence-marking rule: consensus requires *multiple independent* sources, and a repeated search summary is not a second source). pokemon.com's official M-C page does not mention items at all | Any set built around these items being legal. Settled definitively by `dex legal --item "<Item>"` once the item vendor is refreshed in the next transition stage — do not assume yes or no until then |
+*(This table is currently empty. All M-C mechanics have been verified or
+resolved.)*
 
 ## Next regulation
 
@@ -150,7 +153,8 @@ nothing, needs no tooling, and works even when this stamp is out of date.
 | Date | Change | Source |
 |---|---|---|
 | 2026-09-09 | User correction of a repo inference (not new external information): "Z Mega" is a naming convention for an alternate Mega forme of a species that already had one — mechanically identical to a regular Mega, the same relationship as Mega Charizard X vs Y — not a distinct mechanic as the initial M-C rollover entry had assumed from the name alone. Removed the "Z Mega Evolution" row from Unverified mechanics (one-Mega-per-battle limit and dual-Mega-Stone registration both already apply to it, same as any Mega) and rewrote the Active mechanics prose to state this plainly. | User clarification this session |
-| 2026-09-09 | Rolled over M-B → M-C: promoted the former "Incoming regulation" section into Active mechanics/regulation, updated all five machine-readable stamps (`Regulation`, starts, ends, `Last verified`, `Pikalytics slug`), replaced the M-A-vintage "Incoming regulation" section with a "Next regulation" section (nothing announced), added a new item-pool row to Unverified mechanics marked **[unresolved]** rather than [consensus] per `vgc-format.md`'s single-source rule, and recorded the first live M-C usage snapshot (Rillaboom #1 36.64%). M-B archived to `reference/regulations/m-b.md`. Vendored roster/learnset/item data is **not yet refreshed** — that is the next transition stage, not this one; `dex mon`/`dex legal` will still report M-C-only species and items as absent or unknown until then | pokemon.com M-C launch page, victoryroad.pro/champions-regulations/, live read of pikalytics.com/ai/pokedex (slug + usage), this session |
+| 2026-09-09 | Rolled over M-B → M-C: promoted the former "Incoming regulation" section into Active mechanics/regulation, updated all five machine-readable stamps (`Regulation`, starts, ends, `Last verified`, `Pikalytics slug`), replaced the M-A-vintage "Incoming regulation" section with a "Next regulation" section (nothing announced), added a new item-pool row to Unverified mechanics marked **[unresolved]** rather than [consensus] per `vgc-format.md`'s single-source rule, and recorded the first live M-C usage snapshot (Rillaboom #1 36.64%). M-B archived to `reference/regulations/m-b.md`. Vendored roster/learnset/item data was not yet refreshed at this point — `dex mon`/`dex legal` initially reported M-C-only species and items as absent or unknown | pokemon.com M-C launch page, victoryroad.pro/champions-regulations/, live read of pikalytics.com/ai/pokedex (slug + usage), this session |
+| 2026-09-09 | Item pool verification complete: moved the new item row from Unverified mechanics to Active mechanics. Confirmed all seven items (Rocky Helmet, Air Balloon, Terrain Extender, Electric/Grassy/Misty/Psychic Seed) as legal via `dex legal --item` against the M-C-re-vendored pool. Vendored data is now pinned to M-C. Cleared the Unverified mechanics table. | `node tools/dex/cli.js legal --item` verification this session |
 
 Earlier changelog history for this file — covering all of M-B's life,
 including the M-A→M-B transition and the original M-C research pass — is
