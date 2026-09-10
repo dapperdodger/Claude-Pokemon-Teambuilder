@@ -8,6 +8,19 @@ const formats = require('../formats');
 
 const fx = (n) => fs.readFileSync(path.join(__dirname, 'fixtures', n), 'utf8');
 
+// ranked-index.md is a frozen M-B snapshot (format code battledataregmbs3)
+// used throughout this file to test parsing MECHANICS against a pinned
+// historical page — those assertions are intentionally tied to that exact
+// content and must not move at a rollover. check(), below, is different: it
+// tests AGREEMENT between the live-stamped format code
+// (formats.defaultFormatCode(), which reads reference/regulation.md and now
+// reads M-C) and a fetched page's own declared code. A stub built from the
+// M-B fixture can no longer agree with that stamp, so check()'s tests use
+// this separate, real M-C snapshot (fetched live from
+// https://www.pikalytics.com/ai/pokedex/gen9championsvgc2026regmc on
+// 2026-09-09) instead.
+const fxCurrent = () => fx('ranked-index-mc.md');
+
 test('regulationOf reads the regulation out of a format label', () => {
   assert.equal(formats.regulationOf('Pokemon Champions VGC 2026 Reg M-B S3 Ranked Battle Data', 'battledataregmbs3'), 'M-B');
   assert.equal(formats.regulationOf('Pokemon Champions VGC 2026 BO3 Reg M-A', 'gen9championsvgc2026regmabo3'), 'M-A');
@@ -297,7 +310,7 @@ test('check() names the slug on agreement', () => {
         return { status: 200, text: `**Format Code**: \`${stamped}\``, etag: null };
       }
       if (url === `${stub.BASE}/ai/pokedex/${stamped}`) {
-        return { status: 200, text: fx('ranked-index.md'), etag: 'W/"stub-etag"' };
+        return { status: 200, text: fxCurrent(), etag: 'W/"stub-etag"' };
       }
       throw new Error(`unexpected url in test stub: ${url}`);
     },
@@ -409,7 +422,7 @@ test('REGRESSION: check() reports etagStatus "unpinned" — distinguishable from
         return { status: 200, text: `**Format Code**: \`${stamped}\``, etag: null };
       }
       if (url === `${stub.BASE}/ai/pokedex/${stamped}`) {
-        return { status: 200, text: fx('ranked-index.md'), etag: 'W/"live-etag"' };
+        return { status: 200, text: fxCurrent(), etag: 'W/"live-etag"' };
       }
       throw new Error(`unexpected url in test stub: ${url}`);
     },
@@ -434,7 +447,7 @@ test('check() reports etagStatus "unchanged" when the pinned ETag matches the li
         return { status: 200, text: `**Format Code**: \`${stamped}\``, etag: null };
       }
       if (url === `${stub.BASE}/ai/pokedex/${stamped}`) {
-        return { status: 200, text: fx('ranked-index.md'), etag: 'W/"match-etag"' };
+        return { status: 200, text: fxCurrent(), etag: 'W/"match-etag"' };
       }
       throw new Error(`unexpected url in test stub: ${url}`);
     },
@@ -460,7 +473,7 @@ test('REGRESSION: check() reports etagStatus "changed" when upstream has drifted
         return { status: 200, text: `**Format Code**: \`${stamped}\``, etag: null };
       }
       if (url === `${stub.BASE}/ai/pokedex/${stamped}`) {
-        return { status: 200, text: fx('ranked-index.md'), etag: 'W/"new-etag"' };
+        return { status: 200, text: fxCurrent(), etag: 'W/"new-etag"' };
       }
       throw new Error(`unexpected url in test stub: ${url}`);
     },

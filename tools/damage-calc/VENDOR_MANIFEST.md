@@ -5,8 +5,8 @@ License: MIT (see upstream LICENSE)
 
 ## Vendored files (unmodified, byte-for-byte)
 
-Commit: `dfbf020d4ed7df8921c6e11bbaa23410f6ca1448` (main branch HEAD, 2026-07-09)
-Regulation: `M-B`
+Commit: `0e766b01c951d4de05c4af2a3566a0d5c7c8372d` (main branch HEAD, 2026-09-09)
+Regulation: `M-C`
 
 - `pokedex.js` <- `script_res/pokedex.js`
 - `move_data.js` <- `script_res/move_data.js`
@@ -79,3 +79,4 @@ This is a deliberate, manual step — not automated. To re-sync:
 |---|---|---|
 | 2026-07-09 | Initial vendor from commit dfbf020d4ed7df8921c6e11bbaa23410f6ca1448 | https://github.com/nerd-of-now/NCP-VGC-Damage-Calculator |
 | 2026-09-07 | Added `Regulation: \`M-B\`` pin, matching tools/dex/VENDOR_MANIFEST.md's format, so roster regulation drift is reportable by `.claude/hooks/vendor-staleness.js` the same way learnset drift already is | (docs only, no re-vendor) |
+| 2026-09-09 | Re-vendored for M-B → M-C rollover. Re-pinned Commit to `0e766b01c951d4de05c4af2a3566a0d5c7c8372d` (main HEAD) and Regulation to `M-C`. `pokedex.js`, `move_data.js`, `ability_data.js`, `item_data.js`, and `damage_MASTER.js` changed upstream (M-C additions: 24 new species, 6 new Megas including the 3 "Z Mega" reworks, new items — Rocky Helmet, Air Balloon, Terrain Extender, all four terrain Seeds — and M-C move-power/flag updates). `type_data.js`, `nature_data.js`, `stat_data.js`, `damage_SV.js`, `setdex_ncp-g10.js` unchanged. Also re-extracted `side.js`'s `Side` function — its signature grew 6 new trailing parameters upstream (`isLeechSeed`, `isIngrain`, `isCurse`, `isBinding`, `isAquaRing`, `isNightmare`); re-extracted verbatim from the new commit's `ap_calc.js` (now source lines 2164-2198) with the same `module.exports.Side =` wrapper. | https://github.com/nerd-of-now/NCP-VGC-Damage-Calculator |

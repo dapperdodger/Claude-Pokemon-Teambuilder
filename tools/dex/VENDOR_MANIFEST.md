@@ -5,8 +5,8 @@ License: MIT (see upstream LICENSE)
 
 ## Pin
 
-Commit: `cc17bb7854931ce858ebb1836b9a4ea9418aa258` (last commit to touch `data/mods/champions/learnsets.ts`, 2026-07-09)
-Regulation: `M-B`
+Commit: `812501ede865eea397cd6e9a6f040d73ff57cc84` (last commit to touch `data/mods/champions/learnsets.ts`, 2026-09-09)
+Regulation: `M-C`
 
 Both fields are load-bearing. The commit answers "is this behind upstream";
 the regulation answers "is this describing the rules we are playing under".
@@ -66,3 +66,4 @@ Re-vendoring at a regulation rollover is a required step, not a judgement call.
 |---|---|---|
 | 2026-09-07 | Initial vendor at 6b4bc34e, regulation M-B | https://github.com/smogon/pokemon-showdown |
 | 2026-09-07 | Re-pinned Commit to `cc17bb7854931ce858ebb1836b9a4ea9418aa258` — the last commit that actually touched `data/mods/champions/learnsets.ts` (2026-07-09) — and scoped `.claude/hooks/vendor-staleness.js`'s upstream check to that path instead of master HEAD, since master HEAD drifts on unrelated commits and made "behind upstream" permanent noise. Content unchanged: no commit between cc17bb78 and the previous 6b4bc34e pin touched this path, so the vendored bytes are identical. | https://github.com/smogon/pokemon-showdown |
+| 2026-09-09 | Re-vendored for M-B → M-C rollover. Re-pinned Commit to `812501ede865eea397cd6e9a6f040d73ff57cc84` (last commit touching this path) and Regulation to `M-C`. File grew from 15128 to 16803 lines, adding move pools for M-C's 24 new species (Rillaboom, Baxcalibur, Salamence, Golisopod, Cinderace, Inteleon among them) and the new Megas. Line-1 transform re-applied. | https://github.com/smogon/pokemon-showdown |

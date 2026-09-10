@@ -106,7 +106,14 @@ test('find: limit caps results but count reports the true total', () => {
 test('find: no filters returns the whole roster', () => {
   const { getVendor } = require('../../damage-calc/load-vendor');
   const r = dex.find({});
-  assert.equal(r.count, Object.keys(getVendor().POKEDEX_CHAMPIONS).length);
+  // Not just Object.keys(...).length: as of the M-C re-vendor, upstream's
+  // pokedex.js has a typo in its "Regulation M-C additions" list
+  // ("Graploct" for "Grapploct"), which creates a POKEDEX_CHAMPIONS key
+  // whose value is `undefined`. That key is real (Object.keys sees it) but
+  // is not a findable species, so dex.find() correctly skips it — count
+  // only the entries that actually resolved.
+  const realEntries = Object.values(getVendor().POKEDEX_CHAMPIONS).filter(Boolean).length;
+  assert.equal(r.count, realEntries);
 });
 
 const { execFileSync } = require('node:child_process');

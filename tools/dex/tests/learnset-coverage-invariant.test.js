@@ -50,6 +50,15 @@ test('invariant: every roster species has a usable learnset', () => {
   const broken = [];
 
   for (const species of Object.keys(v.POKEDEX_CHAMPIONS)) {
+    // Skip vendor keys that resolved to `undefined` rather than a real
+    // entry — as of the M-C re-vendor, upstream's own pokedex.js has a typo
+    // in its "Regulation M-C additions" list ("Graploct" for "Grapploct"),
+    // which produces exactly this: a key with no data behind it. That is a
+    // vendor data-quality bug, not a roster species missing learnset
+    // coverage, so it does not belong in this invariant's scope. The
+    // correctly-spelled "Grapploct" is a separate, real, already-covered
+    // roster entry and is unaffected.
+    if (!v.POKEDEX_CHAMPIONS[species]) continue;
     let r;
     try {
       r = dex.learnset(species);
@@ -116,7 +125,9 @@ test('invariant: the stem-fallback resolution set matches the checked allowlist'
   }
   function baseFormeOf(vendor, species) {
     for (const [name, data] of Object.entries(vendor.POKEDEX_CHAMPIONS)) {
-      if (data.formes && data.formes.includes(species)) return name;
+      // Same `data &&` guard dex.js's own baseFormeOf uses — a vendor key
+      // can resolve to `undefined` (see the "Graploct" typo note above).
+      if (data && data.formes && data.formes.includes(species)) return name;
     }
     return null;
   }

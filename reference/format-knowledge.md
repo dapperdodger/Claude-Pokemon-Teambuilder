@@ -2,9 +2,9 @@
 
 **Do not hand-edit.** Regenerate with `node tools/meta/cli.js speed-tiers --write`.
 
-**Generated:** 2026-09-09
-**Format:** battledataregmbs3
-**Regulation:** M-B
+**Generated:** 2026-09-10
+**Format:** gen9championsvgc2026regmc
+**Regulation:** M-C
 
 This file answers "what does the field look like" — the questions
 `reference/sources/teambuilding-notes-advanced.md` lists under *Important
@@ -16,37 +16,37 @@ it is wrong.
 
 | Species | Base Speed | Usage % | ×1.5 (Scarf) | ×2 (Tailwind) |
 |---|---|---|---|---|
-| Aerodactyl | 130 | n/a | 195 | 260 |
-| Sneasler | 120 | n/a | 180 | 240 |
-| Whimsicott | 116 | n/a | 174 | 232 |
-| Raichu | 110 | n/a | 165 | 220 |
-| Garchomp | 102 | n/a | 153 | 204 |
-| Charizard | 100 | n/a | 150 | 200 |
-| Staraptor | 100 | n/a | 150 | 200 |
-| Floette-Eternal | 92 | n/a | 138 | 184 |
-| Archaludon | 85 | n/a | 127 | 170 |
-| Gholdengo | 84 | n/a | 126 | 168 |
-| Basculegion | 78 | n/a | 117 | 156 |
-| Metagross | 70 | n/a | 105 | 140 |
-| Sinistcha | 70 | n/a | 105 | 140 |
-| Pelipper | 65 | n/a | 97 | 130 |
-| Farigiraf | 60 | n/a | 90 | 120 |
-| Grimmsnarl | 60 | n/a | 90 | 120 |
-| Incineroar | 60 | n/a | 90 | 120 |
-| Swampert | 60 | n/a | 90 | 120 |
-| Sylveon | 60 | n/a | 90 | 120 |
-| Kingambit | 50 | n/a | 75 | 100 |
+| Sneasler | 120 | 36.64% | 180 | 240 |
+| Whimsicott | 116 | 12.51% | 174 | 232 |
+| Garchomp | 102 | 16.73% | 153 | 204 |
+| Charizard | 100 | 7.85% | 150 | 200 |
+| Salamence | 100 | 25.78% | 150 | 200 |
+| Floette-Eternal | 92 | 14.15% | 138 | 184 |
+| Lucario | 90 | 8% | 135 | 180 |
+| Baxcalibur | 87 | 8.61% | 130 | 174 |
+| Archaludon | 85 | 9.75% | 127 | 170 |
+| Indeedee-F | 85 | 19.3% | 127 | 170 |
+| Rillaboom | 85 | 36.64% | 127 | 170 |
+| Gholdengo | 84 | 9.61% | 126 | 168 |
+| Basculegion | 78 | 23.4% | 117 | 156 |
+| Sinistcha | 70 | 12.04% | 105 | 140 |
+| Pelipper | 65 | 12.98% | 97 | 130 |
+| Tyranitar | 61 | 10.28% | 91 | 122 |
+| Farigiraf | 60 | 19.16% | 90 | 120 |
+| Incineroar | 60 | 30.87% | 90 | 120 |
+| Kingambit | 50 | 25.98% | 75 | 100 |
+| Golisopod | 40 | 16.93% | 60 | 80 |
 
 ## Key move and ability distributions
 
 | Subject | Carried by | Share |
 |---|---|---|
-| Trick Room | 2/20 | 10% |
-| Fake Out | 4/20 | 20% |
-| Follow Me | 0/20 | 0% |
+| Trick Room | 3/20 | 15% |
+| Fake Out | 3/20 | 15% |
+| Follow Me | 1/20 | 5% |
 | Rage Powder | 1/20 | 5% |
-| Wide Guard | 2/20 | 10% |
-| Prankster | 2/20 | 10% |
+| Wide Guard | 1/20 | 5% |
+| Prankster | 0/20 | 0% |
 
 ## Unresolved
 

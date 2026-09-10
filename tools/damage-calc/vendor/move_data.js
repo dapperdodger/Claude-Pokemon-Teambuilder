@@ -5740,8 +5740,15 @@ var MOVES_CHAMPIONS_NATDEX = $.extend(true, {}, MOVES_ZA_NATDEX, {
     'Dire Claw': { isSlice: true },
     'Crush Claw': { isSlice: true },
     'Dragon Cheer': { isSound: true },
+    'Freeze-Dry': { hasSecondaryEffect: false },
+    'Electro Shot': { hasSecondaryEffect: false },
     //Reg M-B changes
     'Make It Rain': { statChange: ['special attack', -2, 'user'] },
+    //Reg M-C changes
+    'Slash': { bp: 80 },
+    'Snipe Shot': { bp: 85 },
+    'Meteor Assault': { bp: 170 },
+    'Double Shock': { isPunch: true },
 
     //THE FOLLOWING IS SUBJECT TO CHANGE SINCE THEY ARE CHANGED IN THE CODE BUT NOT IN THE GAME
     'Gear Grind': { bp: 60 },
@@ -5756,6 +5763,8 @@ var MOVES_CHAMPIONS_NATDEX = $.extend(true, {}, MOVES_ZA_NATDEX, {
     'Hyper Drill': { bp: 120 },
     'Blood Moon': { bp: 130 },
     'Metal Claw': { isSlice: true },
+
+    //CHECK IF SPIRIT SHACKLE IS BOOSTED BY SHEER FORCE
 });
 
 var MOVES_CHAMPIONS = {};
@@ -5819,9 +5828,12 @@ var MOVES_CHAMPIONS = {};
     'Trop Kick', 'Twin Beam', 'U-turn', 'Upper Hand', 'Uproar', 'Vacuum Wave', 'Venoshock', 'Volt Switch', 'Volt Tackle',
     'Water Pulse', 'Water Shuriken', 'Water Spout', 'Waterfall', 'Wave Crash', 'Weather Ball', 'Whirlpool', 'Whirlwind',
     'Wide Guard', 'Wild Charge', 'Will-O-Wisp', 'Wish', 'Wonder Room', 'Wood Hammer', 'Worry Seed', 'Wrap', 'X-Scissor', 'Yawn', 'Zap Cannon', 'Zen Headbutt',
-    //Has move descriptions but isn't learned by any Pokemon at launch
-    //'Double Shock', 'Milk Drink', 'Power Shift', 'Revival Blessing', 'Soft-Boiled', 'Spore',
+    //Has move descriptions but isn't learned by any Pokemon
+    //Power Shift', 'Soft-Boiled', 'Spore',
     //Moves available starting Regulation M-B
     'Barb Barrage', 'Make It Rain', 'No Retreat', 'Rage Fist', 'Spirit Break', 'Topsy-Turvy',
+    //Moves available starting Regulation M-C
+    'Slash', 'Octazooka', 'Milk Drink', 'Shift Gear', 'Zing Zap', 'Snipe Shot', 'Jaw Lock', 'Octolock', 'Court Change', 'Drum Beating', 'Pyro Ball',
+    'Meteor Assault', 'Glaive Rush', 'Revival Blessing', 'Double Shock',
 ].forEach(e => MOVES_CHAMPIONS[e] = MOVES_CHAMPIONS_NATDEX[e]);
 //Spit Up is commented out because it hasn't been implemented

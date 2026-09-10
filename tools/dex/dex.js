@@ -420,6 +420,17 @@ function find(filters) {
   const notInLearnsetTable = [];
 
   for (const [name, entry] of Object.entries(v.POKEDEX_CHAMPIONS)) {
+    // Defensive, not cosmetic: as of the M-C re-vendor, upstream's own
+    // "Regulation M-C additions" list in pokedex.js has a typo ("Graploct"
+    // for "Grapploct"), which maps to `undefined` via
+    // `POKEDEX_CHAMPIONS[e] = POKEDEX_ZA_NATDEX[e]` for a name that doesn't
+    // exist in POKEDEX_ZA_NATDEX. That key is otherwise inert (`mon()`
+    // already reports it as unknown via its own `!entry` check) but this
+    // loop iterates every key, so skip anything that didn't resolve rather
+    // than crashing the whole `find` command over one bad vendor row.
+    // Grapploct itself (correct spelling) is unaffected — it already has
+    // its own separate, correctly-spelled entry from an earlier list.
+    if (!entry) continue;
     const types = [entry.t1, entry.t2].filter(Boolean);
     if (wantTypes.length && !wantTypes.every((t) => types.includes(t))) continue;
 

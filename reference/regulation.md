@@ -52,8 +52,15 @@ event with a defined workflow, not an emergency.
 - **Mega Evolution is the only active competitive mechanic.** All Megas
   legal in M-A and M-B remain legal, plus **6 new Mega Evolutions** added for
   M-C, in two groups:
-  - **3 "Z Mega Evolutions"** — reworks of existing Megas, not a new
-    mechanic name for an old one: Mega Absol Z (Dark/Ghost, Sharpness —
+  - **3 "Z Megas"** — alternate Mega formes for species that already had a
+    Mega, introduced via Pokémon Legends: Z-A. "Z Mega" is a naming
+    convention, not a distinct mechanic: it is a Mega Evolution exactly like
+    any other, the same way Mega Charizard X and Mega Charizard Y are both
+    just Mega Charizard. It uses a Mega Stone, it counts against the
+    one-Mega-per-battle limit the same as every other Mega, and registering
+    a Z Mega's stone alongside a second, unrelated Mega Stone remains legal
+    and standard — see `CLAUDE.md`'s point on the second Mega Stone as a
+    bring-4 flex slot. The three: Mega Absol Z (Dark/Ghost, Sharpness —
     slicing moves +50% power), Mega Lucario Z (Fighting/Steel, Aura Guard —
     halves contact-move damage), Mega Garchomp Z (Dragon, Levitate — immune
     to Ground moves and hazards).
@@ -69,8 +76,8 @@ event with a defined workflow, not an emergency.
 - **Terastallization exists in the game files but is NOT active.** Do not
   recommend Tera game plans — see `reference/pitfalls.md` for the correction
   history on this point.
-- **Dynamax and Z-Moves are not active.** ("Z Mega Evolution" is a distinct
-  mechanic name from Z-Moves — see below.)
+- **Dynamax and Z-Moves are not active.** ("Z Mega" is a Mega-forme naming
+  convention, unrelated to Z-Moves despite the shared word — see above.)
 - **No restricted/banned list changes were found** for M-C on any source
   checked (pokemon.com, Victory Road, Pikalytics). Recorded as "none found
   as of this check", not as "none exists" — a later source could still
@@ -86,7 +93,6 @@ don't leave a build depending on an entry that is still here.
 
 | Mechanic | Open question | Blocks |
 |---|---|---|
-| Z Mega Evolution (Mega Absol Z, Mega Lucario Z, Mega Garchomp Z) | Does a Z Mega count against the one-Mega-per-battle limit the same as a regular Mega? Can one team register **both** a Z Mega and a separate regular Mega (i.e. is it a genuinely independent slot)? Does Mega Evolving into a Z Mega require a distinct held item from the Mega Stone it reworks, or the same one? The official pokemon.com M-C page names the three Z Megas and does not explain the mechanic at all | Any team that plans around bringing a Z Mega *and* a second regular Mega, or that assumes the Z Mega's held item |
 | New item pool — Rocky Helmet, Air Balloon, Terrain Extender, and all four terrain Seeds (Electric/Grassy/Misty/Psychic) | **[unresolved]**, not [consensus] — only a single search summary reports these as added, and it is not corroborated by a second independent source (see `reference/vgc-format.md`'s confidence-marking rule: consensus requires *multiple independent* sources, and a repeated search summary is not a second source). pokemon.com's official M-C page does not mention items at all | Any set built around these items being legal. Settled definitively by `dex legal --item "<Item>"` once the item vendor is refreshed in the next transition stage — do not assume yes or no until then |
 
 ## Next regulation
@@ -143,6 +149,7 @@ nothing, needs no tooling, and works even when this stamp is out of date.
 
 | Date | Change | Source |
 |---|---|---|
+| 2026-09-09 | User correction of a repo inference (not new external information): "Z Mega" is a naming convention for an alternate Mega forme of a species that already had one — mechanically identical to a regular Mega, the same relationship as Mega Charizard X vs Y — not a distinct mechanic as the initial M-C rollover entry had assumed from the name alone. Removed the "Z Mega Evolution" row from Unverified mechanics (one-Mega-per-battle limit and dual-Mega-Stone registration both already apply to it, same as any Mega) and rewrote the Active mechanics prose to state this plainly. | User clarification this session |
 | 2026-09-09 | Rolled over M-B → M-C: promoted the former "Incoming regulation" section into Active mechanics/regulation, updated all five machine-readable stamps (`Regulation`, starts, ends, `Last verified`, `Pikalytics slug`), replaced the M-A-vintage "Incoming regulation" section with a "Next regulation" section (nothing announced), added a new item-pool row to Unverified mechanics marked **[unresolved]** rather than [consensus] per `vgc-format.md`'s single-source rule, and recorded the first live M-C usage snapshot (Rillaboom #1 36.64%). M-B archived to `reference/regulations/m-b.md`. Vendored roster/learnset/item data is **not yet refreshed** — that is the next transition stage, not this one; `dex mon`/`dex legal` will still report M-C-only species and items as absent or unknown until then | pokemon.com M-C launch page, victoryroad.pro/champions-regulations/, live read of pikalytics.com/ai/pokedex (slug + usage), this session |
 
 Earlier changelog history for this file — covering all of M-B's life,

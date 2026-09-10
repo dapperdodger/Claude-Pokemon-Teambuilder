@@ -31,10 +31,21 @@ test('an unknown command exits non-zero with an error object', () => {
   assert.match(JSON.parse(r.stdout).error, /Unknown command/);
 });
 
-test('meta mon returns usage as null-with-reason on the ladder', { skip: !ONLINE }, () => {
+// Was "returns usage as null-with-reason on the ladder": M-B's default slug
+// (battledataregmbs3) was a ranked-ladder page with no usage weighting, only
+// win rate. M-C's default slug (gen9championsvgc2026regmc, re-resolved at
+// the M-C rollover per reference/regulation.md) is a genuinely different
+// page shape — confirmed live 2026-09-09 via
+// formats.detectCapabilities()/describe() against the real fetched page —
+// and DOES carry usage (e.g. Rillaboom #1 at 36.64%, matching the usage
+// snapshot recorded in reference/regulation.md). This is a real upstream
+// behavior difference tied to the slug, not fixture staleness, so the
+// assertion is updated to match the new format rather than forced back to
+// null.
+test('meta mon returns real usage on the M-C default format', { skip: !ONLINE }, () => {
   const out = run('mon', 'Raichu');
-  assert.equal(out.usage.value, null);
-  assert.match(out.usage.reason, /no usage/i);
+  assert.equal(typeof out.usage.value, 'number');
+  assert.equal(out.usage.reason, null);
 });
 
 test('meta mon on a Mega name reports the stone share', { skip: !ONLINE }, () => {
