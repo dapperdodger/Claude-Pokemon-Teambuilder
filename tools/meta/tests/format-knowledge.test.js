@@ -152,6 +152,95 @@ test('cores: a page with no cores section at all yields an empty result with a t
   assert.match(out.reason, /no "Common Team Cores" section/);
 });
 
+// --- teams: /ai/topteams + /ai/team-usage, joined but never blended -------
+function topTeamsFixture() {
+  return parse.parseTopTeams(fs.readFileSync(path.join(FIXTURES, 'tournaments-topteams.md'), 'utf8'));
+}
+function teamUsageFixture() {
+  return parse.parseTeamUsage(fs.readFileSync(path.join(FIXTURES, 'tournaments-team-usage.md'), 'utf8'));
+}
+
+test('teams: both sections come through, carrying format/regulation from opts, top applied independently', () => {
+  const out = fk.teams(
+    { topTeams: topTeamsFixture(), teamUsage: teamUsageFixture() },
+    { format: 'championstournaments', regulation: null, top: 5 }
+  );
+  assert.equal(out.format, 'championstournaments');
+  assert.equal(out.top, 5);
+  assert.equal(out.topTeams.included, true);
+  assert.equal(out.topTeams.error, null);
+  assert.equal(out.topTeams.teams.length, 5);
+  assert.equal(out.teamUsage.included, true);
+  assert.equal(out.teamUsage.error, null);
+  assert.equal(out.teamUsage.compositions.length, 5);
+});
+
+test('teams: topTeams entries carry species and archetype tags through untouched', () => {
+  const out = fk.teams(
+    { topTeams: topTeamsFixture(), teamUsage: teamUsageFixture() },
+    { format: 'championstournaments', top: 25 }
+  );
+  const tagged = out.topTeams.teams.find((t) => t.rank === 3);
+  assert.deepEqual(tagged.archetypes, ['trick-room', 'tailwind']);
+  assert.deepEqual(tagged.species, ['Basculegion', 'Farigiraf', 'Blaziken', 'Whimsicott', 'Floette-Eternal-Mega', 'Salamence-Mega']);
+});
+
+test('teams: teamUsage compositions carry uses/winRate/uniqueTeams as validate.toNumber envelopes, not bare numbers', () => {
+  const out = fk.teams(
+    { topTeams: topTeamsFixture(), teamUsage: teamUsageFixture() },
+    { format: 'championstournaments', top: 5 }
+  );
+  const first = out.teamUsage.compositions[0];
+  assert.equal(first.uses.value, 12);
+  assert.equal(first.uses.reason, null);
+  assert.equal(first.winRate.value, 59.46);
+  assert.equal(first.record, '22 - 15 - 0');
+  assert.equal(first.uniqueTeams.value, 12);
+  assert.deepEqual(first.species, ['Rillaboom', 'Incineroar', 'Salamence-Mega', 'Floette-Eternal', 'Sneasler', 'Basculegion']);
+});
+
+test('teams: a fetch failure on one feed surfaces as that section\'s own error without killing the other', () => {
+  const out = fk.teams(
+    { topTeams: { error: 'HTTP 500 fetching /ai/topteams/championstournaments' }, teamUsage: teamUsageFixture() },
+    { format: 'championstournaments', top: 5 }
+  );
+  assert.equal(out.topTeams.included, true);
+  assert.match(out.topTeams.error, /HTTP 500/);
+  assert.deepEqual(out.topTeams.teams, []);
+  assert.equal(out.teamUsage.included, true);
+  assert.equal(out.teamUsage.error, null);
+  assert.ok(out.teamUsage.compositions.length > 0, 'the other feed must still come through');
+});
+
+test('teams: a section explicitly skipped via --only reports included:false rather than an empty list', () => {
+  const out = fk.teams(
+    { topTeams: { skipped: true }, teamUsage: teamUsageFixture() },
+    { format: 'championstournaments', top: 5 }
+  );
+  assert.deepEqual(out.topTeams, { included: false });
+  assert.equal(out.teamUsage.included, true);
+});
+
+test('REGRESSION: teams surfaces a straddle warning prominently when opts.straddle is set', () => {
+  const straddle = { regulation: 'M-C', regulationStart: '2026-09-09', windowDays: 14, clearsOn: '2026-09-23' };
+  const out = fk.teams(
+    { topTeams: topTeamsFixture(), teamUsage: teamUsageFixture() },
+    { format: 'championstournaments', top: 5, straddle }
+  );
+  assert.deepEqual(out.straddle, straddle);
+  assert.ok(out.warnings.some((w) => /straddles the regulation rollover/i.test(w)), 'must state the straddle in plain language, not just the raw object');
+  assert.ok(out.warnings.some((w) => w.includes('M-C') && w.includes('2026-09-23')), 'must name the regulation and the clear date');
+});
+
+test('teams: no straddle field/warning when opts.straddle is null', () => {
+  const out = fk.teams(
+    { topTeams: topTeamsFixture(), teamUsage: teamUsageFixture() },
+    { format: 'championstournaments', top: 5, straddle: null }
+  );
+  assert.equal(out.straddle, null);
+  assert.deepEqual(out.warnings, []);
+});
+
 test('render: emits a Common team cores section with real data and no [object Object]', () => {
   const u = usageFixture();
   const tiers = fk.speedTiers(u, { top: 5 });

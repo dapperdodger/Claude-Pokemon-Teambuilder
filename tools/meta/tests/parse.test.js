@@ -131,3 +131,100 @@ test('parseCores: a group whose heading parses but whose table row does not matc
   ].join('\n');
   assert.throws(() => parse.parseCores(text), /did not match the expected/);
 });
+
+// --- parseTopTeams / parseTeamUsage -----------------------------------
+// Fixtures fetched live 2026-09-10 (one day into the M-C rollover window),
+// so this data genuinely straddles the regulation boundary — that is a
+// property of what this frozen snapshot is testing, not a bug in the
+// fixture. Parsing-mechanics assertions below are pinned to this exact
+// content and must not move at a later rollover.
+
+test('parseTopTeams: reads real rows off the Top Teams Table, species and archetypes split', () => {
+  const out = parse.parseTopTeams(fx('tournaments-topteams.md'));
+  assert.equal(out.reason, null);
+  assert.equal(out.teams.length, 25);
+  const first = out.teams[0];
+  assert.equal(first.rank, 1);
+  assert.equal(first.author, 'M_rada');
+  assert.equal(first.record, '7-0');
+  assert.deepEqual(first.species, ['Gengar-Mega', 'Snorlax', 'Incineroar', 'Scrafty', 'Dragonite', 'Rillaboom']);
+});
+
+test('parseTopTeams: a literal "None" archetypes cell becomes an empty array, not a one-element ["None"]', () => {
+  const out = parse.parseTopTeams(fx('tournaments-topteams.md'));
+  const untagged = out.teams.find((t) => t.rank === 1);
+  assert.deepEqual(untagged.archetypes, []);
+});
+
+test('parseTopTeams: a real multi-tag archetypes cell splits into separate tags', () => {
+  const out = parse.parseTopTeams(fx('tournaments-topteams.md'));
+  const tagged = out.teams.find((t) => t.rank === 3);
+  assert.deepEqual(tagged.archetypes, ['trick-room', 'tailwind']);
+});
+
+test('REGRESSION: parseTopTeams reconstructs a Tournament name containing literal un-escaped "|" characters', () => {
+  // Row 7's real tournament name is "🍋Sitrus-Series🍋|Champions-MC|$50 to
+  // First|#75" — Pikalytics never escapes the pipes in it, so a naive
+  // positional column split misattributes every cell after Tournament for
+  // this exact row. Parsing from both ends (fixed Rank/Author/Record at the
+  // front, fixed Archetypes/Pokemon at the back) must still recover it
+  // whole, and must not have eaten into the real Archetypes/Pokemon cells.
+  const out = parse.parseTopTeams(fx('tournaments-topteams.md'));
+  const row7 = out.teams.find((t) => t.rank === 7);
+  assert.equal(row7.tournament, '🍋Sitrus-Series🍋|Champions-MC|$50 to First|#75');
+  assert.deepEqual(row7.archetypes, ['trick-room']);
+  assert.deepEqual(row7.species, ['Absol-Mega-Z', 'Sneasler', 'Salamence-Mega', 'Kingambit', 'Incineroar', 'Sinistcha']);
+});
+
+test('parseTopTeams: a page with no Top Teams Table section yields an empty result with a reason, not a throw', () => {
+  const out = parse.parseTopTeams('# Nothing here\n');
+  assert.deepEqual(out.teams, []);
+  assert.match(out.reason, /no "Top Teams Table" section/);
+});
+
+test('parseTopTeams: a table whose data row does not match the expected shape must surface, not vanish', () => {
+  const text = [
+    '## Top Teams Table',
+    '',
+    '| Rank | Author | Record | Tournament | Archetypes | Pokemon |',
+    '|------|--------|--------|------------|------------|---------|',
+    '| 1 | Someone | 7-0 | Some Cup | None | A, B, C, D, E, F |',
+    '| Someone | 7-0 | Some Cup | None | A, B, C, D, E, F |',
+    '',
+    '## Source Links',
+  ].join('\n');
+  assert.throws(() => parse.parseTopTeams(text), /did not match the expected/);
+});
+
+test('parseTeamUsage: reads real rows off the Team Usage Table, Uses/Win Rate/Record/Unique Teams raw and Pokemon split', () => {
+  const out = parse.parseTeamUsage(fx('tournaments-team-usage.md'));
+  assert.equal(out.reason, null);
+  assert.equal(out.rows.length, 25);
+  const first = out.rows[0];
+  assert.equal(first.rank, 1);
+  assert.equal(first.usesRaw, '12');
+  assert.equal(first.winRateRaw, '59.46%');
+  assert.equal(first.recordRaw, '22 - 15 - 0');
+  assert.equal(first.uniqueTeamsRaw, '12');
+  assert.deepEqual(first.species, ['Rillaboom', 'Incineroar', 'Salamence-Mega', 'Floette-Eternal', 'Sneasler', 'Basculegion']);
+});
+
+test('parseTeamUsage: a page with no Team Usage Table section yields an empty result with a reason, not a throw', () => {
+  const out = parse.parseTeamUsage('# Nothing here\n');
+  assert.deepEqual(out.rows, []);
+  assert.match(out.reason, /no "Team Usage Table" section/);
+});
+
+test('parseTeamUsage: a table whose data row does not match the expected shape must surface, not vanish', () => {
+  const text = [
+    '## Team Usage Table',
+    '',
+    '| Rank | Uses | Win Rate | Record | Unique Teams | Pokemon |',
+    '|------|------|----------|--------|--------------|---------|',
+    '| 1 | 12 | 59.46% | 22 - 15 - 0 | 12 | A, B, C, D, E, F |',
+    '| 12 | 59.46% | 22 - 15 - 0 | 12 | A, B, C, D, E, F |',
+    '',
+    '## Related Pages',
+  ].join('\n');
+  assert.throws(() => parse.parseTeamUsage(text), /did not match the expected/);
+});

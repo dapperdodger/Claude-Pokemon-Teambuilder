@@ -523,6 +523,44 @@ test('regulationHasEnded: a missing or unparseable end stamp is not an expiry cl
   assert.equal(formats.regulationHasEnded('not-a-date', '2026-10-01'), false);
 });
 
+// --- rollingStraddle: describe()'s straddle logic, callable without an
+// index-shaped page --------------------------------------------------------
+// The `teams` command reads /ai/topteams and /ai/team-usage, neither of
+// which carries a "Best 50 Pokemon by Usage" table or a "- **Format Code**:"
+// bullet — describe() requires both and throws on either page. rollingStraddle
+// is the same date-math describe() runs internally, extracted so a caller
+// with no per-Pokemon usage index to run describe() against still gets the
+// identical, tested answer rather than reimplementing it. Pure/injectable
+// `now`, same as windowStraddlesRollover, so these tests never depend on the
+// real clock.
+
+test('rollingStraddle: null for a format not on the curated rolling list, regardless of date', () => {
+  assert.equal(formats.rollingStraddle('battledataregmbs3', { now: new Date('2026-09-10T00:00:00Z') }), null);
+});
+
+test('REGRESSION: rollingStraddle mirrors describe()\'s straddle object exactly for a rolling format that straddles', () => {
+  const regStart = formats.activeRegulationStart();
+  assert.ok(regStart, 'reference/regulation.md must have a **Regulation starts:** stamp for this test to mean anything');
+  const threeDaysIn = new Date(new Date(`${regStart}T00:00:00Z`).getTime() + 3 * 24 * 60 * 60 * 1000);
+  const viaDescribe = formats.describe(fx('tournaments-index.md'), undefined, { now: threeDaysIn });
+  const viaDirect = formats.rollingStraddle('championstournaments', { now: threeDaysIn });
+  assert.deepEqual(viaDirect, viaDescribe.straddle);
+  assert.ok(viaDirect, 'both must report a real straddle 3 days into the new regulation');
+});
+
+test('rollingStraddle: null once `now` is well past the window, matching describe()', () => {
+  const regStart = formats.activeRegulationStart();
+  assert.ok(regStart);
+  const wellPast = new Date(new Date(`${regStart}T00:00:00Z`).getTime() + 60 * 24 * 60 * 60 * 1000);
+  assert.equal(formats.rollingStraddle('championstournaments', { now: wellPast }), null);
+});
+
+test('rollingStraddle: matched case-insensitively against the curated rolling-format list', () => {
+  const regStart = formats.activeRegulationStart();
+  const threeDaysIn = new Date(new Date(`${regStart}T00:00:00Z`).getTime() + 3 * 24 * 60 * 60 * 1000);
+  assert.ok(formats.rollingStraddle('ChampionsTournaments', { now: threeDaysIn }));
+});
+
 test('describe() reports stampExpired with the end date and days elapsed', () => {
   const d = formats.describe(fx('ranked-index.md'), null, {
     now: new Date('2026-09-19T00:00:00Z'),

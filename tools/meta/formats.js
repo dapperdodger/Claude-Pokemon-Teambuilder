@@ -153,6 +153,34 @@ function windowStraddlesRollover(regulationStartISO, now, windowDays = ROLLING_W
   return windowStart < regStart;
 }
 
+// The straddle half of describe()'s currency logic, extracted so a caller
+// with no per-Pokemon usage index to run describe() against can still get
+// the identical, tested answer. `describe()` requires a "- **Format Code**:"
+// bullet AND a non-empty "Best 50 Pokemon by Usage" table in the text it is
+// given — both true of a /ai/pokedex/{code} index page, neither true of
+// /ai/topteams or /ai/team-usage (the `teams` command's two endpoints),
+// which carry their own team-shaped tables instead. Rather than reimplement
+// this date math at the call site (exactly the mistake this function exists
+// to prevent — see docs/superpowers/specs/
+// 2026-09-09-team-level-meta-design.md), or spend a third network request
+// fetching an index page solely to run it through describe(), a caller in
+// that position calls this directly with the format code it already knows.
+// Pure and injectable via opts.now, same as windowStraddlesRollover.
+function rollingStraddle(code, opts = {}) {
+  if (!ROLLING_WINDOW_FORMATS.has(String(code).toLowerCase())) return null;
+  const regulationStart = activeRegulationStart();
+  const now = opts.now || new Date();
+  if (!windowStraddlesRollover(regulationStart, now, ROLLING_WINDOW_DAYS)) return null;
+  const regStartDate = new Date(`${regulationStart}T00:00:00Z`);
+  const clearsOn = new Date(regStartDate.getTime() + ROLLING_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  return {
+    regulation: activeRegulation(),
+    regulationStart,
+    windowDays: ROLLING_WINDOW_DAYS,
+    clearsOn: clearsOn.toISOString().slice(0, 10),
+  };
+}
+
 function detectCapabilities(indexText) {
   const rows = parse.parseUsageTable(indexText);
   const some = (key) => rows.some((r) => !validate.isSentinel(r[key]));
@@ -204,21 +232,7 @@ function describe(indexText, expectedCode, opts = {}) {
   // regulation starts, the window's own reach-back still overlaps the
   // previous one, so the data is genuinely current AND genuinely mixed — a
   // third state distinct from both "fine" and "stale".
-  let straddle = null;
-  if (currency === 'rolling') {
-    const regulationStart = activeRegulationStart();
-    const now = opts.now || new Date();
-    if (windowStraddlesRollover(regulationStart, now, ROLLING_WINDOW_DAYS)) {
-      const regStartDate = new Date(`${regulationStart}T00:00:00Z`);
-      const clearsOn = new Date(regStartDate.getTime() + ROLLING_WINDOW_DAYS * 24 * 60 * 60 * 1000);
-      straddle = {
-        regulation: active,
-        regulationStart,
-        windowDays: ROLLING_WINDOW_DAYS,
-        clearsOn: clearsOn.toISOString().slice(0, 10),
-      };
-    }
-  }
+  const straddle = currency === 'rolling' ? rollingStraddle(info.code, opts) : null;
 
   // Independent of currency and of the stamps agreeing with each other: if the
   // stamped cycle's end date has passed, regulation.md itself is stale and the
@@ -416,5 +430,5 @@ module.exports = {
   activeRegulation, activeRegulationStart, activeRegulationEnd, regulationHasEnded,
   regulationOf, detectCapabilities, describe,
   defaultFormatCode, report, check, upsertManifestRow, readManifestRow,
-  classifyCurrency, windowStraddlesRollover, ROLLING_WINDOW_FORMATS, ROLLING_WINDOW_DAYS,
+  classifyCurrency, windowStraddlesRollover, rollingStraddle, ROLLING_WINDOW_FORMATS, ROLLING_WINDOW_DAYS,
 };

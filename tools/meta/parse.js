@@ -158,6 +158,112 @@ function parseCores(text) {
   return { groups, reason: null };
 }
 
+// --- /ai/topteams and /ai/team-usage -----------------------------------
+// Two more championstournaments-only surfaces (see docs/superpowers/specs/
+// 2026-09-09-team-level-meta-design.md): concrete tournament teams with
+// archetype tags, and six-Pokemon compositions ranked by win rate. Both
+// render as pipe tables under their own "## ... Table" heading, reusing
+// CORES_HEADER_ROW_RE / CORES_SEPARATOR_ROW_RE below since the header/
+// separator shape is identical to the Common Team Cores tables.
+
+// A well-formed "| a | b | c |" row's split('|') is ['', ' a ', ' b ', ' c ',
+// '']; the leading/trailing entries are the outer pipes' empty ends, not
+// data. Returns null for a line that is not a table row at all.
+function splitRowCells(rawLine) {
+  const line = rawLine.trim();
+  if (!line.startsWith('|')) return null;
+  return line.split('|').slice(1, -1).map((c) => c.trim());
+}
+
+function splitCommaList(raw) {
+  return String(raw || '').split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+const TOPTEAMS_HEADING = 'Top Teams Table';
+// Observed live 2026-09-10: some Tournament-name cells contain literal,
+// un-escaped "|" characters the upstream markdown generator never quoted —
+// e.g. "🍋Sitrus-Series🍋|Champions-MC|$50 to First|#75". A naive positional
+// split (cells[3] = Tournament) misattributes every column after it for
+// exactly those rows. Parsed from BOTH ends instead: Rank/Author/Record are
+// always the first three cells and Archetypes/Pokemon are always the last
+// two, so whatever is left in the middle — however many extra "|" it
+// contains — IS the Tournament name, reassembled with '|'.join.
+function parseTopTeams(text) {
+  const body = sectionBody(text, TOPTEAMS_HEADING);
+  if (body === null) {
+    return { teams: [], reason: `no "${TOPTEAMS_HEADING}" section in this page` };
+  }
+  const teams = [];
+  let unparsedCount = 0;
+  for (const rawLine of body.split('\n')) {
+    const trimmed = rawLine.trim();
+    if (!trimmed.startsWith('|')) continue;
+    if (CORES_HEADER_ROW_RE.test(trimmed) || CORES_SEPARATOR_ROW_RE.test(trimmed)) continue;
+    const cells = splitRowCells(rawLine);
+    if (!cells || cells.length < 6 || !/^\d+$/.test(cells[0])) {
+      unparsedCount++;
+      continue;
+    }
+    const archetypesRaw = cells[cells.length - 2];
+    teams.push({
+      rank: Number(cells[0]),
+      author: cells[1],
+      record: cells[2],
+      tournament: cells.slice(3, cells.length - 2).join('|').trim(),
+      archetypes: /^none$/i.test(archetypesRaw) ? [] : splitCommaList(archetypesRaw),
+      species: splitCommaList(cells[cells.length - 1]),
+    });
+  }
+  if (unparsedCount > 0) {
+    throw new Error(
+      `"${TOPTEAMS_HEADING}": ${unparsedCount} row(s) did not match the expected ` +
+      `"| Rank | Author | Record | Tournament | Archetypes | Pokemon |" shape — the upstream table ` +
+      `format may have changed. Refusing to silently return a shorter team list.`
+    );
+  }
+  return { teams, reason: teams.length ? null : 'no team rows in this section' };
+}
+
+const TEAM_USAGE_HEADING = 'Team Usage Table';
+// | Rank | Uses | Win Rate | Record | Unique Teams | Pokemon | — Record here
+// is "22 - 15 - 0" (space-hyphen-space), never a literal "|", so unlike
+// topteams' Tournament column this table needs no both-ends reconstruction.
+function parseTeamUsage(text) {
+  const body = sectionBody(text, TEAM_USAGE_HEADING);
+  if (body === null) {
+    return { rows: [], reason: `no "${TEAM_USAGE_HEADING}" section in this page` };
+  }
+  const rows = [];
+  let unparsedCount = 0;
+  for (const rawLine of body.split('\n')) {
+    const trimmed = rawLine.trim();
+    if (!trimmed.startsWith('|')) continue;
+    if (CORES_HEADER_ROW_RE.test(trimmed) || CORES_SEPARATOR_ROW_RE.test(trimmed)) continue;
+    const cells = splitRowCells(rawLine);
+    if (!cells || cells.length !== 6 || !/^\d+$/.test(cells[0])) {
+      unparsedCount++;
+      continue;
+    }
+    rows.push({
+      rank: Number(cells[0]),
+      usesRaw: cells[1],
+      winRateRaw: cells[2],
+      recordRaw: cells[3],
+      uniqueTeamsRaw: cells[4],
+      species: splitCommaList(cells[5]),
+    });
+  }
+  if (unparsedCount > 0) {
+    throw new Error(
+      `"${TEAM_USAGE_HEADING}": ${unparsedCount} row(s) did not match the expected ` +
+      `"| Rank | Uses | Win Rate | Record | Unique Teams | Pokemon |" shape — the upstream table ` +
+      `format may have changed. Refusing to silently return a shorter list.`
+    );
+  }
+  return { rows, reason: rows.length ? null : 'no composition rows in this section' };
+}
+
 module.exports = {
   parseQuickInfo, parseFormatInfo, sectionBody, parsePercentList, parseUsageTable, parseCores,
+  parseTopTeams, parseTeamUsage,
 };

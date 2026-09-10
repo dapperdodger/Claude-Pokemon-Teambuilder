@@ -191,6 +191,113 @@ function cores(parsed, opts) {
   };
 }
 
+// /ai/topteams + /ai/team-usage — the other two-thirds of methodology.md's
+// three-Pikalytics-surface rule (cores() above covers the third). Carries
+// through parse.parseTopTeams()/parse.parseTeamUsage()'s raw output the same
+// way cores() carries parse.parseCores()'s, and takes `format`/`regulation`/
+// `straddle` via opts for the same reason cores() does: there is no single
+// per-Pokemon usage page here to read them off, since both endpoints are
+// team-shaped, not Pokemon-ranked.
+//
+// `parsed.topTeams` / `parsed.teamUsage` each arrive as ONE of three shapes,
+// set by the caller (cli.js), so a network failure on either feed never
+// takes the other down with it:
+//   { skipped: true }                — not requested (the `--only` flag)
+//   { error: '<message>' }           — the fetch/parse for this feed failed
+//   the real parse.parseTopTeams() / parse.parseTeamUsage() return value
+//
+// Never blended: topTeams answers "here is a real team to test against" (one
+// row = one build), teamUsage answers "which archetype actually wins" (ranked
+// by win rate) — see docs/superpowers/specs/
+// 2026-09-09-team-level-meta-design.md. Presented as two separate sections
+// rather than joined into one list.
+function teams(parsed, opts) {
+  const o = opts || {};
+  const top = o.top || 5;
+  const straddle = o.straddle || null;
+
+  // Surfaced at the TOP LEVEL, not nested inside a section a reader might
+  // skip: championstournaments is a rolling window with no regulation of its
+  // own, and for roughly its window length after a rollover it reaches back
+  // into the previous regulation — genuinely current AND genuinely mixed.
+  // Without this, the command confidently describes a blend of two
+  // regulations as if it were one meta.
+  const warnings = [];
+  if (straddle) {
+    warnings.push(
+      `Format "${o.format}" is a rolling ~${straddle.windowDays}-day tournament window that currently ` +
+      `straddles the regulation rollover: it reaches back before ${straddle.regulation} started ` +
+      `(${straddle.regulationStart}), so BOTH sections below mix ${straddle.regulation} with the previous ` +
+      `regulation. Expect it to clear of the old regulation's data around ${straddle.clearsOn}.`
+    );
+  }
+
+  const tt = parsed.topTeams || {};
+  let topTeams;
+  if (tt.skipped) {
+    topTeams = { included: false };
+  } else if (tt.error) {
+    topTeams = { included: true, error: tt.error, reason: null, teams: [] };
+  } else {
+    topTeams = {
+      included: true,
+      error: null,
+      reason: tt.teams.length ? null : tt.reason,
+      teams: tt.teams.slice(0, top).map((t) => ({
+        rank: t.rank,
+        author: t.author,
+        record: t.record,
+        tournament: t.tournament,
+        // Pikalytics' own free-text tags, in reference/archetypes.md's
+        // taxonomy. Nothing else in this repo consumes them yet — carried
+        // through so a later pass can join them against teamUsage's win
+        // rate, which is precisely what nothing here can currently measure.
+        archetypes: t.archetypes,
+        species: t.species,
+      })),
+    };
+  }
+
+  const tu = parsed.teamUsage || {};
+  let teamUsage;
+  if (tu.skipped) {
+    teamUsage = { included: false };
+  } else if (tu.error) {
+    teamUsage = { included: true, error: tu.error, reason: null, compositions: [] };
+  } else {
+    teamUsage = {
+      included: true,
+      error: null,
+      reason: tu.rows.length ? null : tu.reason,
+      compositions: tu.rows.slice(0, top).map((r) => ({
+        rank: r.rank,
+        uses: validate.toNumber(r.usesRaw, 'not reported for this composition'),
+        winRate: validate.toNumber(r.winRateRaw, 'not reported for this composition'),
+        record: validate.isSentinel(r.recordRaw) ? null : r.recordRaw,
+        uniqueTeams: validate.toNumber(r.uniqueTeamsRaw, 'not reported for this composition'),
+        species: r.species,
+      })),
+    };
+  }
+
+  return {
+    format: o.format,
+    regulation: o.regulation,
+    generatedAt: new Date().toISOString().slice(0, 10),
+    top,
+    straddle,
+    warnings,
+    topTeams,
+    teamUsage,
+    note:
+      'topTeams answers "here is a real tournament team to test against" (one row = one build, not a ' +
+      'frequency signal). teamUsage answers "which six-Pokemon archetype actually wins" (ranked by uses ' +
+      'and win rate). Pulled together in one call because methodology.md asks for both, but never ' +
+      'blended into one list — read them as answers to two different questions. "top" bounds each ' +
+      'section\'s own already-ranked list independently; it does not merge or re-sort them.',
+  };
+}
+
 // Markdown body for reference/format-knowledge.md. Mirrors META_MANIFEST.md's
 // do-not-hand-edit convention: this file is computed, never edited by hand,
 // because what is common changes and a hand-maintained list looks exactly as
@@ -304,4 +411,4 @@ function render(speedTiers, distributions, cores) {
   return lines.join('\n');
 }
 
-module.exports = { speedTiers, distribution, KEY_MOVES, KEY_ABILITIES, cores, render };
+module.exports = { speedTiers, distribution, KEY_MOVES, KEY_ABILITIES, cores, teams, render };

@@ -24,6 +24,27 @@ const USAGE = `Usage:
   node tools/meta/cli.js cores [--top N] [--format <code>]  2/3/4-Pokemon "Common Team Cores" —
                                                  read off the same page \`usage\` fetches, no extra
                                                  network request
+  node tools/meta/cli.js teams [--top N] [--only topteams|team-usage] [--format <code>]
+                                                 real tournament teams (/ai/topteams, archetype-tagged)
+                                                 AND six-Pokemon compositions ranked by win rate
+                                                 (/ai/team-usage) — two DIFFERENT questions, reported as
+                                                 two separate sections, never blended. Defaults to format
+                                                 "championstournaments" (NOT the current regulation's
+                                                 ranked-ladder slug) since that is the only format code
+                                                 either endpoint is confirmed to serve.
+                                                 --only reports just one section instead of both — pass it
+                                                 to skip that section's network request entirely, not just
+                                                 its output.
+                                                 Two network requests (one per endpoint) when --only is not
+                                                 given; one when it is. A fetch failure on one endpoint is
+                                                 reported as that section's own error and does NOT abort
+                                                 the other section.
+                                                 championstournaments is a rolling ~14-day window with no
+                                                 regulation of its own — for roughly 14 days after a
+                                                 rollover it straddles two regulations at once. When that is
+                                                 true right now, the output carries a top-level \`straddle\`
+                                                 object and a plain-language warning; ABSENT means the
+                                                 window has cleared, not that it was never checked.
   node tools/meta/cli.js check                  slug agreement and ETag drift
 
 Notes:
@@ -210,6 +231,57 @@ function main() {
       out.regulation = describe.regulation;
       out.top = top;
       out.unresolved = unresolved;
+      return ok(out);
+    }
+
+    if (command === 'teams') {
+      // Defaults to "championstournaments" specifically, NOT the shared
+      // `code` computed above (the current regulation's ranked-ladder
+      // slug, e.g. gen9championsvgc2026regmc) — /ai/topteams and
+      // /ai/team-usage are confirmed to serve THIS format code (see
+      // docs/superpowers/specs/2026-09-09-team-level-meta-design.md's
+      // endpoint probe); the ladder slug is a different upstream that has
+      // never been confirmed to carry either page.
+      const teamsCode = flagValue(argv, '--format') || 'championstournaments';
+      const only = flagValue(argv, '--only');
+      if (only !== undefined && only !== 'topteams' && only !== 'team-usage') {
+        return fail('teams: --only must be "topteams" or "team-usage" (or omitted for both).');
+      }
+      const topRaw = flagValue(argv, '--top');
+      const top = topRaw ? Number(topRaw) : 5;
+
+      // Fetches one endpoint and hands its body to the matching parser.
+      // Returns {error} on any non-200/parse failure rather than throwing,
+      // so a failure on one endpoint cannot take the other down with it —
+      // fk.teams() reports {error} per-section instead of aborting the run.
+      function fetchSection(endpoint, parseFn) {
+        try {
+          const r = fetchmod.get(`${fetchmod.BASE}/ai/${endpoint}/${encodeURIComponent(teamsCode)}`);
+          if (r.status !== 200) {
+            return { error: `"${endpoint}" returned HTTP ${r.status} for format "${teamsCode}"` };
+          }
+          return parseFn(r.text);
+        } catch (err) {
+          return { error: err.message };
+        }
+      }
+
+      const wantTopTeams = !only || only === 'topteams';
+      const wantTeamUsage = !only || only === 'team-usage';
+      const topTeamsParsed = wantTopTeams ? fetchSection('topteams', parse.parseTopTeams) : { skipped: true };
+      const teamUsageParsed = wantTeamUsage ? fetchSection('team-usage', parse.parseTeamUsage) : { skipped: true };
+
+      // No network call: reads reference/regulation.md's local stamp plus
+      // pure date math, the exact logic describe() itself runs for a
+      // rolling-window format — see formats.rollingStraddle's own comment
+      // for why describe() cannot be called directly on either page fetched
+      // above (neither carries the per-Pokemon usage table it requires).
+      const straddle = formats.rollingStraddle(teamsCode);
+
+      const out = fk.teams(
+        { topTeams: topTeamsParsed, teamUsage: teamUsageParsed },
+        { format: teamsCode, regulation: formats.activeRegulation(), top, straddle }
+      );
       return ok(out);
     }
 
