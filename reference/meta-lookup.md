@@ -12,6 +12,7 @@ right now" — that's the `vgc-meta-lookup` skill's job, using this tool.
 ## Contents
 
 - [Command surface](#command-surface)
+- [Team-level surfaces: `cores` and `teams`](#team-level-surfaces-cores-and-teams)
 - [Currency: three ways a format can be current (or not)](#currency-three-ways-a-format-can-be-current-or-not)
 - [Which upstream carries which metric](#which-upstream-carries-which-metric)
 - [Usage is reported per population, never blended](#usage-is-reported-per-population-never-blended)
@@ -27,6 +28,9 @@ right now" — that's the `vgc-meta-lookup` skill's job, using this tool.
 node tools/meta/cli.js formats [--write]      list formats, capabilities, regulation
 node tools/meta/cli.js mon <Species> [--format <code>]   per-Pokemon data
 node tools/meta/cli.js usage [--format <code>]           ranked list
+node tools/meta/cli.js cores [--top N] [--format <code>]  Common Team Cores (2/3/4-mon groupings)
+node tools/meta/cli.js teams [--top N] [--only topteams|team-usage] [--format <code>]
+                                               topteams + team-usage, one call
 node tools/meta/cli.js check                  slug agreement and ETag drift
 ```
 
@@ -102,6 +106,94 @@ $ node tools/meta/cli.js mon "Garchomp" --format championstournaments
 }
 ```
 (live output, this session, matching `tools/meta/tests/fixtures/tournaments-garchomp.md`)
+
+## Team-level surfaces: `cores` and `teams`
+
+`usage`/`mon` answer per-Pokémon questions. These two answer team-level
+ones — `reference/methodology.md`'s "three Pikalytics surfaces" passage
+requires all three (`usage`, `cores`, and `teams`' two halves) before
+answering "what's the meta."
+
+**`cores [--top N] [--format <code>]`** — Pikalytics' own 2/3/4-Pokémon
+"Common Team Cores" groupings, ranked by how many sampled teams run each one.
+Parsed off the same pokedex index page `usage`/`check` already fetch, so this
+costs **no extra network request**. `--top N` bounds each size-group's own
+already-ranked list independently; it does not re-sort or merge them.
+
+```bash
+$ node tools/meta/cli.js cores --top 3
+{
+  "format": "gen9championsvgc2026regmc", "regulation": "M-C",
+  "groups": [
+    { "size": 2, "cores": [
+      { "rank": 1, "species": ["Rillaboom", "Sneasler"],
+        "teams": { "value": 159, "reason": null },
+        "usage": { "value": 24.3, "reason": null } },
+      ...
+    ] },
+    { "size": 3, "cores": [ ... ] },
+    { "size": 4, "cores": [ ... ] }
+  ],
+  "note": "Cores are Pikalytics' own 2/3/4-Pokemon groupings ranked by how many sampled teams run them, read off the same pokedex index page `usage` already fetches — no extra network request. \"top\" bounds each group's own already-ranked list; it does not re-sort."
+}
+```
+(live output, this session, 2026-09-10)
+
+**`teams [--top N] [--only topteams|team-usage] [--format <code>]`** — the
+other two tournament surfaces, in one call:
+
+- `topTeams` (Pikalytics `/ai/topteams`) — concrete real six-Pokémon teams
+  as actually brought, each tagged with its `archetypes` (using the same
+  vocabulary `reference/archetypes.md` defines — `trick-room`, `tailwind`,
+  `sun`, etc.; `[]` when Pikalytics didn't tag that entry). One row is one
+  build, not a frequency signal.
+- `teamUsage` (Pikalytics `/ai/team-usage`) — six-Pokémon *compositions*
+  ranked by `uses`, `winRate`, and W-L-D `record` — "which archetype actually
+  wins," not just "does it exist."
+
+The two sections are reported separately and **never blended** — they answer
+different questions. Costs two network requests unless `--only` narrows to
+one (then one). A fetch failure on one endpoint is reported as that section's
+own `error` and does not abort the other section.
+
+**Defaults to `championstournaments`**, not the current regulation's
+ranked-ladder slug — that's the only format code either endpoint is
+confirmed to serve. `championstournaments` is a rolling ~14-day window with
+no regulation of its own (see "The rollover straddle" below): for roughly
+two weeks after every rollover it mixes the new regulation's results with
+the previous one's. When that's currently true, the response carries a
+top-level `straddle` object and a plain-language warning in `warnings`.
+**Surface that warning to the user — reporting `teams`' contents without it
+defeats the entire point of pulling tournament data.** Its absence means the
+window has cleared, not that it was never checked.
+
+```bash
+$ node tools/meta/cli.js teams --top 2
+{
+  "format": "championstournaments", "regulation": "M-C",
+  "straddle": {
+    "regulation": "M-C", "regulationStart": "2026-09-09",
+    "windowDays": 14, "clearsOn": "2026-09-23"
+  },
+  "warnings": [
+    "Format \"championstournaments\" is a rolling ~14-day tournament window that currently straddles the regulation rollover: it reaches back before M-C started (2026-09-09), so BOTH sections below mix M-C with the previous regulation. Expect it to clear of the old regulation's data around 2026-09-23."
+  ],
+  "topTeams": { "included": true, "teams": [
+    { "rank": 1, "author": "M_rada", "record": "7-0",
+      "archetypes": [], "species": ["Gengar-Mega", "Snorlax", ...] },
+    { "rank": 2, "author": "Hazarai", "record": "4-0",
+      "archetypes": ["sun", "trick-room"], "species": [...] }
+  ] },
+  "teamUsage": { "included": true, "compositions": [
+    { "rank": 1, "uses": { "value": 12, "reason": null },
+      "winRate": { "value": 59.46, "reason": null },
+      "record": "22 - 15 - 0", "species": [...] },
+    ...
+  ] }
+}
+```
+(live output, this session, 2026-09-10 — straddle fires because M-C started
+yesterday and the ~14-day window reaches back into M-B)
 
 **`check`** — the only command that cross-verifies the format code against
 what Pikalytics itself currently declares as default (via `/llms-full.txt`'s
@@ -361,3 +453,4 @@ exactly this reason.
 | 2026-09-08 | Created file, documenting `tools/meta`'s command surface, the per-upstream metrics table, the per-population/no-blending rule, ETag-vs-Data-Date freshness, the Mega naming convention, and the `check`-only regulation-verification gap | `tools/meta/{cli.js,formats.js,meta.js,megas.js,fetch.js,validate.js,META_MANIFEST.md}`; `tools/meta/tests/fixtures/{ranked-raichu.md,ranked-raichu-mega-y.md,tournaments-garchomp.md,tournaments-index.md,filler-index.md}`; live `node tools/meta/cli.js` runs this session (`formats`, `usage`, `mon "Garchomp" --format championstournaments`, `mon "Staraptor-Mega"`, `check`) |
 | 2026-09-08 | Final whole-branch review fix wave: `check` and `report` now check HTTP status before parsing (a failed fetch used to parse as an all-null PASS); `check` now actually reads `META_MANIFEST.md` back and reports `pinnedEtag`/`etagStatus` (`unpinned`/`unchanged`/`changed`) — the ETag-drift capability this doc already claimed, now real instead of write-only; `mon`/`usage`/`formats`/`check` all assert the fetched page's own declared format code against what was requested; a Mega whose stub page slips past `megas.js`'s name matching now fails loudly instead of reporting `undefined%` fields as ordinary missing data; Mega name matching is case-insensitive | `tools/meta/{formats.js,meta.js,megas.js,validate.js,cli.js}` and their test files, this session's review-response task |
 | 2026-09-08 | Added the stamp-expiry check: `describe()` now reads `**Regulation ends:**` from `reference/regulation.md` and sets `stampExpired` once that date has passed, so every command warns instead of only `check`. This closes the one rollover failure the cross-stamp logic structurally cannot see — nobody editing `regulation.md` at all, where both stamps agree with each other and both are wrong. Costs no network call; the date was already stamped in the file and simply went unread. Added the three-rollover-failures table so the remaining `check`-only gap (Pikalytics renaming a format code) is stated rather than implied | Verified live: quiet on 2026-09-08 and 2026-09-09 (M-B's stamped end date), warns from 2026-09-10; `regulationHasEnded` is pure and its tests inject dates so they cannot rot |
+| 2026-09-10 | Documented the two new team-level commands, `cores` and `teams`, which close the gap this file's "team-level cores/curated top teams still need a direct fetch" note used to describe: `cores` parses Pikalytics' "Common Team Cores" section off the same pokedex page `usage` fetches (no extra request); `teams` parses `/ai/topteams` (archetype-tagged real teams) and `/ai/team-usage` (win-rate-ranked compositions) in one call, two network requests unless `--only` narrows to one. Documented `teams`' default format (`championstournaments`) and its rollover-straddle behavior, including the requirement that a `straddle` warning in its output gets surfaced to the user rather than swallowed | `node tools/meta/cli.js cores --top 3` and `node tools/meta/cli.js teams --top 2` run live this session (2026-09-10), straddle warning fired as expected one day after the M-C rollover |

@@ -260,45 +260,62 @@ build. Combine with `damage-calc.md`'s tool for actually testing a
 build's numbers.
 
 **Do this every session before reasoning about "top meta threats," not just
-once**: per-Pokémon usage rank (`/pokedex/{slug}`) tells you individual
+once**: per-Pokémon usage rank (`meta usage`) tells you individual
 strength, but it does not tell you what actually shows up *together* across
-the net. Also check `https://www.pikalytics.com/topteams` (or the
-tournament-teams equivalent) for real team-level cores/archetypes before
-giving bring-6-pick-4 or "what beats the meta" advice — a team-level
-archetype (e.g. a Sun core built around Charizard-Mega-Y + Sylveon +
-Aerodactyl-Mega) surfaces real threats and interactions (weather wars,
-which Pokémon actually pair together) that a flat top-20 usage list won't
-show on its own. Caught mid-session: gave a round of bring-6-pick-4
-recommendations per-threat without checking this page first, and missed an
-entire common archetype (Sun) that directly conflicts with a rain-based
-team — only surfaced once the top-teams page was actually pulled.
+the net. Also run `node tools/meta/cli.js teams` (and `cores`) for real
+team-level cores/archetypes before giving bring-6-pick-4 or "what beats the
+meta" advice — a team-level archetype (e.g. a Sun core built around
+Charizard-Mega-Y + Sylveon + Aerodactyl-Mega) surfaces real threats and
+interactions (weather wars, which Pokémon actually pair together) that a
+flat top-20 usage list won't show on its own. Caught mid-session: gave a
+round of bring-6-pick-4 recommendations per-threat without checking this
+page first, and missed an entire common archetype (Sun) that directly
+conflicts with a rain-based team — only surfaced once the top-teams page was
+actually pulled (at the time, this required a direct fetch; both surfaces
+are now `tools/meta` commands, below).
 
 **"What's the meta / how do I counter it" needs three Pikalytics surfaces
 together, not one** — each answers a different question and none
-substitutes for the others:
+substitutes for the others. All three are now structured `tools/meta`
+commands (`reference/meta-lookup.md` has the full flag reference):
 
-1. `https://www.pikalytics.com/topteams` — real six-Pokémon tournament
-   teams as actually brought by real players. Good for "here's a concrete
-   team I might face," but each entry is one specific build, not a
+1. `node tools/meta/cli.js teams [--top N] [--only topteams]` — real
+   six-Pokémon tournament teams as actually brought by real players
+   (Pikalytics' `/ai/topteams`, archetype-tagged). Good for "here's a
+   concrete team I might face," but each entry is one specific build, not a
    frequency signal.
-2. `https://www.pikalytics.com/team-usage` — full six-Pokémon *archetypes*
-   ranked by win rate and team count/match record (W-L-D), i.e. how well
-   an archetype actually performs, not just that it exists. This is the
-   "is this team good" check that `/topteams` alone doesn't give you.
-3. `/pokedex`'s **"Common Team Cores" section** (distinct from the
-   per-Pokémon teammates list) — dedicated 2/3/4-Pokémon core groupings
-   ranked by how many teams feature them, sitting between the Top 20
-   individual-usage table and the Recent Top Teams listing. This is what
-   surfaces a popular sub-core (e.g. a specific 3-mon rain or Trick Room
-   piece) that's common across *many different* six-mon teams, even when
-   no single full team dominates raw usage — `/topteams`/`/team-usage`
-   alone can miss this if the core gets paired with a long tail of
-   different last-two-picks.
+2. `node tools/meta/cli.js teams [--top N] [--only team-usage]` — full
+   six-Pokémon *archetypes* ranked by win rate and team count/match record
+   (W-L-D), i.e. how well an archetype actually performs, not just that it
+   exists (Pikalytics' `/ai/team-usage`). This is the "is this team good"
+   check that the tournament-teams half alone doesn't give you. (Omit
+   `--only` to pull both halves of `teams` in one call — two network
+   requests, reported as two separate sections, never blended.)
+3. `node tools/meta/cli.js cores [--top N]` — dedicated 2/3/4-Pokémon core
+   groupings ranked by how many teams feature them (Pikalytics' `/ai/pokedex`
+   "Common Team Cores" section, distinct from the per-Pokémon teammates
+   list). Parsed off the same page `usage` already fetches, so it costs no
+   extra network request. This is what surfaces a popular sub-core (e.g. a
+   specific 3-mon rain or Trick Room piece) that's common across *many
+   different* six-mon teams, even when no single full team dominates raw
+   usage — `teams`' two surfaces alone can miss this if the core gets
+   paired with a long tail of different last-two-picks.
 
 When asked to counter "the meta" (as opposed to one named Pokémon or one
-named team), pull all three before answering: cores tell you what to
-expect to see paired together, team-usage tells you which full archetypes
-actually win, topteams gives concrete real builds to test against.
+named team), run all three before answering: `cores` tells you what to
+expect to see paired together, `teams`' team-usage half tells you which
+full archetypes actually win, and its topteams half gives concrete real
+builds to test against.
+
+**`teams` defaults to `championstournaments`, a rolling ~14-day window with
+no regulation of its own** — for roughly two weeks after a rollover it
+straddles two regulations at once, mixing the new regulation's results with
+the previous one's. When that's true, the command's own output carries a
+`straddle` object and a plain-language warning naming which regulations are
+mixed and roughly when the window clears. **That warning must be surfaced to
+the user, not swallowed** — reporting `teams`' contents without it defeats
+the entire point of pulling the surface. Its absence means the window has
+cleared, not that it was never checked.
 
 ## Changelog
 
@@ -321,3 +338,4 @@ actually win, topteams gives concrete real builds to test against.
 | 2026-09-07 | Replaced dangling `CLAUDE.md rule N` cross-references with named pointers — CLAUDE.md stopped being a numbered rule list in the reorganization and every number became dead. Named pointers survive restructuring; numbers do not | docs/specs/2026-09-07-workflow-audit.md |
 | 2026-09-07 | Live meta lookup now requires verifying the fetched page's own format label names the current regulation, not just picking a slug — a previous regulation's slug keeps returning complete, correctly-labelled data instead of failing, so a stale slug is silently wrong rather than obviously broken | Live Pikalytics fetches this session; see reference/regulation.md's "Live usage data" section |
 | 2026-09-09 | Added cross-links, no content moved: "A Pokémon's value isn't always damage" now points to `reference/roles.md` for the role templates and per-role judgment (item choices by role, the base-power floor, what a support pick is judged on) that this section's method implies; "Team-building is collaborative" now points to `reference/archetypes.md` for the starting-point/archetype decision the collaborative checkpoint applies to. Both files were created after this file and needed wiring in, per the strategy-layer routing task | `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-16-brief.md` |
+| 2026-09-10 | Replaced the "three Pikalytics surfaces" passage's raw URLs (`/topteams`, `/team-usage`, `/pokedex`'s Common Team Cores section) with the two new `tools/meta` commands that now parse them structurally: `node tools/meta/cli.js teams` (topteams + team-usage, one call, `--only` to narrow) and `node tools/meta/cli.js cores` (the core groupings, no extra network request). Reasoning about why all three surfaces are needed is unchanged. Added the straddle-warning-must-be-surfaced instruction for `teams`, since its default format (`championstournaments`) is a rolling window that mixes regulations for ~2 weeks after every rollover | `node tools/meta/cli.js cores --top 5` and `node tools/meta/cli.js teams --top 5` run live this session; wiring task for the two new commands |

@@ -66,6 +66,7 @@ them is the wrong answer. Full detail and sourcing in
 | Is this team legal? (items, SP, abilities, regulation) | `node tools/dex/cli.js team teams/<file>.md` |
 | What is *used* in the current meta | `node tools/meta/cli.js usage` |
 | A Pokémon's real moves/items/abilities distribution | `node tools/meta/cli.js mon "<Species>"` |
+| Which Pokémon show up *together* (cores) / real tournament teams and archetypes | `node tools/meta/cli.js cores` / `node tools/meta/cli.js teams` — surface any `teams` straddle warning to the user |
 | Candidates for a roster gap | `node tools/dex/cli.js find --type <T> --learns "<Move>" --min-spe <N>` |
 | How fast is the field / how common is Fake Out | `node tools/meta/cli.js speed-tiers`, `node tools/meta/cli.js distribution --move "<Move>"` |
 

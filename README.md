@@ -90,6 +90,8 @@ node tools/meta/cli.js mon "Staraptor-Mega"            # resolves to base + real
 node tools/meta/cli.js formats --write                 # capabilities + manifest row
 node tools/meta/cli.js speed-tiers --top 30            # field speed tiers, Scarf/Tailwind breakpoints
 node tools/meta/cli.js distribution --move "Fake Out" --top 20  # how common a move/ability is
+node tools/meta/cli.js cores --top 5                   # 2/3/4-mon "Common Team Cores", no extra request
+node tools/meta/cli.js teams --top 5                   # real tournament teams + archetype-tagged win rates
 ```
 
 Which metrics a format carries is a property of its **upstream**, not of

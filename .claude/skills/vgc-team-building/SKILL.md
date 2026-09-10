@@ -55,9 +55,12 @@ to write (full rule at step 10).
 conversation. Roster availability and regulation legality are separate
 checks — for Pokémon, items and abilities alike. Verify item legality with
 `node tools/dex/cli.js legal --item "<Item>"`. Then pull the live meta with
-the **vgc-meta-lookup** skill — all three Pikalytics surfaces, not per-mon
-usage rank. A flat top-20 list has missed whole archetypes (Sun, rain)
-before.
+the **vgc-meta-lookup** skill — all three Pikalytics surfaces
+(`node tools/meta/cli.js usage`, `cores`, and `teams`), not per-mon usage
+rank alone. A flat top-20 list has missed whole archetypes (Sun, rain)
+before; `cores`/`teams` are what catch them. If `teams`' output carries a
+straddle warning (its default format straddles a regulation rollover),
+pass that warning on to the user, not just the teams it returned.
 
 **3. Speed-control plan, before the archetype is locked in.** Read
 `reference/speed-control.md`. Speed control is ranked ahead of the archetype
@@ -81,8 +84,14 @@ things before moving on:
 `reference/archetypes.md`'s "The four archetypes" section before checking in
 with the user, not after: Tailwind, Trick Room, Good Stuff/Balance, and
 Weather each have a stated setter count, a required supporting cast, and a
-documented way they fail. Two things to surface explicitly rather than
-assume:
+documented way they fail. Don't reason about which archetypes are actually
+being brought from the abstract descriptions alone — `node tools/meta/cli.js
+teams` reports real tournament teams tagged with `archetypes` in the same
+vocabulary `reference/archetypes.md` uses (`trick-room`, `tailwind`,
+`sun`, ...), so it's how you find out which archetypes the current field is
+actually running and how each performs (`teamUsage`'s win rate/record),
+rather than picking one on paper appeal alone. Two things to surface
+explicitly rather than assume:
 
 - **Maximise average matchups, or guarantee a floor?** The source's own
   split — these pull in different directions, and the choice belongs to the

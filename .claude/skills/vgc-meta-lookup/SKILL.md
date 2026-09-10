@@ -11,8 +11,8 @@ rank alone has already missed real archetypes twice in past sessions: a Sun
 core and a Swampert-Mega/Pelipper/Archaludon rain core, both invisible from
 individual usage rankings. `tools/meta` (`reference/meta-lookup.md`) answers
 the per-format/per-Pokémon half of this reliably and structurally; team-level
-archetypes (cores, curated top teams) still need a direct read of the same
-page, covered below.
+archetypes (cores, curated top teams) are now their own structured commands
+too — `cores` and `teams`, covered below.
 
 ## When to use
 - "What's the meta right now / what's popular"
@@ -62,8 +62,8 @@ verifies that the other commands don't" section.
 
 ## The command surface
 
-Two surfaces are now structured tool calls; a third still needs a direct
-read.
+All three Pikalytics surfaces `reference/methodology.md` requires are now
+structured tool calls — nothing here still needs a direct fetch.
 
 **1. `node tools/meta/cli.js usage [--format <code>]`** — the top-50
 per-Pokémon table for one format: usage, win rate, and W-L-D record, each
@@ -79,18 +79,15 @@ Both default to the format stamped in `reference/regulation.md` when
 `--format` is omitted; pass `--format championstournaments` (or another
 code from `meta formats`) explicitly to pull a different population.
 
-**3. Team-level cores and curated top teams — not yet a command.**
-`tools/meta` does not currently parse the "Common Team Cores" (2/3/4-Pokémon
-groupings) or "Recent Top Teams" sections into structured output; only the
-per-Pokémon usage table is parsed. This is a real, deliberate gap (documented
-in the implementation plan as deferred work), not an oversight to route
-around by trusting per-Pokémon rank instead. Those sections exist on the same
-page `usage`/`check` already fetch
-(`https://www.pikalytics.com/ai/pokedex/<code>`, `<code>` from `meta check`'s
-verified output) — fetch that URL directly and read them, but only *after*
-`check` has confirmed the code, so this fetch is not the old failure mode of
-guessing a slug by hand. Do not substitute `usage`'s per-Pokémon ranking for
-this — see Common mistakes below.
+**3. `node tools/meta/cli.js cores [--top N] [--format <code>]`** — the
+"Common Team Cores" surface: 2/3/4-Pokémon groupings ranked by how many teams
+run them, parsed off the same pokedex index page `usage`/`check` already
+fetch, so it costs **no extra network request**. This is what surfaces a
+popular sub-core (a specific 3-mon rain or Trick Room piece) that's common
+across many different six-mon teams even when no single full team dominates
+raw usage — a flat per-Pokémon usage list can miss this entirely. Do not
+substitute `usage`'s per-Pokémon ranking for this — see Common mistakes
+below.
 
 Once you have those groupings, the real follow-up is **which Pokémon run
 together, and *why*.** Co-occurrence is a frequency signal, not proof of
@@ -101,7 +98,26 @@ say plainly you could not determine one. A pairing you cannot explain is a
 pairing you cannot counter, so don't hand a core onward as a threat without
 that explanation attached.
 
-**4. Format knowledge — the field's shape, not its names.** Usage tells you
+**4. `node tools/meta/cli.js teams [--top N] [--only topteams|team-usage] [--format <code>]`**
+— the other two tournament surfaces in one call: `/ai/topteams` (concrete
+real six-Pokémon teams as actually brought, each entry tagged with its
+**archetype**, e.g. `trick-room`, `tailwind`, `sun`) and `/ai/team-usage`
+(full six-Pokémon compositions ranked by win rate and W-L-D record — "is this
+archetype actually good," not just "does it exist"). Reported as two separate
+sections, never blended — they answer different questions. Two network
+requests unless `--only` narrows to one. Defaults to `championstournaments`
+(not the current regulation's ranked-ladder slug) since that's the only
+format either endpoint is confirmed to serve.
+
+`championstournaments` is a rolling ~14-day window with no regulation of its
+own, so for roughly two weeks after a rollover it straddles two regulations
+at once. **If the output carries a `straddle` object and warning, that
+caveat must reach the user, verbatim or in substance — reporting the
+teams/compositions without it defeats the entire point of pulling this
+surface.** Its absence means the window has cleared, not that it was never
+checked.
+
+**5. Format knowledge — the field's shape, not its names.** Usage tells you
 *who* you will face; this tells you *what they do*.
 
 ```bash

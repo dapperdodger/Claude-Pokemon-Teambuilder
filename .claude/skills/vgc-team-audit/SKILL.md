@@ -99,8 +99,13 @@ answer to that question has a single point of failure — report that as a
 
 **6. Threat matchups.** Derive the current threat list with the
 **vgc-meta-lookup** skill — never from a previous session's list or from
-another `teams/` file. For each top threat, use **vgc-threat-evaluation**.
-Run real numbers rather than estimating:
+another `teams/` file. Per-Pokémon usage alone answers "what's individually
+common," not "what shows up together" — for a bring-6-pick-4 or "what will I
+face" answer, also run `node tools/meta/cli.js cores` for the real 2/3/4-mon
+groupings a flat usage list can't show, and `node tools/meta/cli.js teams`
+for concrete real builds to test against (surface its straddle warning to
+the user if the output carries one). For each top threat, use
+**vgc-threat-evaluation**. Run real numbers rather than estimating:
 
 ```bash
 node tools/damage-calc/cli.js --attacker <Threat> --defender <Yours> --move <Move> --weather <Weather>
