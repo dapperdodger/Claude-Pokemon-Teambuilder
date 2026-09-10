@@ -190,15 +190,31 @@ it exactly:
 - **Intimidate is modelled as `at:-1` on the attacker, not as an ability
   flag** — there is no `--attacker-ability Intimidate` handling that applies
   its drop for you; represent Intimidate's effect as the stage change it
-  causes. One stage down is **×0.667 (2/3)**, the identical fraction to a
-  screen, because both sit one stage away from neutral on the same formula.
+  causes. One stage down is **×0.667 (2/3)**, the same fraction as a
+  screen — but the ranges are not bit-identical (78-92 here vs. 77-92 for a
+  screen): a stat stage is baked into the attacker's stat before the calc
+  runs, while a screen multiplies the finished damage number afterward, so
+  the two ×2/3 paths round differently at the edges.
   Measured 116-138 → **78-92**, 2026-09-09:
   ```
   node tools/damage-calc/cli.js --attacker Garchomp --defender Incineroar --move "Earthquake" --attacker-boosts "at:-1"
   ```
-- **Defender +2 Defense → ×0.5**, halving incoming damage — confirms
+- **Defender +2 Defense → close to, but *not*, an exact ×0.5 halving** —
   `reference/roles.md`'s "a +2 Defense boost is worth roughly halving
-  incoming damage" as an exact figure, not an approximation.
+  incoming damage" is a rough equivalence, not a measured exact figure.
+  Exact half of the 138 max is 69; the measured max is **72, 4.3% high.**
+  Contrast the Attack side: +2 Attack above measures 1.4% *below* an exact
+  double. That asymmetry isn't noise. Post-calc multipliers (screens, Friend Guard,
+  Multiscale) are exact to rounding because they scale the finished damage
+  number. Stat stages are not, because they act on the Attack/Defense ratio
+  *inside* the damage formula, which carries a trailing additive `+2`
+  constant that doesn't scale with the division — doubling the defender's
+  Defense halves the division term but leaves that `+2` untouched, pushing
+  the result above half. (The −1 Attack row above landing at exactly 0.0%
+  off is a rounding coincidence, not a counterexample to this pattern.)
+  **Practical consequence: a screen or ability multiplier can be applied by
+  hand to a known damage number; a stat-stage change cannot — re-run the
+  calc instead.**
   Measured 116-138 → **60-72**, 2026-09-09:
   ```
   node tools/damage-calc/cli.js --attacker Garchomp --defender Incineroar --move "Earthquake" --defender-boosts "df:2"
@@ -249,3 +265,4 @@ past the next re-vendor.
 | 2026-09-07 | Added an "Ability interactions (non-Mega)" section recording that No Guard covers only its holder and moves targeting it — allies get no benefit — and that Coil's accuracy boost does apply to Hypnosis (60% -> 80% at +1, 100% at +2, via the Gen 5+ (3+stage)/3 accuracy formula). Both came up evaluating a Coil/Hypnosis Milotic alongside Mega Raichu Y, where the tempting inference is that the Mega's No Guard makes the ally's Hypnosis reliable. It does not | Bulbapedia No Guard (Ability) and Accuracy/Stat modifier pages via live search; `dex mon "Mega Raichu Y"` for the Mega-fixed No Guard |
 | 2026-09-09 | Added a cross-link from "Speed calculation" to `reference/speed-control.md` for the strategy layer (which form to run, composition/conflict, the removed-setter fallback) — no modifier numbers moved. Also marked the Grassy Terrain section's Rillaboom example with the availability marker after confirming via `dex mon "Rillaboom"` that it is not in the vendored Champions roster; the measured terrain numbers were computed against that example and stay valid, only the setter's availability is regulation-specific — per prior user correction (see `roles.md`/`archetypes.md` changelogs), the example is marked, not deleted or substituted | `dex mon "Rillaboom"` (exists in the broader dex, absent from `POKEDEX_CHAMPIONS`); `reference/regulation.md`'s stamp block for the live regulation id (M-B); `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-16-brief.md` |
 | 2026-09-09 | Added "Damage reduction: screens, Friend Guard, Multiscale, and stat stages" section, measuring the four mechanics `reference/roles.md` had flagged as undocumented — now measurable now that `tools/damage-calc/cli.js` supports `--reflect`/`--light-screen`/`--aurora-veil`/`--friend-guard`/`--attacker-boosts`/`--defender-boosts`. Reflect/Light Screen/Aurora Veil all measured at ×0.667 (2/3) in doubles, not the singles ×0.5; Friend Guard at ×0.75; Multiscale at ×0.5 from full HP; stat stages confirmed the standard `(2+n)/2` formula exactly, including that a +2 boost is a measured ×2 (not just a heuristic) and that Intimidate is modelled as `--attacker-boosts "at:-1"`, not an ability flag. The screens ×2/3 value is noted as a doubles-vs-singles fact, not a Champions-departure — general VGC doubles has the same number, so it does not carry the Champions-departure marker. Flagged the SP-vs-Speed `sp:` key collision on `--*-boosts`. Updated `reference/roles.md`'s "Damage reduction that is not an item" section to point here instead of saying the mechanics are undocumented, and broadened `.claude/skills/vgc-regulation-transition/SKILL.md`'s rollover-sweep prose to name all of `reference/` rather than four specific files, since this file now also carries a Champions-departure mark (Rillaboom) beyond the four already named. `npm test` — 369/369, unchanged | `tools/damage-calc/cli.js` direct runs, all commands in this section reproduced exactly against numbers supplied for verification; `tools/damage-calc/VENDOR_MANIFEST.md` for the pin date/commit |
+| 2026-09-09 | Review correction: the prior row's defender +2 Defense bullet stated "×0.5 ... an exact figure, not an approximation," which is backwards — exact half of the 138 max is 69, the measured max is 72 (4.3% high), while the +2 Attack bullet above it is the one that's genuinely close to exact (272 vs. an exact 276, 1.4% low) and was already hedged as "essentially exact." Reworded the Defense bullet to state the real figure and added the mechanism: post-calc multipliers (screens, Friend Guard, Multiscale) scale the finished damage number so they round exactly; stat stages act on the Attack/Defense ratio inside the damage formula, which carries a trailing additive `+2` constant that doesn't scale with the division, so a defensive stage change lands off-exact while the −1 Attack row's 0.0% match is a rounding coincidence, not a counterexample. Added the practical consequence: a screen/ability multiplier can be applied by hand to a known number, a stat-stage change can't — re-run the calc. Also softened the −1 Attack bullet's "identical fraction to a screen" (78-92 vs. a screen's 77-92 — same fraction, not the same range) to "the same fraction," with the before/after-the-calc reason for the one-point gap. Re-ran every command in the section; all reproduce their documented numbers unchanged. `npm test` — 371/371, unchanged | Review of this section against `node tools/damage-calc/cli.js` output for all six measurements re-run this session |
