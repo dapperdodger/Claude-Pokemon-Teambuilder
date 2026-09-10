@@ -95,8 +95,15 @@ verified enough to build on**. Resolve it with a live lookup and move it into
 "Active mechanics" with the answer, or drop it — don't leave a build
 depending on an entry that is still here.
 
-*(This table is currently empty. All M-C mechanics have been verified or
-resolved.)*
+*(Empty as of 2026-09-10. Both entries opened at the M-C rollover have been
+resolved: the new item pool, confirmed via `dex legal --item` against the
+re-vendored M-C data; and "Z Mega Evolution", which turned out not to be a
+mechanic at all — see Active mechanics.*
+
+**An empty table means nothing is currently open, not that M-C is fully
+understood.** The regulation is days old. This table only ever held the
+mechanics someone thought to ask about — add a row the moment something new
+surfaces, rather than reading the emptiness as a clean bill of health.)*
 
 ## Next regulation
 
