@@ -131,18 +131,21 @@ regulation before moving on. Re-vendoring both datasets (steps 5 and 5c) is a
 prerequisite — speed tiers join usage against the vendored dex, so a stale
 roster produces a stale tier list that looks fine.
 
-**5e. Re-verify Champions-departure markers in `reference/`.** `reference/archetypes.md`,
-`reference/speed-control.md`, `reference/roles.md`, and `reference/team-evaluation.md`
-each mark the specific points where Champions' roster, item pool, or
-learnsets genuinely depart from general-VGC practice — a species outside the
-current roster, an item outside the current pool, a move a species cannot
-learn here. Every one of those marks is a snapshot pinned to the regulation
-it was checked against, and this step is what makes that pin worth writing:
-a note nobody re-checks at rollover is dead weight. This step reads vendored
-data, so it must run **after** steps 5 and 5c re-vendor it — running it
-against the old vendor would just re-confirm the old answer.
+**5e. Re-verify Champions-departure markers in `reference/`.** Any file under
+`reference/` can carry one of these marks — `reference/archetypes.md`,
+`reference/speed-control.md`, `reference/roles.md`, `reference/team-evaluation.md`
+and `reference/mechanics.md` all currently do — marking the specific points
+where Champions' roster, item pool, or learnsets genuinely depart from
+general-VGC practice: a species outside the current roster, an item outside
+the current pool, a move a species cannot learn here. Every one of those
+marks is a snapshot pinned to the regulation it was checked against, and this
+step is what makes that pin worth writing: a note nobody re-checks at
+rollover is dead weight. This step reads vendored data, so it must run
+**after** steps 5 and 5c re-vendor it — running it against the old vendor
+would just re-confirm the old answer.
 
-Find every departure marker:
+Find every departure marker across the whole reference tree — the glob below
+already covers any file, present or future, that ends up carrying one:
 
 ```bash
 grep -rn "not in the Champions pool as of\|cannot learn .* in Champions as of" reference/*.md
@@ -204,6 +207,7 @@ without it. Don't present provisional numbers as settled.
 - `reference/regulations/` — the archive, and its index
 - `tools/damage-calc/VENDOR_MANIFEST.md` — re-vendoring procedure
 - `reference/format-knowledge.md` (generated) — regenerated in step 5d
-- `reference/archetypes.md`, `reference/speed-control.md`, `reference/roles.md`,
-  `reference/team-evaluation.md` — hold the Champions-departure markers
-  re-verified in step 5e
+- `reference/*.md` — any file here can hold Champions-departure markers
+  re-verified in step 5e; `reference/archetypes.md`, `reference/speed-control.md`,
+  `reference/roles.md`, `reference/team-evaluation.md` and `reference/mechanics.md`
+  currently do

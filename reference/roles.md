@@ -330,14 +330,14 @@ passive healing — not on one item being categorically stronger.
 ## Damage reduction that is not an item
 
 The source's list, organised: screens, stat drops, Intimidate, other
-abilities, and setup moves. **The underlying mechanics of screens, Intimidate,
-Friend Guard and Multiscale — exact duration, reduction fraction, and
-interaction edge cases — are not yet documented anywhere in this repo.**
-`reference/mechanics.md` was checked directly and holds none of them (it does
-document Focus Sash's multi-hit interaction, cited where that comes up
-above). Verify any specific number live (Bulbapedia/Serebii) before relying
-on it; this section states only why each belongs on a role checklist, at the
-level of what it buys the role, not the numbers behind it.
+abilities, and setup moves. **The measured multipliers for screens,
+Intimidate, Friend Guard and Multiscale now live in
+`reference/mechanics.md`'s ["Damage reduction: screens, Friend Guard,
+Multiscale, and stat stages"](mechanics.md#damage-reduction-screens-friend-guard-multiscale-and-stat-stages)
+section** — reduction fraction, the exact `tools/damage-calc/cli.js` command
+for each, and the date measured. This section states only why each belongs
+on a role checklist, at the level of what it buys the role; the numbers
+themselves aren't restated here.
 
 - **Screens** — Light Screen, Reflect, and Aurora Veil (all verified legal
   Champions status moves). One moveslot buys a side-wide damage reduction for
@@ -355,9 +355,7 @@ level of what it buys the role, not the numbers behind it.
 - **Other abilities** — Friend Guard and Multiscale, the source's own two
   named examples (both verified legal Champions abilities). Friend Guard
   reduces damage a Pokémon's *ally* takes rather than its own; Multiscale
-  reduces damage the holder itself takes, but only from full HP. The exact
-  reduction fraction for each is not yet documented in this repo — verify
-  live before relying on a specific number.
+  reduces damage the holder itself takes, but only from full HP.
 - **Setup moves** — a defensive stat boost is the mirror image of the
   offensive setup rule in [Offensive capability](#offensive-capability)
   above: a +2 Defense boost is worth roughly halving incoming damage for as

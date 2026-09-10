@@ -90,6 +90,138 @@ opening the file at the moment of stating it.
   raises Atk/Def/accuracy and touches **no** special stat, so it does nothing
   about special threats.
 
+## Damage reduction: screens, Friend Guard, Multiscale, and stat stages
+
+Closes the gap `reference/roles.md`'s "Damage reduction that is not an item"
+section named — screens, Intimidate, Friend Guard and Multiscale used to be
+unmeasurable because `tools/damage-calc/cli.js` had no way to express side
+conditions or stat stages. It now does (`--reflect`, `--light-screen`,
+`--aurora-veil`, `--friend-guard`, `--attacker-boosts`/`--defender-boosts`),
+so the numbers below are measured against the vendored Champions calc rather
+than cited from a mainline source. All measured 2026-09-09 against the same
+two neutral-nature, 0-SP baselines so the reduction shows up as a clean
+ratio (the multiplier itself doesn't depend on the SP spread used to reveal
+it):
+
+- **Physical baseline**: 0 Atk Garchomp Earthquake vs. 0 HP / 0 Def
+  Incineroar → **116-138**.
+  ```
+  node tools/damage-calc/cli.js --attacker Garchomp --defender Incineroar --move "Earthquake"
+  ```
+- **Special baseline**: 0 SpA Gholdengo Shadow Ball vs. 0 HP / 0 SpD
+  Incineroar → **31-37**.
+  ```
+  node tools/damage-calc/cli.js --attacker Gholdengo --defender Incineroar --move "Shadow Ball"
+  ```
+
+### Screens — Reflect, Light Screen, Aurora Veil
+
+**Reflect** cuts incoming *physical* damage to **×0.667 (2/3) — a ~33%
+reduction, not the 50% a singles intuition would expect.** Doubles screens
+are genuinely weaker than the singles number most players carry in their
+heads; this is the actual doubles value, not a Champions-specific one (see
+the departure-marker note below).
+Measured 116-138 → **77-92**, 2026-09-09:
+```
+node tools/damage-calc/cli.js --attacker Garchomp --defender Incineroar --move "Earthquake" --reflect
+```
+
+**Light Screen** is the special-side counterpart, same ×0.667 multiplier,
+and correctly has zero effect on a physical move — verified both ways:
+Measured Shadow Ball 31-37 → **21-25**; Earthquake 116-138 stays **116-138**
+under `--light-screen` (no effect), 2026-09-09:
+```
+node tools/damage-calc/cli.js --attacker Gholdengo --defender Incineroar --move "Shadow Ball" --light-screen
+node tools/damage-calc/cli.js --attacker Garchomp --defender Incineroar --move "Earthquake" --light-screen
+```
+
+**Aurora Veil** covers both categories at the **same ×0.667 multiplier** as
+the single-category screens — it is both Reflect and Light Screen at once,
+not a stronger version of either (still requires Snow to be up; see
+`reference/archetypes.md`'s Weather section for that dependency).
+Measured Earthquake 116-138 → **77-92**, Shadow Ball 31-37 → **21-25**,
+2026-09-09:
+```
+node tools/damage-calc/cli.js --attacker Garchomp --defender Incineroar --move "Earthquake" --aurora-veil
+node tools/damage-calc/cli.js --attacker Gholdengo --defender Incineroar --move "Shadow Ball" --aurora-veil
+```
+
+This ×2/3 figure is a **doubles-vs-singles** fact, not a Champions-vs-
+general-VGC one — it holds in any Gen 8/9 doubles format, this repo had
+simply never measured it before. It does **not** get the Champions-departure
+marker defined in `reference/archetypes.md`/`reference/roles.md`, because
+that marker is reserved for places Champions' own item pool, roster, or
+learnsets have been checked and found diverging from a general-VGC claim;
+nothing about *this* number is Champions-specific, so it's recorded as a
+plain measured fact instead.
+
+### Friend Guard
+
+Friend Guard reduces damage the holder's **ally** takes (never its own) to
+**×0.75 — a 25% reduction.**
+Measured Earthquake 116-138 → **87-103**, 2026-09-09:
+```
+node tools/damage-calc/cli.js --attacker Garchomp --defender Incineroar --move "Earthquake" --friend-guard
+```
+
+### Multiscale
+
+Multiscale halves damage taken (**×0.5**) while the holder is at full HP —
+the reduction stops applying the instant it has taken any damage.
+Measured Earthquake 116-138 → **58-69**, 2026-09-09:
+```
+node tools/damage-calc/cli.js --attacker Garchomp --defender Incineroar --defender-ability Multiscale --move "Earthquake"
+```
+
+### Stat stages, including Intimidate
+
+Stat-stage multipliers follow the standard formula — `(2+n)/2` for a boost of
+`+n`, `2/(2+|n|)` for a drop of `-n` — and the measured numbers below match
+it exactly:
+
+- **Attacker +2 Attack → ×2, essentially exact.** This is the measured
+  confirmation of `reference/roles.md`'s "boosting to +2 is the same as
+  attacking twice": not a heuristic here, it's what the calc actually
+  produces.
+  Measured 116-138 → **230-272**, 2026-09-09:
+  ```
+  node tools/damage-calc/cli.js --attacker Garchomp --defender Incineroar --move "Earthquake" --attacker-boosts "at:2"
+  ```
+- **Intimidate is modelled as `at:-1` on the attacker, not as an ability
+  flag** — there is no `--attacker-ability Intimidate` handling that applies
+  its drop for you; represent Intimidate's effect as the stage change it
+  causes. One stage down is **×0.667 (2/3)**, the identical fraction to a
+  screen, because both sit one stage away from neutral on the same formula.
+  Measured 116-138 → **78-92**, 2026-09-09:
+  ```
+  node tools/damage-calc/cli.js --attacker Garchomp --defender Incineroar --move "Earthquake" --attacker-boosts "at:-1"
+  ```
+- **Defender +2 Defense → ×0.5**, halving incoming damage — confirms
+  `reference/roles.md`'s "a +2 Defense boost is worth roughly halving
+  incoming damage" as an exact figure, not an approximation.
+  Measured 116-138 → **60-72**, 2026-09-09:
+  ```
+  node tools/damage-calc/cli.js --attacker Garchomp --defender Incineroar --move "Earthquake" --defender-boosts "df:2"
+  ```
+
+**SP naming collision:** this repo's own vocabulary uses **SP for Stat
+Points** (`--attacker-sp`/`--defender-sp`), but the vendored dex's stat key
+`sp` means **Speed**, and `--attacker-boosts`/`--defender-boosts` inherits
+that same vendor convention — a `--attacker-boosts "sp:2"` example boosts
+Speed, not this repo's Stat Points. The two flag families are spelled
+differently (`-sp` vs `-boosts`) but both accept an `sp:` key inside their
+value string with two different meanings; don't read one as the other.
+
+**Vendor-currency caveat:** every number above comes from the vendored
+Champions damage-calc engine (`tools/damage-calc/VENDOR_MANIFEST.md`, pinned
+2026-07-09, Regulation M-B) — the right source for this format, but only as
+current as that pin, and the pin is behind upstream as of this writing
+(Regulation M-B ends 2026-09-09, the day this section was written — see
+`reference/regulation.md`). A re-vendor for the next regulation could move
+any of these multipliers if the underlying engine's screen/ability/stat-stage
+constants change; re-run the commands above rather than trusting the numbers
+past the next re-vendor.
+
 ## Item mechanics
 - **Focus Sash only protects against the first hit of a multi-hit move.** Sash (and Sturdy) check "would this hit knock the holder from full HP to 0" independently per strike — after the first strike of a 2-5 hit move (or a fixed-2-hit move like Dual Wingbeat) brings the holder to 1 HP, the holder is no longer at full HP, so the second strike faints it normally. A Focus Sash holder does NOT reliably survive a multi-hit spread move the way it survives a single-target nuke — relevant any time a Focus Sash set (e.g. Whimsicott) is being counted on to tank a hit from something running a 2-hit move like Dual Wingbeat (Mega Staraptor).
 
@@ -116,3 +248,4 @@ opening the file at the moment of stating it.
 | 2026-09-07 | Added a "Terrain mechanics" section with Grassy Terrain's verified numbers (Gen 9 Grass boost is +30%, not the older 50%; EQ/Bulldoze/Magnitude halved; 1/16 end-of-turn heal to *both* sides; the Grass boost also applies to the opponent). Prompted by evaluating a Milotic/Rillaboom/Incineroar core, where the terrain both halves Garchomp Earthquake into Incineroar and turns Sinistcha Matcha Gotcha into Milotic from a 3HKO into a 2HKO — the file had no terrain entry at all | `tools/damage-calc/cli.js --terrain "Grassy"` before/after runs this session; Bulbapedia Grassy Terrain (move) and Pokemon Database for the Gen 9 +30% figure |
 | 2026-09-07 | Added an "Ability interactions (non-Mega)" section recording that No Guard covers only its holder and moves targeting it — allies get no benefit — and that Coil's accuracy boost does apply to Hypnosis (60% -> 80% at +1, 100% at +2, via the Gen 5+ (3+stage)/3 accuracy formula). Both came up evaluating a Coil/Hypnosis Milotic alongside Mega Raichu Y, where the tempting inference is that the Mega's No Guard makes the ally's Hypnosis reliable. It does not | Bulbapedia No Guard (Ability) and Accuracy/Stat modifier pages via live search; `dex mon "Mega Raichu Y"` for the Mega-fixed No Guard |
 | 2026-09-09 | Added a cross-link from "Speed calculation" to `reference/speed-control.md` for the strategy layer (which form to run, composition/conflict, the removed-setter fallback) — no modifier numbers moved. Also marked the Grassy Terrain section's Rillaboom example with the availability marker after confirming via `dex mon "Rillaboom"` that it is not in the vendored Champions roster; the measured terrain numbers were computed against that example and stay valid, only the setter's availability is regulation-specific — per prior user correction (see `roles.md`/`archetypes.md` changelogs), the example is marked, not deleted or substituted | `dex mon "Rillaboom"` (exists in the broader dex, absent from `POKEDEX_CHAMPIONS`); `reference/regulation.md`'s stamp block for the live regulation id (M-B); `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-16-brief.md` |
+| 2026-09-09 | Added "Damage reduction: screens, Friend Guard, Multiscale, and stat stages" section, measuring the four mechanics `reference/roles.md` had flagged as undocumented — now measurable now that `tools/damage-calc/cli.js` supports `--reflect`/`--light-screen`/`--aurora-veil`/`--friend-guard`/`--attacker-boosts`/`--defender-boosts`. Reflect/Light Screen/Aurora Veil all measured at ×0.667 (2/3) in doubles, not the singles ×0.5; Friend Guard at ×0.75; Multiscale at ×0.5 from full HP; stat stages confirmed the standard `(2+n)/2` formula exactly, including that a +2 boost is a measured ×2 (not just a heuristic) and that Intimidate is modelled as `--attacker-boosts "at:-1"`, not an ability flag. The screens ×2/3 value is noted as a doubles-vs-singles fact, not a Champions-departure — general VGC doubles has the same number, so it does not carry the Champions-departure marker. Flagged the SP-vs-Speed `sp:` key collision on `--*-boosts`. Updated `reference/roles.md`'s "Damage reduction that is not an item" section to point here instead of saying the mechanics are undocumented, and broadened `.claude/skills/vgc-regulation-transition/SKILL.md`'s rollover-sweep prose to name all of `reference/` rather than four specific files, since this file now also carries a Champions-departure mark (Rillaboom) beyond the four already named. `npm test` — 369/369, unchanged | `tools/damage-calc/cli.js` direct runs, all commands in this section reproduced exactly against numbers supplied for verification; `tools/damage-calc/VENDOR_MANIFEST.md` for the pin date/commit |
