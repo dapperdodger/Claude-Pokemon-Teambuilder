@@ -338,6 +338,112 @@ test('REGRESSION: check() throws on disagreement, naming BOTH values', () => {
   });
 });
 
+// --- Resolved slug disagreements -------------------------------------------
+// The real llms-full.txt vs regulation.md disagreement hit live on 2026-09-09
+// (llms-full.txt still declares the M-B slug "battledataregmbs3"; the M-C
+// stamp is correct — see META_MANIFEST.md's "Resolved slug disagreements"
+// section for the evidence). A resolution recorded there must let `check`
+// stop failing on THAT EXACT pair while still failing on any other
+// disagreement, including a future one involving either of the same two
+// values paired with something new. Scoped to its own heading (rather than
+// reusing readManifestRow's line scan) specifically so a resolved-pair row's
+// backtick-wrapped codes can never be mistaken for — or mistake for — a
+// Formats-table ETag pin row for the same code.
+function buildResolvedManifest(declared, stamped, chosen, date) {
+  return [
+    '| Format code | Regulation | Usage | Win rate | Record | ETag | Last checked |',
+    '|---|---|---|---|---|---|---|',
+    '| _(populated by `meta formats --write`)_ | | | | | | |',
+    '',
+    '## Resolved slug disagreements',
+    '',
+    '| llms-full.txt declared | regulation.md stamped | Chosen | Date | Evidence |',
+    '|---|---|---|---|---|',
+    `| \`${declared}\` | \`${stamped}\` | \`${chosen}\` | ${date} | test evidence |`,
+  ].join('\n');
+}
+
+function stubFor(declaredCode, stampedCode) {
+  return {
+    BASE: 'https://stub.test',
+    get(url) {
+      if (url === `${this.BASE}/llms-full.txt`) {
+        return { status: 200, text: `**Format Code**: \`${declaredCode}\``, etag: null };
+      }
+      if (url === `${this.BASE}/ai/pokedex/${stampedCode}`) {
+        return { status: 200, text: fxCurrent(), etag: 'W/"resolved-etag"' };
+      }
+      throw new Error(`unexpected url in test stub: ${url}`);
+    },
+  };
+}
+
+test('REGRESSION: check() passes and reports a hand-resolved disagreement recorded for the EXACT pair', () => {
+  const stamped = formats.defaultFormatCode();
+  const declared = 'battledataregmbs3';
+  const stub = stubFor(declared, stamped);
+  const manifestPath = writeTempManifest(buildResolvedManifest(declared, stamped, stamped, '2026-09-09'));
+  try {
+    const out = formats.check(stub, { manifestPath });
+    assert.equal(out.slug, stamped);
+    assert.equal(out.agrees, false, 'the underlying values still disagree — a recorded resolution is not the same as agreement');
+    assert.ok(out.resolvedDisagreement, 'must report that a resolution was applied, not fall silent');
+    assert.equal(out.resolvedDisagreement.declared, declared);
+    assert.equal(out.resolvedDisagreement.stamped, stamped);
+    assert.equal(out.resolvedDisagreement.chosen, stamped);
+    assert.equal(out.resolvedDisagreement.date, '2026-09-09');
+  } finally {
+    fs.unlinkSync(manifestPath);
+  }
+});
+
+test('REGRESSION: check() still throws when llms-full.txt declares a value OTHER than the recorded resolution\'s declared side', () => {
+  const stamped = formats.defaultFormatCode();
+  const recordedDeclared = 'battledataregmbs3';
+  const actualDeclared = 'some-third-value-neither-side-recorded';
+  const stub = stubFor(actualDeclared, stamped);
+  const manifestPath = writeTempManifest(buildResolvedManifest(recordedDeclared, stamped, stamped, '2026-09-09'));
+  try {
+    assert.throws(() => formats.check(stub, { manifestPath }), (err) => {
+      assert.match(err.message, new RegExp(actualDeclared.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+      assert.ok(err.message.includes(stamped));
+      return true;
+    });
+  } finally {
+    fs.unlinkSync(manifestPath);
+  }
+});
+
+test('REGRESSION: check() still throws when regulation.md is stamped with a value OTHER than the recorded resolution\'s stamped side (e.g. a rollover since the resolution was recorded)', () => {
+  const realStamped = formats.defaultFormatCode();
+  const recordedStamped = 'gen9championsvgc-some-other-regulation-entirely';
+  const declared = 'battledataregmbs3';
+  const stub = stubFor(declared, realStamped);
+  const manifestPath = writeTempManifest(buildResolvedManifest(declared, recordedStamped, recordedStamped, '2026-09-09'));
+  try {
+    assert.throws(() => formats.check(stub, { manifestPath }), (err) => {
+      assert.match(err.message, /battledataregmbs3/);
+      assert.ok(err.message.includes(realStamped));
+      return true;
+    });
+  } finally {
+    fs.unlinkSync(manifestPath);
+  }
+});
+
+test('REGRESSION: readManifestRow is unaffected by a Resolved slug disagreements section mentioning the same code', () => {
+  const code = 'sharedCode';
+  const pinRow = `| \`${code}\` | M-B | true | true | true | "real-pin-etag" | 2026-09-01 |`;
+  const { text: withPin } = formats.upsertManifestRow(MANIFEST_TEMPLATE, code, pinRow);
+  const withResolvedSection = withPin
+    + '\n\n## Resolved slug disagreements\n\n'
+    + '| llms-full.txt declared | regulation.md stamped | Chosen | Date | Evidence |\n'
+    + '|---|---|---|---|---|\n'
+    + `| \`some-declared\` | \`${code}\` | \`${code}\` | 2026-09-09 | test |\n`;
+  const found = formats.readManifestRow(withResolvedSection, code);
+  assert.equal(found.etag, '"real-pin-etag"', 'the real Formats-table pin row must win, never the Resolved-section row that also mentions this code');
+});
+
 // FIX 1: check() and report() previously never looked at r.status. On a 404
 // (or any non-200) the parse functions ran on a "Not Found" body anyway and
 // happily returned nulls everywhere — the mandated first-line gate reporting

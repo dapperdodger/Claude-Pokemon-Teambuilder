@@ -31,3 +31,45 @@ change-detection signal available.
 | Format code | Regulation | Usage | Win rate | Record | ETag | Last checked | Currency |
 |---|---|---|---|---|---|---|---|
 | `battledataregmbs3` | M-B | false | true | true | W/"459e-RBQlRZysoWXer8KGrQ0pAg" | 2026-09-08 | regulation |
+
+## Why observed behaviour beats documentation, when the two disagree
+
+`check`'s slug-agreement gate compares two things Pikalytics publishes about
+itself: `llms-full.txt`'s stated **"Current Default Format"**, and the format
+code its own `/ai/pokedex/<code>` endpoint actually answers to. Both are
+"upstream," but they are not the same upstream — one is prose describing the
+site, the other is the site. When they disagree, the fix is the same
+precedence rule this whole repo runs on (live web search > this repo's files
+> recall) applied one layer deeper: prefer what upstream **does** over what
+upstream **says about itself**, because the thing consumed for real data is
+the endpoint's actual behaviour, never its own changelog prose.
+
+A disagreement resolved this way is recorded below rather than fixed in code,
+because it is not a bug in this tool — it is a fact about Pikalytics on the
+date recorded, and it is expected to stop being true whenever Pikalytics
+corrects its own documentation. When that happens, `llms-full.txt`'s declared
+value will no longer match the row below, `readResolvedDisagreement` will no
+longer find a match, and `check` will quietly return to failing until someone
+either re-verifies the (now different) disagreement or confirms upstream has
+actually converged — never to permanently trusting the stamp because it used
+to be right.
+
+## Resolved slug disagreements
+
+Unlike the Formats table above, **this section is hand-written and hand-read**
+— it is the record `check` consults before failing on a slug disagreement.
+`check` fails on any `llms-full.txt`-vs-`regulation.md` disagreement UNLESS
+the exact pair below matches, so a row here can only ever silence one
+specific, already-verified pair — never disagreements in general. Add a row
+only after fetching the disputed endpoint live yourself and confirming which
+side is actually correct; never add one from `llms-full.txt`'s own prose,
+since that is precisely the side this section exists to override.
+
+If either column ever stops matching what `check` observes — `llms-full.txt`
+starts declaring some third value, or `reference/regulation.md`'s stamp moves
+to a new regulation — this row no longer applies and `check` fails again,
+exactly as if it had never been recorded.
+
+| llms-full.txt declared | regulation.md stamped | Chosen | Date | Evidence |
+|---|---|---|---|---|
+| `battledataregmbs3` | `gen9championsvgc2026regmc` | `gen9championsvgc2026regmc` | 2026-09-09 | `llms-full.txt` states "Current Default Format: battledataregmbs3" and its format table does not list an M-C code at all — stale, an M-B-era default that was never updated for the M-C rollover. Live fetch of the actual endpoint, `https://www.pikalytics.com/ai/pokedex/gen9championsvgc2026regmc`, returns a page self-titled "Pokemon Champions VGC 2026 Reg M-C" with Format Code `gen9championsvgc2026regmc` and real ladder rows (Rillaboom #1 at 36.64% usage) — unambiguously current M-C data. The endpoint's own behaviour is chosen over the documentation page's stale claim. |

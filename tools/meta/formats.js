@@ -321,11 +321,69 @@ function readManifestRow(src, code) {
   return null;
 }
 
+// A markdown heading, not a line-by-line scan of the whole manifest like
+// readManifestRow's — deliberately. A resolved-disagreement row's cells are
+// ALSO backtick-wrapped format codes, and one of them (the "stamped" side)
+// is by definition a currently-pinned format code too. If this table were
+// scanned the same undifferentiated way as the Formats table, a
+// resolved-disagreement row could be mistaken for that code's ETag pin row
+// (or vice-versa) depending purely on which happened to sit first in the
+// file. Scoping to the heading makes that collision structurally impossible
+// instead of relying on section order in META_MANIFEST.md never changing.
+const RESOLVED_DISAGREEMENTS_HEADING = '## Resolved slug disagreements';
+
+function resolvedDisagreementsSection(src) {
+  const lines = src.split('\n');
+  const start = lines.findIndex((l) => l.trim() === RESOLVED_DISAGREEMENTS_HEADING);
+  if (start === -1) return [];
+  const rest = lines.slice(start + 1);
+  const end = rest.findIndex((l) => l.trim().startsWith('## '));
+  return end === -1 ? rest : rest.slice(0, end);
+}
+
+// A hand-recorded resolution applies to the EXACT (declared, stamped) pair —
+// see META_MANIFEST.md's "Resolved slug disagreements" section, which records
+// both values, which one was chosen, why, the evidence, and the date. Pinning
+// to the exact pair (not e.g. "ignore disagreements for this stamped code")
+// is what keeps this scoped: if llms-full.txt ever reports a THIRD value, or
+// reference/regulation.md's stamp moves to a new regulation, neither value
+// matches the recorded row anymore and `check` goes back to failing until a
+// fresh row is recorded for the new pair.
+function readResolvedDisagreement(src, declared, stamped) {
+  const declaredCell = `\`${declared}\``;
+  const stampedCell = `\`${stamped}\``;
+  for (const line of resolvedDisagreementsSection(src)) {
+    if (!line.trim().startsWith('|')) continue;
+    if (!line.includes(declaredCell) || !line.includes(stampedCell)) continue;
+    const cells = line.split('|').map((c) => c.trim());
+    // | llms-full.txt declared | regulation.md stamped | Chosen | Date | Evidence |
+    const rowDeclared = cells[1] ? cells[1].replace(/`/g, '') : null;
+    const rowStamped = cells[2] ? cells[2].replace(/`/g, '') : null;
+    // Guard against a substring collision inside a longer code (rare, but
+    // the same discipline readManifestRow already applies via its exact
+    // backtick-cell match) — require the parsed cells to equal the values
+    // asked about, not merely contain their text somewhere in the line.
+    if (rowDeclared !== declared || rowStamped !== stamped) continue;
+    return {
+      declared: rowDeclared,
+      stamped: rowStamped,
+      chosen: cells[3] ? cells[3].replace(/`/g, '') : null,
+      date: cells[4] || null,
+      evidence: cells[5] || null,
+    };
+  }
+  return null;
+}
+
 // Disagreement between what Pikalytics itself declares as current and what
-// reference/regulation.md has stamped is a hard error, never a fallback:
-// silently preferring either source reintroduces the exact trap this repo has
-// been burned by (a previous regulation's slug keeps returning complete,
-// correctly-formatted, entirely wrong data forever).
+// reference/regulation.md has stamped is a hard error, never a silent
+// fallback: silently preferring either source reintroduces the exact trap
+// this repo has been burned by (a previous regulation's slug keeps returning
+// complete, correctly-formatted, entirely wrong data forever). The one
+// exception is a disagreement that has already been resolved BY HAND, with
+// evidence recorded in META_MANIFEST.md for that exact pair — see
+// readResolvedDisagreement above. That still gets reported on every run
+// (never silently), just not treated as a fresh, unverified failure.
 //
 // The manifest's whole stated purpose (META_MANIFEST.md's own header) is
 // answering "has upstream changed since we last cited it?" — which was
@@ -336,13 +394,29 @@ function readManifestRow(src, code) {
 function check(fetchmod, opts = {}) {
   const declared = declaredDefault(fetchmod);
   const stamped = stampedSlug();
-  if (declared !== stamped) {
-    throw new Error(
-      `Slug disagreement: llms-full.txt declares "${declared}", reference/regulation.md ` +
-      `stamps "${stamped}". One is stale. Resolve it by hand — silently preferring either ` +
-      `reintroduces the wrong-regulation-data trap.`
-    );
+
+  const mp = opts.manifestPath || manifestPath();
+  let manifestSrc = '';
+  try {
+    manifestSrc = fs.readFileSync(mp, 'utf8');
+  } catch {
+    manifestSrc = '';
   }
+
+  let resolvedDisagreement = null;
+  if (declared !== stamped) {
+    resolvedDisagreement = readResolvedDisagreement(manifestSrc, declared, stamped);
+    if (!resolvedDisagreement) {
+      throw new Error(
+        `Slug disagreement: llms-full.txt declares "${declared}", reference/regulation.md ` +
+        `stamps "${stamped}". One is stale. Resolve it by hand — silently preferring either ` +
+        `reintroduces the wrong-regulation-data trap. If this exact pair has already been ` +
+        `verified and resolved, record it in tools/meta/META_MANIFEST.md's "Resolved slug ` +
+        `disagreements" table so \`check\` recognises it.`
+      );
+    }
+  }
+
   const idx = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${stamped}`);
   if (idx.status !== 200) {
     throw new Error(
@@ -352,13 +426,6 @@ function check(fetchmod, opts = {}) {
   }
   const d = describe(idx.text, stamped);
 
-  const mp = opts.manifestPath || manifestPath();
-  let manifestSrc = '';
-  try {
-    manifestSrc = fs.readFileSync(mp, 'utf8');
-  } catch {
-    manifestSrc = '';
-  }
   const pinned = readManifestRow(manifestSrc, stamped);
   const pinnedEtag = pinned ? pinned.etag : null;
   // 'unpinned': this format code has never been written with `formats --write`.
@@ -366,7 +433,15 @@ function check(fetchmod, opts = {}) {
   // 'changed': upstream has moved since the pin — re-vendor/re-check before citing it.
   const etagStatus = !pinnedEtag ? 'unpinned' : pinnedEtag === idx.etag ? 'unchanged' : 'changed';
 
-  return { slug: stamped, agrees: true, etag: idx.etag, pinnedEtag, etagStatus, ...d };
+  return {
+    slug: stamped,
+    agrees: declared === stamped,
+    resolvedDisagreement,
+    etag: idx.etag,
+    pinnedEtag,
+    etagStatus,
+    ...d,
+  };
 }
 
 // Insert-or-update a manifest row keyed on the format code (the manifest is
@@ -429,6 +504,6 @@ function report(fetchmod, opts = {}) {
 module.exports = {
   activeRegulation, activeRegulationStart, activeRegulationEnd, regulationHasEnded,
   regulationOf, detectCapabilities, describe,
-  defaultFormatCode, report, check, upsertManifestRow, readManifestRow,
+  defaultFormatCode, report, check, upsertManifestRow, readManifestRow, readResolvedDisagreement,
   classifyCurrency, windowStraddlesRollover, rollingStraddle, ROLLING_WINDOW_FORMATS, ROLLING_WINDOW_DAYS,
 };
