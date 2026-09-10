@@ -293,15 +293,43 @@ function manifestPath() {
   return path.join(__dirname, 'META_MANIFEST.md');
 }
 
+// Bounds a markdown section by heading, structurally: everything between the
+// named heading line and the next `## ` heading (or end of file). Shared by
+// every reader/writer below that must stay confined to one table — scoping
+// by heading, rather than by line shape or column count, is what makes a
+// cross-table collision structurally impossible instead of merely unlikely.
+// Returns null when the heading isn't present at all.
+function sectionLineRange(lines, heading) {
+  const start = lines.findIndex((l) => l.trim() === heading);
+  if (start === -1) return null;
+  const rest = lines.slice(start + 1);
+  const relEnd = rest.findIndex((l) => l.trim().startsWith('## '));
+  const end = relEnd === -1 ? lines.length : start + 1 + relEnd;
+  return { headingIdx: start, start: start + 1, end };
+}
+
+// The `## Formats` table is the ONLY section upsertManifestRow/readManifestRow
+// may read or write. See the data-loss incident this constant's callers now
+// prevent: a Formats write for a format code that also happens to appear
+// (backtick-wrapped) inside the hand-written "Resolved slug disagreements"
+// table below it used to match THAT row in an undifferentiated whole-file
+// line scan, and overwrite the hand-written resolution with a machine row —
+// destroying the recorded evidence. Diffed at commit 49ffac3 against 04069c7.
+const FORMATS_HEADING = '## Formats';
+
 // Pure text -> row parse, same style as upsertManifestRow: no I/O, so it's
 // directly testable with synthetic manifest text. Returns null when the
 // format code has never been written to the manifest — that "never pinned"
 // state must stay distinguishable from a pinned row whose etag happens to
 // match, or a caller can't tell "nothing to compare against" from "verified
-// unchanged".
+// unchanged". Scoped to the `## Formats` section only — see FORMATS_HEADING.
 function readManifestRow(src, code) {
   const codeCell = `\`${code}\``;
-  for (const line of src.split('\n')) {
+  const lines = src.split('\n');
+  const bounds = sectionLineRange(lines, FORMATS_HEADING);
+  if (!bounds) return null;
+  for (let i = bounds.start; i < bounds.end; i++) {
+    const line = lines[i];
     if (!line.trim().startsWith('|')) continue;
     if (!line.includes(codeCell)) continue;
     const cells = line.split('|').map((c) => c.trim());
@@ -334,11 +362,9 @@ const RESOLVED_DISAGREEMENTS_HEADING = '## Resolved slug disagreements';
 
 function resolvedDisagreementsSection(src) {
   const lines = src.split('\n');
-  const start = lines.findIndex((l) => l.trim() === RESOLVED_DISAGREEMENTS_HEADING);
-  if (start === -1) return [];
-  const rest = lines.slice(start + 1);
-  const end = rest.findIndex((l) => l.trim().startsWith('## '));
-  return end === -1 ? rest : rest.slice(0, end);
+  const bounds = sectionLineRange(lines, RESOLVED_DISAGREEMENTS_HEADING);
+  if (!bounds) return [];
+  return lines.slice(bounds.start, bounds.end);
 }
 
 // A hand-recorded resolution applies to the EXACT (declared, stamped) pair —
@@ -450,13 +476,29 @@ function check(fetchmod, opts = {}) {
 // given code is written; every later --write for that same code must find its
 // own row by the code cell and overwrite it in place, or this silently stops
 // updating anything while still claiming success.
+//
+// Scoped structurally to the `## Formats` section (see FORMATS_HEADING) —
+// never to the whole file. This is not merely a read-side concern: the
+// incident this scoping fixes was a WRITE that reached into a different
+// hand-written table below it purely because that table's own cells are also
+// backtick-wrapped format codes. Bounding the scan (and any insertion) to the
+// Formats section's own line range makes that cross-table write impossible
+// regardless of what a future row elsewhere in the file happens to contain.
 function upsertManifestRow(src, code, row) {
   const codeCell = `\`${code}\``;
   const lines = src.split('\n');
+  const bounds = sectionLineRange(lines, FORMATS_HEADING);
+  // No `## Formats` heading at all is not a shape this manifest should ever
+  // be in, but fail safe rather than silently writing into the wrong place:
+  // append at the very end instead of guessing.
+  if (!bounds) {
+    lines.push(row);
+    return { text: lines.join('\n'), action: 'added' };
+  }
   let codeRowIdx = -1;
   let placeholderIdx = -1;
   let lastTableRowIdx = -1;
-  for (let i = 0; i < lines.length; i++) {
+  for (let i = bounds.start; i < bounds.end; i++) {
     const line = lines[i];
     if (!line.trim().startsWith('|')) continue;
     lastTableRowIdx = i;
@@ -475,7 +517,10 @@ function upsertManifestRow(src, code, row) {
     lines.splice(lastTableRowIdx + 1, 0, row);
     return { text: lines.join('\n'), action: 'added' };
   }
-  lines.push(row);
+  // The Formats heading exists but has no table rows under it yet (e.g. a
+  // hand-trimmed manifest with the heading but no placeholder) — insert
+  // right after the heading rather than falling through to the whole file.
+  lines.splice(bounds.start, 0, row);
   return { text: lines.join('\n'), action: 'added' };
 }
 

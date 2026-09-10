@@ -28,9 +28,16 @@ change-detection signal available.
 
 ## Formats
 
+This table is machine-written by `node tools/meta/cli.js formats --write`
+(`upsertManifestRow`/`readManifestRow` in `formats.js`), and those functions
+are scoped structurally to this `## Formats` heading — they never read or
+write a row under any other heading in this file. Anyone adding a new
+hand-written section below should know that boundary exists and rely on it.
+
 | Format code | Regulation | Usage | Win rate | Record | ETag | Last checked | Currency |
 |---|---|---|---|---|---|---|---|
 | `battledataregmbs3` | M-B | false | true | true | W/"459e-RBQlRZysoWXer8KGrQ0pAg" | 2026-09-08 | regulation |
+| `gen9championsvgc2026regmc` | M-C | true | true | true | W/"485d-0LZpiz1c9MFNg38QLLM8bQ" | 2026-09-10 | regulation |
 
 ## Why observed behaviour beats documentation, when the two disagree
 
@@ -72,4 +79,4 @@ exactly as if it had never been recorded.
 
 | llms-full.txt declared | regulation.md stamped | Chosen | Date | Evidence |
 |---|---|---|---|---|
-| `gen9championsvgc2026regmc` | M-C | true | true | true | W/"485d-0LZpiz1c9MFNg38QLLM8bQ" | 2026-09-10 | regulation |
+| `battledataregmbs3` | `gen9championsvgc2026regmc` | `gen9championsvgc2026regmc` | 2026-09-09 | `llms-full.txt` states "Current Default Format: battledataregmbs3" and its format table does not list an M-C code at all — stale, an M-B-era default that was never updated for the M-C rollover. Live fetch of the actual endpoint, `https://www.pikalytics.com/ai/pokedex/gen9championsvgc2026regmc`, returns a page self-titled "Pokemon Champions VGC 2026 Reg M-C" with Format Code `gen9championsvgc2026regmc` and real ladder rows (Rillaboom #1 at 36.64% usage) — unambiguously current M-C data. The endpoint's own behaviour is chosen over the documentation page's stale claim. |

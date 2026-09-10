@@ -264,6 +264,8 @@ test('REGRESSION: describe() still rejects genuinely different format code', () 
 // a confident report of success with nothing behind it, in the one tool
 // whose whole job is catching exactly that failure mode.
 const MANIFEST_TEMPLATE = [
+  '## Formats',
+  '',
   '| Format code | Regulation | Usage | Win rate | Record | ETag | Last checked |',
   '|---|---|---|---|---|---|---|',
   '| _(populated by `meta formats --write`)_ | | | | | | |',
@@ -296,6 +298,75 @@ test('a write for a DIFFERENT code appends rather than clobbering the first row'
   assert.equal(second.action, 'added');
   assert.ok(second.text.includes(rowA), 'the existing codeA row must survive untouched');
   assert.ok(second.text.includes(rowB));
+});
+
+// REAL DATA-LOSS BUG (hit live 2026-09-10, diffed at commit 49ffac3 against
+// 04069c7): upsertManifestRow scanned every `|`-prefixed line in the WHOLE
+// file for its code-cell match, with no regard for which heading a line sat
+// under. The "Resolved slug disagreements" table's own columns are ALSO
+// backtick-wrapped format codes (the declared/stamped/chosen values), so a
+// Formats write for a code that also appears in that hand-written row matched
+// THAT row — the line-scan's last match won regardless of table — and
+// overwrote the hand-written resolution with a machine-generated Formats row,
+// destroying the recorded evidence and making `check` fail again as if the
+// disagreement had never been resolved. Scoping the writer (and reader) to
+// the `## Formats` heading, structurally, the same way
+// resolvedDisagreementsSection already scopes reads of the OTHER table, is
+// what makes this collision impossible rather than merely unlikely.
+function buildManifestWithResolvedRowMentioningCode(code) {
+  return [
+    '## Formats',
+    '',
+    '| Format code | Regulation | Usage | Win rate | Record | ETag | Last checked |',
+    '|---|---|---|---|---|---|---|',
+    '| _(populated by `meta formats --write`)_ | | | | | | |',
+    '',
+    '## Resolved slug disagreements',
+    '',
+    '| llms-full.txt declared | regulation.md stamped | Chosen | Date | Evidence |',
+    '|---|---|---|---|---|',
+    `| \`battledataregmbs3\` | \`${code}\` | \`${code}\` | 2026-09-09 | some hand-written evidence text that must survive |`,
+  ].join('\n');
+}
+
+test('REGRESSION: writing a Formats row must not touch a Resolved slug disagreements row that mentions the same code', () => {
+  const code = 'gen9championsvgc2026regmc';
+  const before = buildManifestWithResolvedRowMentioningCode(code);
+  const resolvedLineBefore = before.split('\n').find((l) => l.includes('some hand-written evidence text'));
+  assert.ok(resolvedLineBefore, 'sanity: the hand-written row must exist in the fixture before the write');
+
+  const formatsRow = `| \`${code}\` | M-C | true | true | true | W/"485d-etag" | 2026-09-10 | regulation |`;
+  const { text: after } = formats.upsertManifestRow(before, code, formatsRow);
+
+  assert.ok(
+    after.includes(resolvedLineBefore),
+    'the hand-written Resolved-slug-disagreements row must survive byte-identical'
+  );
+  assert.ok(after.includes(formatsRow), 'the new Formats-table row must be written');
+});
+
+test('REGRESSION: readManifestRow must not read a row from the Resolved slug disagreements section', () => {
+  const code = 'gen9championsvgc2026regmc';
+  // No Formats-table pin exists for this code at all — only the resolved
+  // section mentions it. readManifestRow must report "never pinned" (null),
+  // not accidentally parse the resolved-disagreement row as if it were an
+  // ETag pin.
+  const manifest = buildManifestWithResolvedRowMentioningCode(code);
+  assert.equal(formats.readManifestRow(manifest, code), null);
+});
+
+test('REGRESSION: round-tripping a manifest with both tables through upsertManifestRow leaves the second table byte-identical', () => {
+  const code = 'gen9championsvgc2026regmc';
+  const before = buildManifestWithResolvedRowMentioningCode(code);
+  const beforeResolvedSection = before.split('## Resolved slug disagreements')[1];
+
+  const rowV1 = `| \`${code}\` | M-C | true | true | true | "etag1" | 2026-09-10 | regulation |`;
+  const rowV2 = `| \`${code}\` | M-C | true | true | true | "etag2" | 2026-09-11 | regulation |`;
+  const first = formats.upsertManifestRow(before, code, rowV1);
+  const second = formats.upsertManifestRow(first.text, code, rowV2);
+
+  const afterResolvedSection = second.text.split('## Resolved slug disagreements')[1];
+  assert.equal(afterResolvedSection, beforeResolvedSection, 'the Resolved slug disagreements section must be untouched by either write');
 });
 
 // FINDING 3: check() has no automated test despite being the most
@@ -351,6 +422,8 @@ test('REGRESSION: check() throws on disagreement, naming BOTH values', () => {
 // Formats-table ETag pin row for the same code.
 function buildResolvedManifest(declared, stamped, chosen, date) {
   return [
+    '## Formats',
+    '',
     '| Format code | Regulation | Usage | Win rate | Record | ETag | Last checked |',
     '|---|---|---|---|---|---|---|',
     '| _(populated by `meta formats --write`)_ | | | | | | |',
