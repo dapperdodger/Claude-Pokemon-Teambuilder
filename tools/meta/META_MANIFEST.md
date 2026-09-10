@@ -72,4 +72,4 @@ exactly as if it had never been recorded.
 
 | llms-full.txt declared | regulation.md stamped | Chosen | Date | Evidence |
 |---|---|---|---|---|
-| `battledataregmbs3` | `gen9championsvgc2026regmc` | `gen9championsvgc2026regmc` | 2026-09-09 | `llms-full.txt` states "Current Default Format: battledataregmbs3" and its format table does not list an M-C code at all — stale, an M-B-era default that was never updated for the M-C rollover. Live fetch of the actual endpoint, `https://www.pikalytics.com/ai/pokedex/gen9championsvgc2026regmc`, returns a page self-titled "Pokemon Champions VGC 2026 Reg M-C" with Format Code `gen9championsvgc2026regmc` and real ladder rows (Rillaboom #1 at 36.64% usage) — unambiguously current M-C data. The endpoint's own behaviour is chosen over the documentation page's stale claim. |
+| `gen9championsvgc2026regmc` | M-C | true | true | true | W/"485d-0LZpiz1c9MFNg38QLLM8bQ" | 2026-09-10 | regulation |
