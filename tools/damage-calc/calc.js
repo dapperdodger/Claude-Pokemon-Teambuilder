@@ -288,18 +288,70 @@ function runDamageCalc(input) {
   attacker.hasType = vendor.setHasTypeFunc;
   defender.hasType = vendor.setHasTypeFunc;
 
-  // Field setup — Side constructor: (format, terrain, weather, isGravity,
-  // isSR, spikes, isReflect, isLightScreen, isForesight, isHelpingHand,
-  // isFriendGuard, isBattery, isProtect, isPowerSpot, isSteelySpirit,
-  // isNeutralizingGas, isGmaxField, isFlowerGiftSpD, isFlowerGiftAtk,
-  // isTailwind, isSaltCure, isAuroraVeil, isSwamp, isSeaFire, isRedItem,
-  // isBlueItem, isCharge)
-  const side = new Side(
-    'Doubles', input.field.terrain || '', input.field.weather || '',
-    false, false, 0, false, false, false, false, false, false, false,
-    false, false, false, false, false, false, false, false, false,
-    false, false, false, false, false
-  );
+  // Field setup — the vendored Side constructor (tools/damage-calc/vendor/side.js)
+  // takes 27 POSITIONAL arguments in this exact order:
+  //   (format, terrain, weather, isGravity, isSR, spikes, isReflect,
+  //   isLightScreen, isForesight, isHelpingHand, isFriendGuard, isBattery,
+  //   isProtect, isPowerSpot, isSteelySpirit, isNeutralizingGas,
+  //   isGmaxField, isFlowerGiftSpD, isFlowerGiftAtk, isTailwind,
+  //   isSaltCure, isAuroraVeil, isSwamp, isSeaFire, isRedItem, isBlueItem,
+  //   isCharge)
+  // A positional literal call (27 bare `false`/0 values) is a silent
+  // wrong-answer generator the moment a future edit reorders or inserts a
+  // flag — nothing would catch a shifted boolean landing on the wrong
+  // field. Instead, build a NAMED config object (each key spelled out, so
+  // its position can never drift silently) and derive the positional call
+  // from SIDE_PARAM_ORDER, which mirrors the constructor signature above.
+  //
+  // NOTE: there is only ONE shared Side for both attacker and defender —
+  // GET_DAMAGE_SV(attacker, defender, move, side) takes a single `side`,
+  // not a per-side pair. Each flag's direction (does it help the attacker
+  // or hurt the defender?) was verified by reading where the flag is
+  // consumed in vendor/damage_MASTER.js, not assumed from its name:
+  //   - isReflect reduces damage from Physical moves only (categoryphysical
+  //     gate at damage_MASTER.js ~line 2328); isLightScreen the Special
+  //     converse (~line 2331); isAuroraVeil reduces both regardless of
+  //     category (~line 2324).
+  //   - isFriendGuard reduces the damage the move deals, unconditionally of
+  //     category (finalMods, ~line 2381-2384) — i.e. it protects the
+  //     defender, matching its real doubles role (an ally's Friend Guard
+  //     shields the Pokemon actually being hit).
+  //   - isHelpingHand is a base-power multiplier applied unconditionally
+  //     (bpMods, ~line 1759-1762) — i.e. it boosts the attacker's move,
+  //     matching its real doubles role (an ally uses Helping Hand on the
+  //     attacker before it moves).
+  //   - isTailwind only affects Speed (read in getFinalSpeed via
+  //     `side.isTailwind`), never damage — included for completeness/output
+  //     echoing, but a damage-only before/after comparison correctly shows
+  //     no change from it.
+  const SIDE_PARAM_ORDER = [
+    'format', 'terrain', 'weather', 'isGravity', 'isSR', 'spikes', 'isReflect',
+    'isLightScreen', 'isForesight', 'isHelpingHand', 'isFriendGuard', 'isBattery',
+    'isProtect', 'isPowerSpot', 'isSteelySpirit', 'isNeutralizingGas',
+    'isGmaxField', 'isFlowerGiftSpD', 'isFlowerGiftAtk', 'isTailwind',
+    'isSaltCure', 'isAuroraVeil', 'isSwamp', 'isSeaFire', 'isRedItem',
+    'isBlueItem', 'isCharge',
+  ];
+  const sideConfig = Object.assign({
+    format: 'Doubles', terrain: '', weather: '',
+    isGravity: false, isSR: false, spikes: 0, isReflect: false,
+    isLightScreen: false, isForesight: false, isHelpingHand: false,
+    isFriendGuard: false, isBattery: false, isProtect: false,
+    isPowerSpot: false, isSteelySpirit: false, isNeutralizingGas: false,
+    isGmaxField: false, isFlowerGiftSpD: false, isFlowerGiftAtk: false,
+    isTailwind: false, isSaltCure: false, isAuroraVeil: false, isSwamp: false,
+    isSeaFire: false, isRedItem: false, isBlueItem: false, isCharge: false,
+  }, {
+    terrain: input.field.terrain || '',
+    weather: input.field.weather || '',
+    isReflect: !!input.field.reflect,
+    isLightScreen: !!input.field.lightScreen,
+    isAuroraVeil: !!input.field.auroraVeil,
+    isFriendGuard: !!input.field.friendGuard,
+    isHelpingHand: !!input.field.helpingHand,
+    isTailwind: !!input.field.tailwind,
+  });
+  const side = new Side(...SIDE_PARAM_ORDER.map((key) => sideConfig[key]));
 
   // Stat-stage/ability/Speed setup that CALCULATE_ALL_MOVES_SV does before
   // calling GET_DAMAGE_SV, minus its DOM writes ($(".p1-speed-mods").text(...)).
@@ -423,12 +475,18 @@ function runDamageCalc(input) {
         rawStats: attacker.rawStats, presetUsed: input.attacker.preset || null,
         abilityChampionsLegal: isKnownAbility(attacker.ability),
         itemChampionsLegal: attacker.item ? isKnownItem(attacker.item) : null,
+        // Echoes the boosts actually applied above (attacker.stats.*), so a
+        // result can always be traced back to the stat stages that produced
+        // it rather than trusted on faith — see the module-level note on
+        // why this matters (a wrong number quoted without its conditions).
+        boosts: attacker.boosts,
       },
       defender: {
         species: defender.name, ability: defender.ability, item: defender.item, nature: defender.nature,
         rawStats: defender.rawStats, presetUsed: input.defender.preset || null,
         abilityChampionsLegal: isKnownAbility(defender.ability),
         itemChampionsLegal: defender.item ? isKnownItem(defender.item) : null,
+        boosts: defender.boosts,
       },
       move: {
         name: move.name, bp: move.bp, type: move.type, category: move.category,
@@ -436,6 +494,20 @@ function runDamageCalc(input) {
         // real variable-hit-count moves (Bullet Seed, Icicle Spear, etc.)
         // whose min/max above is one hit's damage, not a summed total.
         isVariableMultiHit: move.isVariableMultiHit,
+      },
+      // Echoes the resolved field/side conditions actually passed into the
+      // engine (see the Side-construction note above for which side each
+      // one acts on), so a quoted number can be traced back to what
+      // produced it.
+      field: {
+        weather: side.weather,
+        terrain: side.terrain,
+        reflect: side.isReflect,
+        lightScreen: side.isLightScreen,
+        auroraVeil: side.isAuroraVeil,
+        friendGuard: side.isFriendGuard,
+        helpingHand: side.isHelpingHand,
+        tailwind: side.isTailwind,
       },
     },
   };
