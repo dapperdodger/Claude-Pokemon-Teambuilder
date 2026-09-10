@@ -48,45 +48,57 @@ same piece of work (Task 10); a link that does not resolve yet means "not
 written yet," not "wrong path" — the convention `reference/archetypes.md` and
 `reference/roles.md` both already use.
 
-**Three marking schemes apply to claims in this file, inherited from
+**This file is general VGC doubles practice, drawn from the masterclass
+notes in `reference/sources/`. It applies to Champions unless a note says
+otherwise** — Champions is VGC doubles, and the notes were written
+cross-format deliberately, not narrowed down to this platform. Where
+Champions genuinely departs — a roster gap, an item outside the current
+pool, a move a species cannot learn here — that departure is marked at the
+claim, with the regulation it was checked against.
+
+**Two marking schemes apply to claims in this file, inherited from
 `reference/archetypes.md` and `reference/roles.md` and orthogonal to each
 other — a single claim can legitimately carry one mark from each at once, and
-none of the three ranks or supersedes another:**
+neither ranks or supersedes the other:**
 
 - **Sourcing strength** — `reference/vgc-format.md`'s `[official]` /
   `[consensus]` / `[unresolved]` bracket tags (see that file's ["Confidence
   marking"](vgc-format.md#confidence-marking) section). Answers *how well
   established* a claim is.
-- **Scope** — *(generic VGC — not Champions-verified)*, inherited from
-  `reference/archetypes.md`. Carried from the masterclass notes; true of VGC
-  doubles broadly but **not** separately verified against Champions' roster
-  or its current meta. Kept and marked rather than dropped, because dropping
-  is distilling. Answers *where a claim came from* — generic VGC vs. this
-  file's own Champions-specific verification.
-- **Availability** — `*(not in the Champions pool as of <regulation id>,
-  verified <date> — guidance holds for when it returns)*`. Answers *is the
-  thing legal to use right now*. Attaches only to a species, item, or
-  ability this file actually ran through `node tools/dex/cli.js mon` /
-  `legal --item` / `legal --ability` and confirmed absent or
-  `championsLegal: false` — never applied from recall. **Guidance is never
-  deleted because the species, item, or ability it describes is currently
-  unavailable** — the roster and item pool are regulation-specific, both grow
-  and shrink at each transition, and revert. **No claim in this file
-  currently carries this mark.** Every species this file names (Grimmsnarl,
-  Whimsicott, Aegislash, Hydreigon) was checked and came back present in the
-  vendored Champions roster; the one name the source raises that is genuinely
-  absent (Urshifu) is a different, narrower case — see the footnote under
+- **Champions departure** — one marker family, inherited from
+  `reference/archetypes.md` and `reference/roles.md`, for every place this
+  file has actually checked and found Champions diverging from the
+  general-VGC claim being made, covering roster gaps, item-pool gaps, and
+  learnset gaps alike. A roster or item-pool departure reads `*(not in the
+  Champions pool as of <regulation id>, verified <date> — guidance holds for
+  when it returns)*`; a learnset departure reads `*(cannot learn <Move> in
+  Champions as of <regulation id>, verified <date> — guidance holds for when
+  that changes)*`. Answers *does Champions' current roster, item pool, or
+  learnsets actually differ from what the general-VGC source says here*.
+  Attaches only to a species, item, or ability this file actually ran
+  through `node tools/dex/cli.js mon` / `legal --item` / `legal --ability` /
+  `learnset --move` and confirmed absent, `championsLegal: false`, or
+  `illegal` — never applied from recall. **Guidance carrying this mark is
+  never deleted** — the roster and item pool are regulation-specific, both
+  grow and shrink at each transition, and revert, and a regulation cuts move
+  pools as well as adding to them (`tools/dex/VENDOR_MANIFEST.md`). **This
+  mark is a snapshot pinned to the regulation named in it, not a permanent
+  verdict — re-verify every instance at the next rollover**, with the same
+  command that produced it. **No claim in this file currently carries this
+  mark.** Every species this file names (Grimmsnarl, Whimsicott, Aegislash,
+  Hydreigon) was checked and came back present in the vendored Champions
+  roster; the one name the source raises that is genuinely absent (Urshifu)
+  is a different, narrower case — see the footnote under
   [Is this Pokémon good?](#is-this-pokémon-good) — and this file does not
   name any item or ability at all. The axis is defined here so a future
   addition to this file marks correctly rather than being silently dropped.
 
-A claim can be *(generic VGC — not Champions-verified)*, `[consensus]` among
-third-party sources, **and** carry an availability mark, all at the same
-time — each axis is answering a different question, so none of them
-substitutes for the others.
+A claim can be `[consensus]` among third-party sources **and** carry a
+Champions-departure mark at the same time — each axis is answering a
+different question, so neither substitutes for the other.
 
-A fourth, narrower marker also appears below, answering a different question
-again (current usage share, not sourcing, scope, or legality):
+A third, narrower marker also appears below, answering a different question
+again (current usage share, not sourcing or departure status):
 
 - `(as of 2026-09 — confirm with meta usage)` — the claim rests on what is
   currently played, and what is currently played changes. Re-check with
@@ -429,6 +441,7 @@ left the meta, as the actual failure mode — not the tech slot itself).
 | 2026-09-09 | Created. The repo had no "is this Pokémon good" rubric and no team-wide design-constraints checklist anywhere — `vgc-team-building`'s per-slot candidate step and `vgc-team-audit`'s coverage/distribution checks both needed a target and found none. Covers the four-question good-Pokémon rubric (including the "is there a better legal Pokémon for this role" question, illustrated with a verified Grimmsnarl-vs-Whimsicott learnset check after Urshifu — the source's own example — turned out to be absent from the vendored dex entirely, footnoted per the substitution convention), inherent vs. relative strength, real verified numbers for "types are not equal" (Dragon offense resisted by 1 type vs. Bug offense resisted by 7; Steel defense resisting 10 types plus one immunity), a literal checkable Design-constraints list (closing the pointer `reference/roles.md` left open for the team-wide 1-3 offensive-item budget), multiplicative scaling, a dedicated Counterweights section carrying the judgement half of the source's "Stats/Damage Calculation re:Teambuilding" section (method left in `reference/methodology.md`, not duplicated here), and Meta awareness. One source claim was corrected rather than restated: "Aegislash/Hydreigon resists all types in the game" is false for either Pokémon individually (verified via `dex type --vs-mon` — Aegislash takes 2x+ from four types, Hydreigon is 4x weak to Fairy) but true as a *pair* in the sense that matters — every type that hits one hard is neutral-or-better for the other, verified in both directions. Every species named (Grimmsnarl, Whimsicott, Aegislash, Hydreigon, plus the rejected Urshifu) was checked via `dex mon`/`dex learnset`; none currently carry the availability mark — all are present in the vendored Champions roster. `npm test` — 318/318, unchanged. | `reference/sources/teambuilding-notes.md` ("Other Rules" → "Use 'Good' Pokémon") and `reference/sources/teambuilding-notes-advanced.md` ("Inherent Strength vs Relative Strength", "Types", "Defensive Coverage", "Offensive Capabilities Distribution", "Format Specific Teambuilding", "Relative Strength", "Stats/Damage Calculation re:Teambuilding"), both vendored from masterclass notes by a Pokémon world champion; `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-5-brief.md` |
 | 2026-09-09 | Cross-file cleanup ahead of `vgc-team-building`'s renumbering from 8 to 10 steps. Converted both cross-file step-number citations ("step 4" in the header pointer and in the Created changelog row) to "the per-slot candidate step," which survives renumbering. Reworded the "Is this Pokémon good?" intro's parallel to `reference/archetypes.md`'s "Building around a specific Pokémon" step-0 triage, which also cited that step by number and additionally overstated the parallel as "a narrower three-question version of this rubric" — the two question sets only loosely overlap (on "role"); that triage asks about speed-control fit, type profile, and physical/special/support classification for a piece already locked in, while this file's rubric asks about matchups, stats/moves/ability, role, and whether a better legal Pokémon exists for a slot still open. Reworded to describe it as a related but narrower question set, not a subset. No verified fact (BP, type-chart result, item/ability/learnset verdict) was touched. `npm test` — 318/318, unchanged. | Batch cross-reference cleanup across `archetypes.md`, `speed-control.md`, `roles.md`, `team-evaluation.md` |
 | 2026-09-09 | Task 16 (routing/wiring): added a lockstep note directly under the Design-constraints checklist recording that all five numbers are also restated inline in `vgc-team-audit`'s SKILL.md (by design, so the skill can act on a real six without a file hop) and must be updated together with this file if any of the five change. Ran `grep -rln "80 BP\|design-constraint\|Design constraints" .claude/skills/` to find the real consumer rather than guessing; confirmed all five numbers (≤2 same-type, resistance rule of thumb, 1-2 support, 1-3 offensive items, speed control + fallback) appear in that skill's coverage/distribution/speed steps. No design-constraint number itself was changed | `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-16-brief.md`; `.claude/skills/vgc-team-audit/SKILL.md` |
+| 2026-09-09 | Framing correction (user instruction, two parts). First: "*(generic VGC — not Champions-verified)* still sounds too negative... The source notes were for general VGC, they weren't ever supposed to be extremely narrowed down to Champions." Removed the file's 2 instances of the `*(generic VGC — not Champions-verified)*` marker, both in the definition block — this file names no body claim carrying it. Replaced the removed **Scope** axis with a preamble stating the file applies to Champions unless a note says otherwise. Second instruction: "these champions specific exceptions should be reevaluated on regulation change to see if it's still true." Collapsed **Scope** and **Availability** into one **Champions departure** axis, generalised to cover roster, item-pool, *and* learnset departures (a learnset-departure marker shape was added to the definition; no instance of it exists in this file, since every species this file names — Grimmsnarl, Whimsicott, Aegislash, Hydreigon — is currently roster-legal). Stated the re-check obligation directly in the axis definition. `npm test` — 356/356, unchanged. | User correction: over-marking of ordinary general-VGC provenance, and a request that Champions-departure marks be pinned to and re-checked at each regulation |
 
 [^1]: The source's own example for this question is "Urshifu is mostly just
       a better Palafin." Urshifu is absent from the vendored dex entirely —

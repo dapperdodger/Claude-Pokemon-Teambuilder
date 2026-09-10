@@ -43,39 +43,52 @@ a link that does not resolve yet means "not written yet," not "wrong path"
 (same convention `reference/archetypes.md` and `reference/speed-control.md`
 use).
 
-**Three marking schemes apply to claims in this file, and they are
-orthogonal axes — a single claim can legitimately carry one mark from each
-at once, and none of the three ranks or supersedes another:**
+**This file is general VGC doubles practice, drawn from the masterclass
+notes in `reference/sources/`. It applies to Champions unless a note says
+otherwise** — Champions is VGC doubles, and the notes were written
+cross-format deliberately, not narrowed down to this platform. Where
+Champions genuinely departs — a roster gap, an item outside the current
+pool, a move a species cannot learn here — that departure is marked at the
+claim, with the regulation it was checked against.
+
+**Two marking schemes apply to claims in this file, and they are orthogonal
+axes — a single claim can legitimately carry one mark from each at once, and
+neither ranks or supersedes the other:**
 
 - **Sourcing strength** — `reference/vgc-format.md`'s `[official]` /
   `[consensus]` / `[unresolved]` bracket tags (see that file's ["Confidence
   marking"](vgc-format.md#confidence-marking) section). Answers *how well
   established* a claim is.
-- **Scope** — *(generic VGC — not Champions-verified)*, inherited from
-  `reference/archetypes.md`. Carried from the masterclass notes; true of VGC
-  doubles broadly but **not** separately verified against Champions' roster
-  or its current meta. Kept and marked rather than dropped, because dropping
-  is distilling. Answers *where a claim came from* — generic VGC vs. this
-  file's own Champions-specific verification.
-- **Availability** — `*(not in the Champions pool as of <regulation id>,
-  verified <date> — guidance holds for when it returns)*`. Answers *is the
-  thing legal to use right now*. Attaches only to an item, ability, or
-  species this file actually ran through `node tools/dex/cli.js legal
-  --item` / `--ability` and got `championsLegal: false` back — never applied
-  from recall. **Guidance is never deleted because the item, ability, or
-  species it describes is currently unavailable.** The item pool is
-  regulation-specific and reverts; what a masterclass source says an item is
-  *for* stays true for the entire time that item happens to be sitting out a
-  regulation. See the standing note under [Items by role](#items-by-role)
-  for the re-check obligation this mark carries.
+- **Champions departure** — one marker family, inherited from
+  `reference/archetypes.md`, for every place this file has actually checked
+  and found Champions diverging from the general-VGC claim being made,
+  covering item-pool gaps, roster gaps, and learnset gaps alike. An item or
+  roster departure reads `*(not in the Champions pool as of <regulation id>,
+  verified <date> — guidance holds for when it returns)*`; a learnset
+  departure reads `*(cannot learn <Move> in Champions as of <regulation id>,
+  verified <date> — guidance holds for when that changes)*`. Answers *does
+  Champions' current item pool, roster, or learnsets actually differ from
+  what the general-VGC source says here*. Attaches only to an item, ability,
+  species, or move this file actually ran through `node tools/dex/cli.js
+  legal --item` / `--ability` / `mon` / `learnset --move` and got back
+  `championsLegal: false`, absent, or `illegal` — never applied from recall.
+  **Guidance carrying this mark is never deleted.** The item pool and roster
+  are regulation-specific and both revert, and a regulation cuts move pools
+  as well as adding to them (`tools/dex/VENDOR_MANIFEST.md`); what a
+  masterclass source says an item, species, or move is *for* stays true for
+  the entire time the thing it names happens to be sitting out a regulation.
+  **This mark is a snapshot pinned to the regulation named in it, not a
+  permanent verdict — re-verify every instance at the next rollover**, with
+  the same command that produced it. See the standing note under
+  [Items by role](#items-by-role) for the re-check obligation this mark
+  carries.
 
-A claim can be *(generic VGC — not Champions-verified)*, `[consensus]` among
-third-party sources, **and** carry an availability mark, all at the same
-time — each axis is answering a different question, so none of them
-substitutes for the others.
+A claim can be `[consensus]` among third-party sources **and** carry a
+Champions-departure mark at the same time — each axis is answering a
+different question, so neither substitutes for the other.
 
-A fourth, narrower marker also appears below, answering a different question
-again (current usage share, not sourcing, scope, or legality):
+A third, narrower marker also appears below, answering a different question
+again (current usage share, not sourcing or departure status):
 
 - `(as of 2026-09 — confirm with meta usage)` — the claim rests on what is
   currently played, and what is currently played changes. Re-check with
@@ -97,8 +110,7 @@ again (current usage share, not sourcing, scope, or legality):
 ## Role before moveset before spread
 
 **Decide the role first, then let the role choose the moveset, then let the
-moveset (and the matchups it has to survive) choose the SP spread**
-*(generic VGC — not Champions-verified)*. Doing
+moveset (and the matchups it has to survive) choose the SP spread.** Doing
 this in the other order — picking four moves that look good, or maximising a
 spread before the set is settled — produces a Pokémon that is good at nothing
 in particular, because "good" was never defined before the choices that
@@ -131,7 +143,7 @@ is a set nobody actually decided.
 What "Defensive" is optimising for, as the counterpart to
 [Offensive capability](#offensive-capability) below: the source's own framing
 is that **the best defense is a strong offense — don't obsess over defensive
-stats as an end in themselves** *(generic VGC — not Champions-verified)*.
+stats as an end in themselves.**
 A Defensive-template Pokémon still wants
 high Def/SpD and hits that land as neutral or not-very-effective rather than
 super-effective, but those stats exist to buy it turns to use its two Support
@@ -153,7 +165,7 @@ What actually makes a Pokémon hit hard, per the source:
 - **Setup moves** — Swords Dance and Helping Hand for a partner are the
   source's own two examples (both verified legal Champions moves). **The
   source's rule: boosting to +2 is the same as attacking twice, so the setup
-  has to pay for the turn it cost** *(generic VGC — not Champions-verified)*.
+  has to pay for the turn it cost.**
   A setup move that gets no follow-up
   attack in — because the setter faints, gets Taunted, or the game ends
   first — bought nothing. This is the same accounting
@@ -195,8 +207,7 @@ edit, not just this file.
 
 ## Coverage without over-fixating
 
-**You do not need a super-effective answer to everything** *(generic VGC —
-not Champions-verified)*. Resistances matter, but half of a large number can
+**You do not need a super-effective answer to everything.** Resistances matter, but half of a large number can
 still be a large number — a strong enough attacker clicking a neutral hit can
 still remove the target. Coverage is a tool for closing specific gaps, not a
 checklist to fill for its own sake.
@@ -413,3 +424,4 @@ regulation this file names.
 | 2026-09-09 | Fix round 2 (user correction, overriding fix round 1's removal ruling). The user reviewed fix round 1's outcome and explicitly overrode the prior ruling that Assault Vest, Choice Band, Choice Specs and the four terrain seeds be removed from "Items by role" for failing `legal --item`: the item pool is regulation-specific and these items "will be available at some point," so "the guidance in general is evergreen even if specifics aren't." Restored all seven to the table itself (not as excluded call-outs), each keeping its full "Best on"/"Watch out for" guidance from the source's "Offensive Items" and "Defensive items" sections — Assault Vest's "cannot run status moves" caveat, the Choice-item ×1.5 damage/speed trade-off, terrain seeds keyed to their own terrain. Re-ran `legal --item` fresh for all 17 items on 2026-09-09: every verdict matched fix round 1's (10 legal; 7 `championsLegal: false` — Choice Band, Choice Specs, Assault Vest, and all four terrain seeds) — no legality changed, only the file's treatment of the failures did. Regulation used for the new marker is **M-B**, read fresh from `reference/regulation.md`'s stamp block, the still-active regulation as of this check (the vendored dex data has not rolled over to M-C yet). Added the availability marker `*(not in the Champions pool as of M-B, verified 2026-09-09 — guidance holds for when it returns)*` to the marker-definition block near the top as a third axis, orthogonal to the pre-existing scope marker and to `vgc-format.md`'s sourcing-strength tags — stated explicitly that a claim can carry one from each axis and that guidance is never deleted for current unavailability. Added a standing note under "Items by role" pointing at `legal --item` and the `vgc-regulation-transition` skill as the required post-rollover re-check. Reworded fix round 1's "did not survive the sweep" framing (footnote 1, the Assault-Vest/terrain-seed call-out, and the Examples-policy closing paragraph) from "removed/excluded" to "marked unavailable, guidance kept." Fix round 1's four corrections were left untouched; no BP value or ability verdict was changed. `npm test` — 318/318, unchanged. | User correction on fix round 1's controller ruling |
 | 2026-09-09 | Cross-file cleanup ahead of `vgc-team-building`'s renumbering from 8 to 10 steps. Converted both cross-file step-number citations ("step 6" in the header pointer and in the Created changelog row) to "the moveset step," which survives renumbering. Corrected the Created row's item-sweep clause, which still said the seven unavailable items were "removed from the recommendation table and footnoted rather than presented as available" — true of that original round, but fix round 2 (above) restored all seven to the table under the availability marker; reworded to "marked unavailable in the recommendation table and kept there with their full guidance" to match the file's current state. Fixed the team-wide-item-budget forward pointer (below "Items by role"), which said `reference/team-evaluation.md`'s distribution gates were "not yet present" — that file now exists and carries them; pointed directly at its Design-constraints section. Also fixed the "Forward references" note: `reference/team-evaluation.md` is now written, so only `reference/format-knowledge.md` remains a genuine forward reference. `npm test` — 318/318, unchanged. | Batch cross-reference cleanup across `archetypes.md`, `speed-control.md`, `roles.md`, `team-evaluation.md` |
 | 2026-09-09 | Task 16 (routing/wiring): fixed the Life Orb row's false pointer — it claimed `reference/mechanics.md` "owns ability interactions" for Magic Guard; verified via `grep -in "magic guard" reference/mechanics.md` that it holds none, and reworded to the same "not yet documented anywhere in this repo, verify live" treatment already used for screens/Intimidate/Friend Guard/Multiscale (fix round 1 above), rather than leaving a dangling pointer to an empty section. Added a lockstep note under the base-power floor recording that `vgc-team-building` and `vgc-team-refining` both restate the ≥80 BP number inline (by design, for skill-time action) and must be updated together with this file if the floor changes. No BP value, item verdict, or ability verdict was changed | `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-16-brief.md`; `dex legal --ability "Magic Guard"` confirmed it as a real legal Champions ability before naming it as the standard example |
+| 2026-09-09 | Framing correction (user instruction, two parts). First: "*(generic VGC — not Champions-verified)* still sounds too negative... The source notes were for general VGC, they weren't ever supposed to be extremely narrowed down to Champions." Removed all 6 instances of the `*(generic VGC — not Champions-verified)*` marker (2 in the definition block, 4 on individual claims: role-before-moveset-before-spread ordering, "the best defense is a strong offense," the +2-setup-pays-for-its-turn rule, and "you do not need a super-effective answer to everything") without touching the claims themselves. Replaced the removed **Scope** axis with a preamble stating the file applies to Champions unless a note says otherwise. Second instruction: "these champions specific exceptions should be reevaluated on regulation change to see if it's still true." Collapsed **Scope** and **Availability** into one **Champions departure** axis, generalised to cover item-pool, roster, *and* learnset departures — the existing pool-absence instances (Choice Band, Choice Specs, Assault Vest, the four terrain seeds in the Items-by-role table) keep their exact prior wording; a learnset-departure marker shape was added to the definition alongside them. Stated the re-check obligation directly in the axis definition (this file's separate "Standing note — re-check after every rollover" under Items by role is unchanged and still applies). `npm test` — 356/356, unchanged. | User correction: over-marking of ordinary general-VGC provenance, and a request that Champions-departure marks be pinned to and re-checked at each regulation |

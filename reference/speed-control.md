@@ -30,45 +30,56 @@ Every species, move, and ability named below was run through
 does not resolve yet means "not built yet," not "wrong path" (same
 convention `reference/archetypes.md` uses).
 
-**Three marking schemes apply to claims in this file, inherited from
+**This file is general VGC doubles practice, drawn from the masterclass
+notes in `reference/sources/`. It applies to Champions unless a note says
+otherwise** — Champions is VGC doubles, and the notes were written
+cross-format deliberately, not narrowed down to this platform. Where
+Champions genuinely departs — a roster gap, an item outside the current
+pool, a move a species cannot learn here — that departure is marked at the
+claim, with the regulation it was checked against.
+
+**Two marking schemes apply to claims in this file, inherited from
 `reference/archetypes.md` and orthogonal to each other — a single claim can
-legitimately carry one mark from each at once, and none of the three ranks
-or supersedes another:**
+legitimately carry one mark from each at once, and neither ranks or
+supersedes the other:**
 
 - **Sourcing strength** — `reference/vgc-format.md`'s `[official]` /
   `[consensus]` / `[unresolved]` bracket tags (see that file's ["Confidence
   marking"](vgc-format.md#confidence-marking) section). Answers *how well
   established* a claim is.
-- **Scope** — *(generic VGC — not Champions-verified)*, inherited from
-  `reference/archetypes.md`. Carried from the masterclass notes; true of VGC
-  doubles broadly but **not** separately verified against Champions' roster
-  or its current meta. Kept and marked rather than dropped, because dropping
-  is distilling. Answers *where a claim came from* — generic VGC vs. this
-  file's own Champions-specific verification. It is written in italic
-  parentheses, deliberately distinct from the bracket tags above so the two
-  schemes are never mistaken for tiers of the same axis.
-- **Availability** — `*(not in the Champions pool as of <regulation id>,
-  verified <date> — guidance holds for when it returns)*`. Answers *is the
-  thing legal to use right now*. Attaches only to a species, item, or
-  ability this file actually ran through `node tools/dex/cli.js mon` /
-  `legal --item` / `legal --ability` and confirmed absent or
-  `championsLegal: false` — never applied from recall. **Guidance is never
-  deleted because the species, item, or ability it describes is currently
-  unavailable.** The roster and item pool are regulation-specific, both grow
-  and shrink at each transition, and revert; what a form's mechanism *does*
-  for turn order stays true for the entire time the thing that provides it
-  happens to be sitting outside the current pool. No claim in this file
-  currently carries this mark — every species, move, and item named below
-  was checked and came back legal — but the axis is defined here so a future
-  addition marks correctly rather than getting silently dropped.
+- **Champions departure** — one marker family, inherited from
+  `reference/archetypes.md`, for every place this file has actually checked
+  and found Champions diverging from the general-VGC claim being made,
+  covering roster gaps, item-pool gaps, and learnset gaps alike. A roster or
+  item-pool departure reads `*(not in the Champions pool as of <regulation
+  id>, verified <date> — guidance holds for when it returns)*`; a learnset
+  departure reads `*(cannot learn <Move> in Champions as of <regulation id>,
+  verified <date> — guidance holds for when that changes)*`. Answers *does
+  Champions' current roster, item pool, or learnsets actually differ from
+  what the general-VGC source says here*. Attaches only to a claim this file
+  actually ran through `node tools/dex/cli.js mon` / `legal --item` /
+  `legal --ability` / `learnset --move` and got back absent,
+  `championsLegal: false`, or `illegal` — never applied from recall.
+  **Guidance carrying this mark is never deleted.** The roster, item pool,
+  and learnsets are all regulation-specific, all grow and shrink at each
+  transition — a regulation cuts move pools as well as adding to them
+  (`tools/dex/VENDOR_MANIFEST.md`) — and all of it can revert; what a form's
+  mechanism *does* for turn order stays true for the entire time the thing
+  that provides it happens to be sitting outside the current pool. **This
+  mark is a snapshot pinned to the regulation named in it, not a permanent
+  verdict — re-verify every instance at the next rollover**, with the same
+  command that produced it (`dex legal --item` / `--ability`, `dex mon`,
+  `dex learnset`). No claim in this file currently carries this mark — every
+  species, move, and item named below was checked and came back legal — but
+  the axis is defined here so a future addition marks correctly rather than
+  getting silently dropped.
 
-A claim can be *(generic VGC — not Champions-verified)*, `[consensus]` among
-third-party sources, **and** carry an availability mark, all at the same
-time — each axis is answering a different question, so none of them
-substitutes for the others.
+A claim can be `[consensus]` among third-party sources **and** carry a
+Champions-departure mark at the same time — each axis is answering a
+different question, so neither substitutes for the other.
 
-A fourth, narrower marker also appears below, answering a different question
-again (current usage share, not sourcing, scope, or legality):
+A third, narrower marker also appears below, answering a different question
+again (current usage share, not sourcing or departure status):
 
 - `(as of 2026-09 — confirm with meta usage)` — the claim rests on what is
   currently played, and what is currently played changes. Re-check with
@@ -177,7 +188,7 @@ What is settled, and what it means as a build tool:
   [Speed-lowering moves](#speed-lowering-moves) below.
 - **It does not stack with the field effects.** Paralysis is the target's
   own status, independent of Tailwind or Trick Room being up on either side.
-- *(generic VGC — not Champions-verified)* Electric-types cannot be
+- Electric-types cannot be
   paralyzed by any method, mainline-series-wide since it became a
   type-based status immunity — the same shape as Fire-types and burn, or
   Poison/Steel-types and poison. This is not re-verified against Champions'
@@ -339,3 +350,4 @@ numbers live elsewhere, and drift gets fixed there:
 | 2026-09-09 | Compress Turn-order-changers row cell (What it costs you) from 58 to 35 words while preserving both the concrete cost and archetype reference, by folding the pointer to `reference/archetypes.md` into the cost sentence rather than leaving it as a separate sentence. | Single-cell text trim task |
 | 2026-09-09 | Fix round 2 (user correction: mark availability, never delete evergreen guidance). Same controller ruling applied to `reference/roles.md` and `reference/archetypes.md`: current unavailability of a thing is a regulation-specific, reversible fact, not grounds to delete or omit the evergreen guidance about what it does. Added **Availability** as a third orthogonal marking axis alongside Sourcing strength and Scope in the marker-definition block, copying `reference/roles.md`'s wording and structure. Swept the rest of the file (Edit 3) for anywhere a form, move, or item was dropped or presented as excluded for current illegality rather than marked — found nothing: every species, move and item this file names (Fake Out, Choice Scarf, Thunder Wave/Nuzzle/Glare, Body Slam/Discharge, Icy Wind/Cotton Spore, Aerodactyl, Dragapult) is currently legal, so no claim in the file carries the new availability mark yet — the axis is defined here so a future addition marks correctly instead of being silently dropped. Regulation used for the marker's example wording is **M-B**, read fresh from `reference/regulation.md`'s stamp block, still the active regulation as of this check. `npm test` — 318/318, unchanged. | User correction on over-eager availability-based deletion |
 | 2026-09-09 | Cross-file cleanup ahead of `vgc-team-building`'s renumbering from 8 to 10 steps. Converted both cross-file step-number citations ("step 3" in the header pointer and in the Created changelog row) to "the speed-control step," which survives renumbering. Fixed the "Forward references" note (`roles.md` and `team-evaluation.md` are now written; only `format-knowledge.md` remains a genuine forward reference) and the inherent-vs-relative-strength pointer, which said `reference/team-evaluation.md` was "not yet written" — it now exists, so the parenthetical was dropped. | Batch cross-reference cleanup across `archetypes.md`, `speed-control.md`, `roles.md`, `team-evaluation.md` |
+| 2026-09-09 | Framing correction (user instruction, two parts). First: "*(generic VGC — not Champions-verified)* still sounds too negative... The source notes were for general VGC, they weren't ever supposed to be extremely narrowed down to Champions." Removed the file's 3 instances of the `*(generic VGC — not Champions-verified)*` marker (2 in the definition block, 1 on the Electric-type-paralysis-immunity claim) without touching the claim itself. Replaced the removed **Scope** axis with a preamble stating the file applies to Champions unless a note says otherwise. Second instruction: "these champions specific exceptions should be reevaluated on regulation change to see if it's still true." Collapsed **Scope** and **Availability** into one **Champions departure** axis, generalised to cover roster, item-pool, *and* learnset departures (a learnset-departure marker shape was added to the definition; no instance of it exists in this file, since every species/move/item this file names is currently legal). Stated the re-check obligation directly in the axis definition, naming the commands (`dex legal --item`/`--ability`, `dex mon`, `dex learnset`). `npm test` — 356/356, unchanged. | User correction: over-marking of ordinary general-VGC provenance, and a request that Champions-departure marks be pinned to and re-checked at each regulation |

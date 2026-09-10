@@ -32,6 +32,7 @@ Pokémon and Megas, which live in vendored data that lags), and the **meta**
 - [ ] 5b. Re-resolve the Pikalytics format slug
 - [ ] 5c. Re-vendor the learnsets and re-pin the regulation
 - [ ] 5d. Regenerate format knowledge
+- [ ] 5e. Re-verify Champions-departure markers in reference/
 - [ ] 6. Flag teams built for the old regulation
 - [ ] 7. Set expectations with the user
 ```
@@ -130,6 +131,39 @@ regulation before moving on. Re-vendoring both datasets (steps 5 and 5c) is a
 prerequisite — speed tiers join usage against the vendored dex, so a stale
 roster produces a stale tier list that looks fine.
 
+**5e. Re-verify Champions-departure markers in `reference/`.** `reference/archetypes.md`,
+`reference/speed-control.md`, `reference/roles.md`, and `reference/team-evaluation.md`
+each mark the specific points where Champions' roster, item pool, or
+learnsets genuinely depart from general-VGC practice — a species outside the
+current roster, an item outside the current pool, a move a species cannot
+learn here. Every one of those marks is a snapshot pinned to the regulation
+it was checked against, and this step is what makes that pin worth writing:
+a note nobody re-checks at rollover is dead weight. This step reads vendored
+data, so it must run **after** steps 5 and 5c re-vendor it — running it
+against the old vendor would just re-confirm the old answer.
+
+Find every departure marker:
+
+```bash
+grep -rn "not in the Champions pool as of\|cannot learn .* in Champions as of" reference/*.md
+```
+
+For each hit, re-run the check the marker names, against the freshly
+re-vendored data:
+
+- **Item or ability departure** — `node tools/dex/cli.js legal --item "<Item>"`
+  or `legal --ability "<Ability>"`.
+- **Roster departure** — `node tools/dex/cli.js mon "<Species>"`.
+- **Learnset departure** — `node tools/dex/cli.js learnset "<Species>" --move "<Move>"`.
+
+**A departure that no longer holds gets its marker removed and the guidance
+unmarked** — the thing came back, so the file should read as plainly
+available again, the same as any other claim in these files. **A departure
+that still holds gets its regulation stamp and verified-date updated** to
+the new regulation id and today's date. Either way the file changes: this is
+a real editing step with an output, not a read-only check. Update each
+file's own Changelog with what changed and why.
+
 **6. Flag teams built for the old regulation — in chat, not in the files.**
 The phase hook lists team files whose `Regulation:` stamp no longer matches.
 **Write nothing to `teams/`.** A team file is a historical record of what was
@@ -158,6 +192,10 @@ without it. Don't present provisional numbers as settled.
   return the pre-update forme
 - Carrying a mechanic assumption over from the previous regulation
 - Rewriting old team files to look current instead of marking them historical
+- Skipping step 5e, or running it before re-vendoring — a Champions-departure
+  mark left un-re-checked past a rollover is exactly the "plausible wrong
+  data" trap the learnset pin already teaches: it keeps reading as correct
+  after the thing it describes has changed
 - Presenting week-one usage data as a settled meta
 
 ## References
@@ -166,3 +204,6 @@ without it. Don't present provisional numbers as settled.
 - `reference/regulations/` — the archive, and its index
 - `tools/damage-calc/VENDOR_MANIFEST.md` — re-vendoring procedure
 - `reference/format-knowledge.md` (generated) — regenerated in step 5d
+- `reference/archetypes.md`, `reference/speed-control.md`, `reference/roles.md`,
+  `reference/team-evaluation.md` — hold the Champions-departure markers
+  re-verified in step 5e

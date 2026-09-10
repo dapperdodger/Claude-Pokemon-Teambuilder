@@ -26,43 +26,53 @@ below was run through that CLI on 2026-09-08 — see
 `reference/format-knowledge.md` remains a forward reference — a link that
 does not resolve yet means "not built yet," not "wrong path."
 
-**Three marking schemes apply to claims in this file, and they are
-orthogonal axes — a single claim can legitimately carry one mark from each
-at once, and none of the three ranks or supersedes another:**
+**This file is general VGC doubles practice, drawn from the masterclass
+notes in `reference/sources/`. It applies to Champions unless a note says
+otherwise** — Champions is VGC doubles, and the notes were written
+cross-format deliberately, not narrowed down to this platform. Where
+Champions genuinely departs — a roster gap, an item outside the current
+pool, a move a species cannot learn here — that departure is marked at the
+claim, with the regulation it was checked against.
+
+**Two marking schemes apply to claims in this file, and they are orthogonal
+axes — a single claim can legitimately carry one mark from each at once, and
+neither ranks or supersedes the other:**
 
 - **Sourcing strength** — `reference/vgc-format.md`'s `[official]` /
   `[consensus]` / `[unresolved]` bracket tags (see that file's ["Confidence
   marking"](vgc-format.md#confidence-marking) section). Answers *how well
   established* a claim is.
-- **Scope** — *(generic VGC — not Champions-verified)*. Carried from the
-  masterclass notes; true of VGC doubles broadly but **not** separately
-  verified against Champions' roster or its current meta. Kept and marked
-  rather than dropped, because dropping is distilling. Answers *where a
-  claim came from* — generic VGC vs. this file's own Champions-specific
-  verification. It is written in italic parentheses, deliberately distinct
-  from the bracket tags above so the two schemes are never mistaken for
-  tiers of the same axis.
-- **Availability** — `*(not in the Champions pool as of <regulation id>,
-  verified <date> — guidance holds for when it returns)*`. Answers *is the
-  thing legal to use right now*. Attaches only to a species, item, or
-  ability this file actually ran through `node tools/dex/cli.js mon` /
-  `legal --item` / `legal --ability` and confirmed absent or
-  `championsLegal: false` — never applied from recall. **Guidance is never
-  deleted because the species, item, or ability it describes is currently
-  unavailable.** The roster and item pool are regulation-specific, both grow
-  and shrink at each transition, and revert; what the source says a role,
-  item, or strategy is *for* stays true for the entire time the thing it
-  names happens to be sitting outside the current pool. See
-  [Examples policy](#examples-policy) below for where this plays out for
-  this file's rejected-name sweep.
+- **Champions departure** — one marker family for every place this file has
+  actually checked and found Champions diverging from the general-VGC claim
+  being made, covering roster gaps, item-pool gaps, and learnset gaps alike.
+  A roster or item-pool departure reads `*(not in the Champions pool as of
+  <regulation id>, verified <date> — guidance holds for when it returns)*`;
+  a learnset departure reads `*(cannot learn <Move> in Champions as of
+  <regulation id>, verified <date> — guidance holds for when that
+  changes)*`. Answers *does Champions' current roster, item pool, or
+  learnsets actually differ from what the general-VGC source says here*.
+  Attaches only to a claim this file actually ran through `node
+  tools/dex/cli.js mon` / `legal --item` / `legal --ability` / `learnset
+  --move` and got back absent, `championsLegal: false`, or `illegal` — never
+  applied from recall. **Guidance carrying this mark is never deleted.** The
+  roster, item pool, and learnsets are all regulation-specific, all grow and
+  shrink at each transition — a regulation cuts move pools as well as adding
+  to them, exactly what `tools/dex/VENDOR_MANIFEST.md` records at the M-B
+  rollover — and all of it can revert; what the source says a role, item,
+  move, or strategy is *for* stays true for the entire time the thing it
+  names happens to be sitting outside the current pool. **This mark is a
+  snapshot pinned to the regulation named in it, not a permanent verdict —
+  re-verify every instance at the next rollover**, with the same command
+  that produced it (`dex legal --item` / `--ability`, `dex mon`, `dex
+  learnset`). See [Examples policy](#examples-policy) below for where this
+  plays out for this file's rejected-name sweep.
 
-A claim can be *(generic VGC — not Champions-verified)*, `[consensus]` among
-third-party sources, **and** carry an availability mark, all at the same
-time — each axis is answering a different question, so none of them
-substitutes for the others.
+A claim can be `[consensus]` among third-party sources **and** carry a
+Champions-departure mark at the same time — each axis is answering a
+different question, so neither substitutes for the other.
 
-A fourth, narrower marker also appears below, answering a different question
-again (current usage share, not sourcing, scope, or legality):
+A third, narrower marker also appears below, answering a different question
+again (current usage share, not sourcing or departure status):
 
 - `(as of 2026-09 — confirm with meta usage)` — the claim rests on what is
   currently played, and what is currently played changes. Re-check with
@@ -188,7 +198,7 @@ the stronger line — and that has a build consequence, not just a play
 consequence: **the setter has to have something worth doing on the turns it is
 not setting Tailwind.**
 
-**How many setters.** Usually one *(generic VGC — not Champions-verified)*. Tailwind is a side-wide
+**How many setters.** Usually one. Tailwind is a side-wide
 field effect, so a second setter does not stack — it buys the ability to
 re-set after the four turns lapse, and insurance against the first setter
 being removed. That is a redundancy purchase, not a power increase; price it
@@ -252,7 +262,7 @@ The practical consequence is that **setup is a slot cost you pay up front**:
   depend on the opponent's typing.
 
 **How many setters.** Usually two, sometimes one depending on the meta
-*(generic VGC — not Champions-verified)* `(as of 2026-09 — confirm with meta usage)`. This is the
+`(as of 2026-09 — confirm with meta usage)`. This is the
 opposite call from Tailwind's one, and for a structural reason: Tailwind
 upgrades attackers that already function, so losing the setter downgrades the
 plan. Hard Trick Room's attackers are individually outsped by the field, so
@@ -316,7 +326,7 @@ plausible bring, so the six should be chosen to make that true rather than to
 make one specific four strong.
 
 **Specific-matchup slots.** Typically **1-2 slots aimed at specific common
-matchups** *(generic VGC — not Champions-verified)* `(as of 2026-09 — confirm with meta usage)`. This
+matchups** `(as of 2026-09 — confirm with meta usage)`. This
 is where a dedicated answer to one recurring problem lives, and it is
 legitimate — there is a counter to every Pokémon, however strong, and if you
 keep losing to one thing, building an answer to it is the correct response
@@ -341,7 +351,7 @@ which means a live meta pull, not recall (`vgc-meta-lookup`).
 **What it needs.** A setter, and a plan for the turns when the weather is not
 up.
 
-- **Set by ability (most common) or by move** *(generic VGC — not Champions-verified)*
+- **Set by ability (most common) or by move**
   `(as of 2026-09 — confirm with meta usage)`. An ability
   setter puts the weather up on switch-in for free; a move costs a turn and a
   moveslot, and can be Taunted or simply never get its turn.
@@ -359,7 +369,7 @@ up.
   `--weather` flag to the damage CLI; it silently no-ops on a lowercase
   mismatch (`reference/pitfalls.md`, "Weather effects on move power").
 
-**How many setters.** Usually one *(generic VGC — not Champions-verified)* — for the same reason as
+**How many setters.** Usually one — for the same reason as
 Tailwind: weather is a field effect that does not stack. A second setter is
 insurance and a re-set, not a stronger effect.
 
@@ -368,7 +378,7 @@ are Champions-legal (setters and abilities verified 2026-09-08); which of them
 is *good right now* is a meta question this file does not answer
 `(as of 2026-09 — confirm with meta usage)`.
 
-**Rain.** **Trends bulkier than the other weathers** *(generic VGC — not Champions-verified)*. Water
+**Rain.** **Trends bulkier than the other weathers.** Water
 STAB at ×1.5 with Fire coverage halved is already a large swing, so rain teams
 buy staying power rather than more damage. Drizzle setters in the Champions
 roster include Pelipper (Water/Flying) and Politoed (Water) — both verified.
@@ -377,7 +387,7 @@ Swim by the Mega forme, which is a durable fact rather than a usage one
 (verified via `dex mon`, and see `reference/mechanics.md` on Mega-fixed
 abilities).
 
-**Sun.** Usually about **one Chlorophyll abuser** *(generic VGC — not Champions-verified)* — one, not
+**Sun.** Usually about **one Chlorophyll abuser** — one, not
 three. Chlorophyll's Speed doubling is conditional on the sun, so each
 additional Chlorophyll body increases how much of the team switches off at
 once when the weather changes; that is the whole-team rule below, applied
@@ -389,7 +399,7 @@ fixed to Thick Fat, so Mega Venusaur is *not* a Chlorophyll abuser
 tool call for).
 
 **Sand.** **The weakest payoff of the four, attached to the sturdiest
-setter.** *(generic VGC — not Champions-verified)* Sand's own benefits are thin next to rain's ×1.5 Water or sun's
+setter.** Sand's own benefits are thin next to rain's ×1.5 Water or sun's
 ×1.5 Fire; what buys sand a slot is the quality of the Pokémon setting it.
 Tyranitar (Rock/Dark, Sand Stream, base 100/110/100 bulk behind 134 Attack —
 verified) is a real Pokémon on its own terms whether or not the sand does
@@ -405,7 +415,7 @@ redirection, Intimidate, a Fighting-resist partner — as part of the cost of
 choosing sand, not as an optional extra.
 
 **Snow.** **Earns its place through Aurora Veil or Blizzard**, not through the
-weather's own chip effect *(generic VGC — not Champions-verified)*. Aurora Veil is one moveslot that
+weather's own chip effect. Aurora Veil is one moveslot that
 does what Reflect and Light Screen do together, and it requires the snow to be
 up; Blizzard is 110 BP spread Ice (verified via `dex move`). *Unverified
 locally:* the commonly-cited perfect-accuracy interaction between Blizzard and
@@ -531,7 +541,7 @@ so it is present.
   detailed in `reference/vgc-format.md` — read them there. Do not present the
   limit as a flaw in a plan that registers two. The source's own guidance is
   the same in weaker form: two is fine, more probably is not, and at least one
-  in a Mega-legal format *(generic VGC — not Champions-verified)*.
+  in a Mega-legal format.
 
 ## Examples policy
 
@@ -600,3 +610,4 @@ rollover means "not re-vendored yet," not "not legal" (`CLAUDE.md`).
 | 2026-09-09 | Fix round 2 (user correction: mark availability, never delete evergreen guidance). The user flagged that removing Rillaboom-terrain-setting-style guidance for a currently-unavailable thing loses knowledge the roster will regain, and asked for a sweep of what had already been over-eagerly deleted, following `reference/roles.md`'s already-corrected precedent. Added **Availability** as a third orthogonal marking axis alongside Sourcing strength and Scope in the marker-definition block, copying `reference/roles.md`'s wording and structure: `*(not in the Champions pool as of <regulation id>, verified <date> — guidance holds for when it returns)*`, attached only after an actual `dex mon`/`legal --item`/`legal --ability` check, and never a reason to delete guidance. Reframed the "Names that failed the sweep" paragraph (Examples policy) to "Names outside the current roster, not wrong": re-ran `dex mon` fresh on all eleven names (`Rillaboom`, `Amoonguss`, `Indeedee`, `Barraskewda`, `Kingdra`, `Ludicolo`, `Lilligant`, `Sawsbuck`, `Shiftry`, `Togekiss`, `Urshifu`) — same verdicts as before, ten absent from the vendored roster and `Urshifu` never vendored under either name — and reframed the ten from "failed"/"rejected" to "outside the current pool," stating explicitly that the archetype role each was reaching for is real and that any of the ten is a candidate again with no re-reasoning needed if it returns, Rillaboom soonest since it launches with M-C the same day this file was last verified. The instruction to re-run `dex mon` before reintroducing one is kept, not removed. Swept the rest of the file (Edit 3) for the same class of error — anywhere something was dropped or called excluded for current illegality rather than marked — and found nothing else: Choice Scarf is the only item this file names and it is currently legal; no other mechanic figure or dropped guidance was found. Regulation used for the marker is **M-B**, read fresh from `reference/regulation.md`'s stamp block (still the active regulation as of this check; the vendored dex has not rolled over to M-C yet, confirmed by re-running `dex mon` on Rillaboom). `npm test` — 318/318, unchanged. | User correction on over-eager availability-based deletion |
 | 2026-09-09 | Cross-file cleanup ahead of `vgc-team-building`'s renumbering from 8 to 10 steps. Converted this file's two cross-file step-number citations (the file header's "steps 1 and 4," and the Created changelog row's "step 3") to named pointers — "the starting-point step" and "the archetype step" — which survive renumbering; the file's own internal "Step 0/1" scaffolding (its own three-starting-points and Building-around-a-Pokémon headings) was left untouched, since those number the file's own structure, not another file's. Updated the "Forward references" note: `speed-control.md`, `roles.md` and `team-evaluation.md` are now written, so only `format-knowledge.md` remains a genuine forward reference (confirmed still absent); `dex find`, the other outstanding forward reference in this file, was independently confirmed still unbuilt (`node tools/dex/cli.js find` still errors "Unknown command") and left alone. `npm test` — 318/318, unchanged. | Batch cross-reference cleanup across `archetypes.md`, `speed-control.md`, `roles.md`, `team-evaluation.md` |
 | 2026-09-09 | Fix round 3 (cosmetic prose adjustments): Added missing scope marker `*(generic VGC — not Champions-verified)*` to Sand subsection's opening claim, matching sibling Rain/Sun/Snow markers. Removed bare `-7` priority numeral from Trick Room "How it fails" section, replacing with prose pointing to `reference/mechanics.md`, "Priority & turn order" to match Tailwind section's established discipline of deferring mechanics to that file rather than restating numerals. Fixed quote-style inconsistency in `tools/dex/cli.js` lines 198 and 203, changing double-quoted `require("./manifest")` and `require("./team")` to single quotes matching the file's convention. | Whole-branch review corrections |
+| 2026-09-09 | Framing correction (user instruction, two parts). First: "*(generic VGC — not Champions-verified)* still sounds too negative and as if it's not something to consider at all... The source notes were for general VGC, they weren't ever supposed to be extremely narrowed down to Champions." General-VGC provenance is the normal case for this file, not a deficiency worth flagging on every claim — Champions *is* VGC doubles. Removed all 12 instances of the `*(generic VGC — not Champions-verified)*` marker (2 in the definition block, 10 on individual claims: Tailwind/weather setter counts, Good Stuff tech-slot count, weather-setting method, Rain/Sun/Sand/Snow openers, the two-Mega-Stones closer) without touching the claims themselves. Replaced the removed **Scope** axis with a preamble stating the file applies to Champions unless a note says otherwise. Second instruction: "these champions specific exceptions should be reevaluated on regulation change to see if it's still true." Collapsed **Scope** and **Availability** into one **Champions departure** axis (alongside `vgc-format.md`'s unchanged Sourcing-strength axis), generalised to cover roster, item-pool, *and* learnset departures — a learnset-departure shape (`*(cannot learn <Move> in Champions as of <regulation id>, verified <date> — guidance holds for when that changes)*`) was added to the definition alongside the existing pool-absence shape, which keeps its exact prior wording and instances unchanged. Stated the re-check obligation directly in the axis definition, naming the commands (`dex legal --item`/`--ability`, `dex mon`, `dex learnset`). Checked this file's own worked example against the learnset-departure case named in the task: `node tools/dex/cli.js learnset "Torkoal" --move "Trick Room"` returns `illegal` ("Torkoal cannot learn Trick Room in Champions"), but this file only ever uses Torkoal as a Trick Room *attacker*, never claims it can set the room itself — no existing prose here asserts the departure, so per the "reframe, not a research pass" instruction none was added. `npm test` — 356/356, unchanged. | User correction: over-marking of ordinary general-VGC provenance, and a request that Champions-departure marks be pinned to and re-checked at each regulation |
