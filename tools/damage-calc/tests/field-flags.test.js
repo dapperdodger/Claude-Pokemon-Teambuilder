@@ -191,6 +191,52 @@ test('output JSON echoes resolved boosts and true field flags', () => {
   assert.equal(result.matchedRecords.field.reflect, false);
 });
 
+// --- Aurora Veil: reduces damage regardless of category ---
+
+test('--aurora-veil lowers max damage for both physical and special moves', () => {
+  // Physical move (Earthquake)
+  const basePhysical = run([
+    '--attacker', 'Garchomp', '--attacker-ability', 'Rough Skin', '--attacker-nature', 'Serious',
+    '--defender', 'Incineroar', '--defender-ability', 'Intimidate', '--defender-nature', 'Serious',
+    '--move', 'Earthquake',
+  ]);
+  const withAVPhysical = run([
+    '--attacker', 'Garchomp', '--attacker-ability', 'Rough Skin', '--attacker-nature', 'Serious',
+    '--defender', 'Incineroar', '--defender-ability', 'Intimidate', '--defender-nature', 'Serious',
+    '--move', 'Earthquake', '--aurora-veil',
+  ]);
+  assert.ok(withAVPhysical.max < basePhysical.max, `expected ${withAVPhysical.max} < ${basePhysical.max}`);
+
+  // Special move (Shadow Ball)
+  const baseSpecial = run([
+    '--attacker', 'Gholdengo', '--attacker-ability', 'Good as Gold', '--attacker-nature', 'Serious',
+    '--defender', 'Incineroar', '--defender-ability', 'Intimidate', '--defender-nature', 'Serious',
+    '--move', 'Shadow Ball',
+  ]);
+  const withAVSpecial = run([
+    '--attacker', 'Gholdengo', '--attacker-ability', 'Good as Gold', '--attacker-nature', 'Serious',
+    '--defender', 'Incineroar', '--defender-ability', 'Intimidate', '--defender-nature', 'Serious',
+    '--move', 'Shadow Ball', '--aurora-veil',
+  ]);
+  assert.ok(withAVSpecial.max < baseSpecial.max, `expected ${withAVSpecial.max} < ${baseSpecial.max}`);
+});
+
+// --- Helping Hand: increases damage (opposite of mitigation flags) ---
+
+test('--helping-hand strictly raises max damage', () => {
+  const base = run([
+    '--attacker', 'Garchomp', '--attacker-ability', 'Rough Skin', '--attacker-nature', 'Serious',
+    '--defender', 'Incineroar', '--defender-ability', 'Intimidate', '--defender-nature', 'Serious',
+    '--move', 'Earthquake',
+  ]);
+  const withHH = run([
+    '--attacker', 'Garchomp', '--attacker-ability', 'Rough Skin', '--attacker-nature', 'Serious',
+    '--defender', 'Incineroar', '--defender-ability', 'Intimidate', '--defender-nature', 'Serious',
+    '--move', 'Earthquake', '--helping-hand',
+  ]);
+  assert.ok(withHH.max > base.max, `expected ${withHH.max} > ${base.max}`);
+});
+
 // --- Existing flags still work unchanged ---
 
 test('existing flags (--weather, --*-sp, --*-preset) still work unchanged', () => {
