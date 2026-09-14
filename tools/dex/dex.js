@@ -385,6 +385,10 @@ function find(filters) {
   const caveats = [];
 
   const wantTypes = (f.types || []).map(canonicalType);
+  // --resists answers "what takes this type well" from the dex's own chart and
+  // the entry's own typing, so a Mega is judged on its Mega typing. An invalid
+  // type throws via canonicalType rather than silently matching nothing.
+  const wantResists = (f.resists || []).map(canonicalType);
   const wantMoves = f.learns || [];
   const wantAbility = f.ability ? toId(f.ability) : null;
   const min = f.min || {};
@@ -433,6 +437,7 @@ function find(filters) {
     if (!entry) continue;
     const types = [entry.t1, entry.t2].filter(Boolean);
     if (wantTypes.length && !wantTypes.every((t) => types.includes(t))) continue;
+    if (wantResists.length && !wantResists.every((t) => typeEffectiveness(t, types).multiplier <= 0.5)) continue;
 
     let statOk = true;
     for (const [stat, bound] of Object.entries(min)) {

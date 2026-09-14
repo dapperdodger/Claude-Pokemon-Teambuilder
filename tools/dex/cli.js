@@ -33,6 +33,7 @@ Examples:
   node tools/dex/cli.js type --vs-mon "Mega Froslass"
   node tools/dex/cli.js find --type Flying --learns "Tailwind" --min-spe 100
   node tools/dex/cli.js find --learns "Trick Room" --max-spe 50 --min-atk 100
+  node tools/dex/cli.js find --resists Dark --resists Steel --learns "Close Combat"
 
 "What is X weak to" is one call, not a shell loop over 18 types: use
 --vs-mon (or --vs) with no attacking type. Never loop this CLI and grep its
@@ -182,6 +183,7 @@ function main() {
       const limitRaw = flagValue(argv, '--limit');
       const result = dex.find({
         types: flagValues(argv, '--type'),
+        resists: flagValues(argv, '--resists'),
         learns,
         ability: flagValue(argv, '--ability') || null,
         min: statBounds(argv, 'min'),

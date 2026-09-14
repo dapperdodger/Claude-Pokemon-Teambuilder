@@ -116,6 +116,47 @@ test('find: no filters returns the whole roster', () => {
   assert.equal(r.count, realEntries);
 });
 
+test('find: resists keeps only species taking 0.5x or less from each named type', () => {
+  const r = dex.find({ resists: ['Dark', 'Steel'] });
+  assert.ok(r.count > 0, 'expected at least one species resisting both Dark and Steel');
+  for (const m of r.results) {
+    for (const t of ['Dark', 'Steel']) {
+      const mult = dex.typeEffectiveness(t, m.types).multiplier;
+      assert.ok(mult <= 0.5, `${m.name} (${m.types.join('/')}) takes ${mult}x from ${t}`);
+    }
+  }
+});
+
+test('find: resists counts an immunity as a resist', () => {
+  const r = dex.find({ resists: ['Ground'] });
+  assert.ok(
+    r.results.some((m) => dex.typeEffectiveness('Ground', m.types).multiplier === 0),
+    'a Ground-immune species must be kept by resists: Ground'
+  );
+});
+
+test('find: resists judges a Mega on its own typing, not its base form', () => {
+  // Verified 2026-09-14: Mega Staraptor is Fighting/Flying (0.5x from Dark);
+  // base Staraptor is Normal/Flying (1x from Dark).
+  const names = dex.find({ resists: ['Dark'] }).results.map((m) => m.name);
+  assert.ok(names.includes('Mega Staraptor'), 'Mega Staraptor takes 0.5x from Dark');
+  assert.ok(!names.includes('Staraptor'), 'base Staraptor takes 1x from Dark');
+});
+
+test('find: resists combines with learns as an AND', () => {
+  const r = dex.find({ resists: ['Dark', 'Steel'], learns: ['Close Combat'] });
+  assert.ok(r.count > 0, 'expected at least one Dark+Steel resister that learns Close Combat');
+  for (const m of r.results) {
+    assert.ok(dex.typeEffectiveness('Dark', m.types).multiplier <= 0.5);
+    assert.ok(dex.typeEffectiveness('Steel', m.types).multiplier <= 0.5);
+    assert.equal(dex.learnset(m.name, 'Close Combat').verdict, 'legal');
+  }
+});
+
+test('find: an unknown resists type throws rather than matching nothing', () => {
+  assert.throws(() => dex.find({ resists: ['Fairyy'] }), /Unknown type/);
+});
+
 const { execFileSync } = require('node:child_process');
 const path = require('node:path');
 const CLI = path.join(__dirname, '..', 'cli.js');
@@ -155,4 +196,13 @@ test('cli find: --limit truncates results without falsifying count', () => {
   const capped = run(['find', '--type', 'Water', '--limit', '2']);
   assert.equal(capped.results.length, 2);
   assert.ok(capped.count >= 2);
+});
+
+test('cli find: --resists is repeatable and filters on type effectiveness', () => {
+  const out = run(['find', '--resists', 'Dark', '--resists', 'Steel']);
+  assert.ok(out.count > 0);
+  for (const m of out.results) {
+    assert.ok(dex.typeEffectiveness('Dark', m.types).multiplier <= 0.5, `${m.name} vs Dark`);
+    assert.ok(dex.typeEffectiveness('Steel', m.types).multiplier <= 0.5, `${m.name} vs Steel`);
+  }
 });
