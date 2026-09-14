@@ -66,3 +66,14 @@ test('vgc-team-building step 7 carries the Q4 and centrepiece gates', () => {
     '**8. Solve the numbers for SP',
   ]);
 });
+
+const REFINING = '.claude/skills/vgc-team-refining/SKILL.md';
+
+test('vgc-team-refining carries the card skeleton verbatim', () => {
+  assert.equal(skeleton(REFINING), skeleton(REFERENCE));
+});
+
+test('vgc-team-refining checks role fit before meta relevance', () => {
+  assertInOrder(REFINING, ['1b. **Role fit.**', '1c. **Meta relevance is context.**']);
+  assertInOrder('reference/team-refining.md', ['### 1b. Role fit', '### 1c. Meta relevance is context']);
+});

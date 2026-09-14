@@ -30,8 +30,8 @@ team construction.
   this regulation — see `reference/regulation.md`, and
   `reference/champions-format.md`'s roster-vs-legality checks and the
   `vgc-threat-evaluation` skill).
-- Move meta-relevance check (is it actually run on current sets, or
-  legal-but-obscure).
+- Move meta-relevance as **context** — how often it is run on current sets.
+  Never a mismatch on its own; see [Process](#process), step 1c.
 - Full SP spread recommendation: speed breakpoints, offensive breakpoints,
   and defensive bulk, all against a current threat list.
 
@@ -61,18 +61,12 @@ the Scope section above rather than filling it.
 
 ## Process
 
-### 1. Move verification (per Pokémon, per listed move)
+### 1. Move legality (per Pokémon, per listed move)
 
-1. **Legality**: run `node tools/dex/cli.js learnset "<Species>" --move "<Move>"`.
-   `illegal` is a hard stop. `unknown` means the species is not in the vendored
-   table — verify live rather than assuming either way. Also confirm the move
-   is not restricted this regulation.
-2. **Meta-relevance**: cross-check live Pikalytics per-Pokémon set data
-   (see the "Live meta lookup" section of
-   `reference/methodology.md`). If a move is legal but
-   rarely appears on real sets, flag it and name what's commonly run
-   instead. Do not auto-swap it — report the finding and let the user
-   decide.
+Run `node tools/dex/cli.js learnset "<Species>" --move "<Move>"`. `illegal` is
+a hard stop. `unknown` means the species is not in the vendored table — verify
+live rather than assuming either way. Also confirm the move is not restricted
+this regulation.
 
 ### 1b. Role fit
 
@@ -89,11 +83,29 @@ infer it and confirm before proceeding. Then check the moveset against
 - Is Protect listed alongside a Choice item? That is a wasted slot — Protect
   used once locks a Choice holder into Protect for the rest of its time on
   the field.
+- A move is a **mismatch** only when it breaks the role template without a
+  stated reason, sits below the floor with no stated non-damage job, or is the
+  wrong damage category for what the role needs. "Rarely run" is not on this
+  list.
 
 Report; do not auto-swap. This does not breach the scope fence above: species,
 item and ability remain fixed inputs. "Is this move right for this role" is a
 moveset question and is in scope; "is this the right Pokémon for this role"
 is not — that question belongs to `vgc-team-building`.
+
+### 1c. Meta relevance is context
+
+Cross-check live per-Pokémon set data (the `vgc-meta-lookup` skill, `meta
+mon`). Report how often each move is run, as context. A move that is rarely
+run but passes 1b is not a finding — do not flag it for rarity.
+
+Any move flagged in 1b, and any replacement suggested, goes on a decision card
+(`reference/decision-card.md`): options are learnable moves that fit the role,
+and the usage column is each move's share on real sets. Do not auto-swap —
+report and let the user decide.
+
+If `meta mon` shows an ability the species cannot have, the parsed data is
+broken: say so and do not cite it.
 
 ### 2. Threat sourcing
 
@@ -150,3 +162,4 @@ Per Pokémon, the report includes:
 | 2026-07-17 | Initial version | `docs/superpowers/specs/2026-07-17-team-refining-mode-design.md` |
 | 2026-09-07 | Replaced dangling `CLAUDE.md rules 3/6/7/10` references with named pointers to the relevant files and skills | docs/specs/2026-09-07-workflow-audit.md |
 | 2026-09-09 | Added a role-fit check (step 1b) between move verification and threat sourcing: the mode verified each move for legality and meta-usage but never asked whether the moveset fit the role the Pokémon plays. Checks the moveset against `reference/roles.md`'s two templates, the ≥80 BP (preferably ≥90) base-power floor via `node tools/dex/cli.js move`, and flags Protect alongside a Choice item as a wasted slot. Report only, no auto-swap — same discipline as move verification. Added one line to Scope making explicit that "is this move right for this role" is in scope while "is this the right Pokémon for this role" is `vgc-team-building`'s question, so the scope fence holds. | `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-12-brief.md` |
+| 2026-09-14 | Role fit now precedes meta relevance. Split step 1 into 1 (legality) and a new 1c (meta relevance as context): a rarely-run move that fits its role is no longer a finding, because ranking moves by usage copied usage sets instead of judging them. Defined a mismatch in 1b (template break without a reason, below the floor with no non-damage job, wrong category). Flagged and replacement moves go on a decision card. Added the ability sanity rule. Scope line reworded to match. | `docs/superpowers/specs/2026-09-14-binding-evaluation-design.md`; `reference/decision-card.md` |
