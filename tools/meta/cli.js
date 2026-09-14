@@ -10,11 +10,17 @@ const megas = require('./megas');
 const meta = require('./meta');
 const parse = require('./parse');
 const fk = require('./format-knowledge');
+const rank = require('./rank');
 
 const USAGE = `Usage:
   node tools/meta/cli.js formats [--write]      list formats, capabilities, regulation
   node tools/meta/cli.js mon <Species> [--format <code>]   per-Pokemon data
   node tools/meta/cli.js usage [--format <code>]           ranked list
+  node tools/meta/cli.js rank <Species> [<Species> ...] [--format <code>]
+                                                 where each option ranks in usage — one fetch.
+                                                 Accepts "Mega Froslass" or "Froslass-Mega"; a Mega
+                                                 reports its base species' row. A misspelled name is
+                                                 a row error, never "outside the top 50".
   node tools/meta/cli.js speed-tiers [--top N] [--format <code>] [--write]  base-Speed tiers of the field
                                                  --write also runs a KEY_MOVES/KEY_ABILITIES
                                                  distribution and a cores lookup, and (re)generates
@@ -157,6 +163,25 @@ function main() {
     if (command === 'usage') {
       const idx = loadIndex(code);
       return ok(meta.usageFromText(idx.text, { describe: formats.describe(idx.text, code) }));
+    }
+
+    if (command === 'rank') {
+      const names = [];
+      for (let i = 1; i < argv.length; i++) {
+        if (argv[i] === '--format') { i++; continue; }
+        names.push(argv[i]);
+      }
+      if (!names.length) {
+        return fail('rank: at least one species name is required, e.g. rank "Mega Froslass" "Sneasler"');
+      }
+      const idx = loadIndex(code);
+      const describe = formats.describe(idx.text, code);
+      const usage = meta.usageFromText(idx.text, { describe });
+      const out = rank.rankFromUsage(usage, names);
+      out.currency = usage.currency;
+      out.current = usage.current;
+      out.warnings = usage.warnings;
+      return ok(out);
     }
 
     if (command === 'speed-tiers') {

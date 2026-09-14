@@ -136,3 +136,18 @@ test('meta teams: an invalid --only value exits non-zero rather than silently ig
   assert.equal(r.status, 1);
   assert.match(JSON.parse(r.stdout).error, /--only must be/);
 });
+
+test('rank with no names exits non-zero before any fetch', () => {
+  const r = runFailing('rank');
+  assert.ok(r);
+  assert.equal(r.status, 1);
+  assert.match(JSON.parse(r.stdout).error, /at least one species name/);
+});
+
+test('meta rank resolves a Mega to its base row and errors a misspelling', { skip: !ONLINE }, () => {
+  const out = run('rank', 'Mega Froslass', 'Frosslass');
+  assert.equal(out.rows[0].usageSpecies, 'Froslass');
+  assert.equal(out.rows[0].isMega, true);
+  assert.match(out.rows[1].error, /Unknown Pokemon/);
+  assert.equal(typeof out.anchoring.allWithinThreshold, 'boolean');
+});
