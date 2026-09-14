@@ -16,7 +16,7 @@ function read(rel) {
 }
 
 function skeleton(rel) {
-  const m = read(rel).match(/<!-- card-skeleton:start -->\n([\s\S]*?)\n<!-- card-skeleton:end -->/);
+  const m = read(rel).match(/^<!-- card-skeleton:start -->\n([\s\S]*?)\n<!-- card-skeleton:end -->$/m);
   assert.ok(m, `${rel} has no <!-- card-skeleton:start --> ... <!-- card-skeleton:end --> block at column 0`);
   return m[1];
 }

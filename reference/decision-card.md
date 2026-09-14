@@ -125,7 +125,7 @@ commands listed on 2026-09-14)*
 | Throat Chop | 13.755% | meta | 80 / Physical | Second Dark attack; blocks sound moves for two turns | legal | Deviation from Defensive template — needs a reason | Overlaps Darkest Lariat's type |
 | Darkest Lariat | 15.438% | meta | 85 / Physical | Second Dark attack; ignores the target's stat boosts | legal | Deviation from Defensive template — needs a reason | Overlaps Throat Chop's type |
 | Will-O-Wisp | 2.351% | learnset | — / Status | Burn halves a physical attacker's damage for the rest of the game | legal | Fits slot 4 (Support) | — |
-| Helping Hand | 1.017% | learnset | — / Status | Boosts the partner's attack that turn; +5 priority | legal | Fits slot 4 (Support) | Only pays off on turns the partner attacks; does nothing on its own, unlike Will-O-Wisp |
+| Helping Hand | 1.017% | learnset | — / Status | Boosts the partner's attack that turn | legal | Fits slot 4 (Support) | Only pays off on turns the partner attacks; does nothing on its own, unlike Will-O-Wisp |
 
 6. **Recommendation** — Will-O-Wisp: it fills the template's Support slot
    (field 5, Q3), and its effect outlasts the turn it is used on, which a
@@ -133,10 +133,9 @@ commands listed on 2026-09-14)*
    Throat Chop and Darkest Lariat are the most-run options, but a second Dark
    attack is a template deviation with no reason stated for this team — their
    share is context, not a reason.
-7. **Not verified** — Throat Chop's sound-blocking duration and Darkest
-   Lariat's boost-ignoring effect are stated from move descriptions, not from a
-   repo tool; Will-O-Wisp's damage halving is not measured by
-   `tools/damage-calc` in this example.
+7. **Not verified** — Throat Chop's sound-blocking duration is stated from a
+   move description, not from a repo tool; Will-O-Wisp's damage halving is not
+   measured by `tools/damage-calc` in this example.
 
 ## What a card is not
 
