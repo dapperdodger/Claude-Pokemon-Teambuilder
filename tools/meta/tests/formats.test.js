@@ -901,3 +901,39 @@ test('check(): a live default with no regulation token reports uncorroborated wi
   assert.equal(out.corroboration.status, 'uncorroborated');
   assert.ok(out.warnings.some((w) => /uncorroborated|could not/i.test(w)));
 });
+
+// FINDING 4 (Fix round 1): two branches of check() traced by hand as
+// non-silent but previously uncovered by any test — exactly the failure
+// class this whole change exists for (a network failure degrading to a
+// report, never a silent false pass).
+
+test('FINDING 4: check() reports agrees:null (never true) when llms-full.txt fails but the live default endpoint succeeds', () => {
+  const stub = checkStub({
+    llmsFull: { status: 500, text: 'Internal Server Error', etag: null },
+  });
+  const out = formats.check(stub);
+  assert.equal(out.corroboration.status, 'agrees', 'sanity: the live default endpoint must still succeed and agree');
+  assert.equal(out.agrees, null, 'agrees must read as unknown, never a false true');
+  assert.ok(
+    out.warnings.some((w) => /llms-full\.txt/i.test(w) && /500/.test(w)),
+    `expected a warning naming the llms-full.txt failure, got: ${JSON.stringify(out.warnings)}`
+  );
+});
+
+test('FINDING 4: check() survives the live default endpoint AND llms-full.txt both failing at once — unverified, both failures reported, nothing reads as agreement', () => {
+  const stub = checkStub({
+    bareIndex: { status: 500, text: 'Internal Server Error', etag: null },
+    llmsFull: { status: 500, text: 'Internal Server Error', etag: null },
+  });
+  const out = formats.check(stub);
+  assert.equal(out.corroboration.status, 'unverified');
+  assert.equal(out.agrees, null, 'nothing reads as agreement when both independent sources failed');
+  assert.ok(
+    out.warnings.some((w) => /could not fetch|unverified/i.test(w)),
+    `expected the live-default failure to surface, got: ${JSON.stringify(out.warnings)}`
+  );
+  assert.ok(
+    out.warnings.some((w) => /llms-full\.txt/i.test(w)),
+    `expected the llms-full.txt failure to also surface, got: ${JSON.stringify(out.warnings)}`
+  );
+});

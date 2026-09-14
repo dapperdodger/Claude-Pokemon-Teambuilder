@@ -306,3 +306,47 @@ test('no stamp-expiry warning while the stamped regulation is still running', ()
   });
   assert.equal(out.warnings.some((x) => /stale/i.test(x)), false);
 });
+
+// FINDING 3 (Fix round 1): when stampExpired forces current:false but the
+// format's OWN regulation token still equals the active regulation (exactly
+// what describe() now does — see formats.test.js's "sets current:false when
+// the stamp has expired, even though the regulation token still matches"),
+// currencyWarnings used to fire BOTH stampExpiredWarning AND
+// offRegulationWarning. The latter says the format is "NOT the current one",
+// which is wrong here: the token matches, only the calendar stamp expired.
+// Only the expiry warning should fire in this exact case.
+// ranked-index.md's own upstream carries no usage weighting, so usageFromText
+// always adds an unrelated NO_USAGE warning on top of whatever currencyWarnings
+// produces — isolate the currency-shaped warnings (stale/NOT the current one)
+// from that noise rather than asserting a total warning count.
+test('FINDING 3: an expired stamp whose token still matches active does not ALSO produce a misleading off-regulation warning', () => {
+  const out = meta.usageFromText(fx('ranked-index.md'), {
+    describe: {
+      code: 'battledataregmbs3', label: 'l', regulation: 'M-B', currency: 'regulation',
+      current: false, straddle: null,
+      stampExpired: { regulation: 'M-B', endedOn: '2026-09-09', daysAgo: 12 },
+      capabilities: formats.detectCapabilities(fx('ranked-index.md')),
+    },
+  });
+  const currencyRelated = out.warnings.filter((w) => /stale|NOT the current one/.test(w));
+  assert.equal(currencyRelated.length, 1, 'only the stamp-expiry warning should fire, not also an off-regulation one');
+  assert.match(currencyRelated[0], /stale/i);
+});
+
+// A genuine token mismatch (the format's own regulation differs from the
+// active one the stamp names) is a DIFFERENT failure than an expired stamp,
+// even when both happen to be present at once, and must still warn.
+test('FINDING 3: a genuine regulation-token mismatch still produces the off-regulation warning', () => {
+  const out = meta.usageFromText(fx('ranked-index.md'), {
+    describe: {
+      code: 'gen9championsvgc2026regmabo3', label: 'l', regulation: 'M-A', currency: 'regulation',
+      current: false, straddle: null,
+      stampExpired: { regulation: 'M-B', endedOn: '2026-09-09', daysAgo: 12 },
+      capabilities: formats.detectCapabilities(fx('ranked-index.md')),
+    },
+  });
+  const currencyRelated = out.warnings.filter((w) => /stale|NOT the current one/.test(w));
+  assert.ok(currencyRelated.some((w) => /NOT the current one/.test(w)), 'a genuine token mismatch must still warn');
+  assert.ok(currencyRelated.some((w) => /stale/i.test(w)), 'the expiry warning must also still fire');
+  assert.equal(currencyRelated.length, 2);
+});

@@ -159,13 +159,23 @@ test('checkRegulationCorroboration: does nothing (null) with no active regulatio
   assert.equal(result, null);
 });
 
-test('checkRegulationCorroboration: respects META_OFFLINE, never invoking the fetcher', async () => {
+// CHANGED (Fix round 1, FINDING 2): this used to assert `result === null` —
+// read by a reviewer as the hook's normal "quiet when there is nothing to
+// check". Ruled otherwise: META_OFFLINE is not nothing to check, it's a check
+// that did NOT run, the same category this hook already reports loudly for a
+// vendor with no manifest. Silence here is indistinguishable from "verified
+// current" to anyone with META_OFFLINE left set in their shell, so this must
+// now report a one-line skip message instead of null. `called === false` is
+// unchanged and is still the important half of this test: the fetcher must
+// never be invoked offline, regardless of what is reported about it.
+test('checkRegulationCorroboration: reports a skip message under META_OFFLINE, never invoking the fetcher', async () => {
   const before = process.env.META_OFFLINE;
   process.env.META_OFFLINE = '1';
   try {
     let called = false;
     const result = await hook.checkRegulationCorroboration('M-C', async () => { called = true; return 'M-B'; });
-    assert.equal(result, null);
+    assert.match(result, /regulation corroboration skipped/i);
+    assert.match(result, /META_OFFLINE/);
     assert.equal(called, false, 'the fetcher must not run at all in offline mode');
   } finally {
     if (before === undefined) delete process.env.META_OFFLINE;

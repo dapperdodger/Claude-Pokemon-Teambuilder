@@ -49,12 +49,28 @@ function stampExpiredWarning(d) {
     `citing these numbers as current.`;
 }
 
+// FINDING 3 (Fix round 1): stampExpired forces `current: false` in
+// describe() even when the format's own regulation token still matches the
+// active regulation — that's precisely the case a stale calendar stamp
+// produces (see formats.js's describe(), and its regression test "sets
+// current:false when the stamp has expired, even though the regulation
+// token still matches"). Without this guard, that single failure fired BOTH
+// stampExpiredWarning AND offRegulationWarning, and the latter's wording
+// ("NOT the current one") is actively wrong in that case — the token
+// agrees; only the calendar stamp is stale. `d.stampExpired.regulation` is
+// always set to the active regulation (see describe()), so comparing it
+// against `d.regulation` here needs no second read of reference/regulation.md
+// — it's the same information describe() already computed.
+function stampExpiredExplainsOffRegulation(d) {
+  return Boolean(d.currency === 'regulation' && d.stampExpired && d.regulation === d.stampExpired.regulation);
+}
+
 // Every currency-driven warning, in one call, so mon/usage/any future caller
 // stay identical by construction rather than by two call sites happening to
 // agree.
 function currencyWarnings(d) {
   const warnings = [];
-  if (!d.current) warnings.push(offRegulationWarning(d));
+  if (!d.current && !stampExpiredExplainsOffRegulation(d)) warnings.push(offRegulationWarning(d));
   if (d.straddle) warnings.push(straddleWarning(d));
   if (d.stampExpired) warnings.push(stampExpiredWarning(d));
   return warnings;

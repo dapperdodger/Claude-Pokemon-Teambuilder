@@ -283,10 +283,21 @@ async function fetchProviderRegulation(timeoutMs = REGULATION_CHECK_TIMEOUT_MS) 
 //
 // Respects META_OFFLINE the same way tools/meta's own test suite does (see
 // tools/meta/tests/{cli,fetch}.test.js's `ONLINE` guard), so a caller that
-// sets it never triggers a live fetch here either — this function simply has
-// nothing to report in that mode, the same as a network failure.
+// sets it never triggers a live fetch here either — the fetcher must NEVER
+// run in this mode. But unlike a network failure, this is not "nothing to
+// report": it's a check that did not run at all, exactly the category this
+// hook already reports loudly for a vendor with no manifest ("VENDOR CHECK
+// NOT RUNNING ... This is not a clean bill of health"). Silence here would be
+// indistinguishable from "verified current" to anyone who has META_OFFLINE
+// left set in their shell, so this returns a one-line report instead of
+// staying quiet.
 async function checkRegulationCorroboration(active, fetchProvider = fetchProviderRegulation) {
-  if (process.env.META_OFFLINE === '1') return null;
+  if (process.env.META_OFFLINE === '1') {
+    return (
+      "Regulation corroboration skipped (META_OFFLINE=1): reference/regulation.md's stamp was NOT " +
+      'checked against Pikalytics. Unset META_OFFLINE for this check to run.'
+    );
+  }
   if (!active) return null;
   let provider;
   try {
@@ -305,10 +316,19 @@ async function checkRegulationCorroboration(active, fetchProvider = fetchProvide
 
 async function main() {
   const active = activeRegulation();
+  // Kicked off BEFORE the vendor Promise.all, not after: this network call
+  // and the vendor checks' network calls are unrelated, and running them one
+  // after another (rather than concurrently) doubled worst-case session-start
+  // latency on a hung network (measured: ~10s vendor-only vs. ~20s with this
+  // sequenced after) for no benefit — nothing here depends on the vendor
+  // results. The emitted order below is unchanged (vendor notes, then the
+  // format-knowledge note, then this one); only when the network calls START
+  // moves, not the order results are reported in.
+  const regulationPromise = checkRegulationCorroboration(active);
   const results = await Promise.all(VENDORS.map((v) => checkVendor(v, active)));
   const fk = readFormatKnowledgeStatus(active);
   if (fk.stale) results.push(fk.reason);
-  const regulationNote = await checkRegulationCorroboration(active);
+  const regulationNote = await regulationPromise;
   if (regulationNote) results.push(regulationNote);
   const body = results.filter(Boolean).join('\n\n---\n\n');
   if (body) emit(body);
