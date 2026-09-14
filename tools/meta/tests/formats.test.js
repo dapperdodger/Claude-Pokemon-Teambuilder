@@ -374,39 +374,32 @@ test('REGRESSION: round-tripping a manifest with both tables through upsertManif
 // both paths are testable deterministically with a stub — no network needed.
 test('check() names the slug on agreement', () => {
   const stamped = formats.defaultFormatCode();
-  const stub = {
-    BASE: 'https://stub.test',
-    get(url) {
-      if (url === `${stub.BASE}/llms-full.txt`) {
-        return { status: 200, text: `**Format Code**: \`${stamped}\``, etag: null };
-      }
-      if (url === `${stub.BASE}/ai/pokedex/${stamped}`) {
-        return { status: 200, text: fxCurrent(), etag: 'W/"stub-etag"' };
-      }
-      throw new Error(`unexpected url in test stub: ${url}`);
-    },
-  };
+  const stub = checkStub();
   const out = formats.check(stub);
   assert.equal(out.slug, stamped);
   assert.equal(out.agrees, true);
+  assert.equal(out.corroboration.status, 'agrees');
 });
 
-test('REGRESSION: check() throws on disagreement, naming BOTH values', () => {
+// CHANGED: this used to assert check() THROWS on an llms-full.txt
+// disagreement. Under the new design llms-full.txt is Pikalytics' own
+// changelog PROSE about itself (known to lag a real rollover — see
+// META_MANIFEST.md's "Resolved slug disagreements" row) rather than its
+// actual behaviour, so it is demoted to informational: reported in
+// `warnings`, never a throw. The hard gate is now the live default endpoint
+// (bare /ai/pokedex), covered by the corroboration tests above and the
+// regulation-mismatch test below.
+test('check() reports (never throws) an llms-full.txt disagreement, naming BOTH values', () => {
   const stamped = formats.defaultFormatCode();
-  const stub = {
-    BASE: 'https://stub.test',
-    get(url) {
-      if (url === `${stub.BASE}/llms-full.txt`) {
-        return { status: 200, text: '**Format Code**: `some-other-stale-slug`', etag: null };
-      }
-      throw new Error(`unexpected url in test stub: ${url}`);
-    },
-  };
-  assert.throws(() => formats.check(stub), (err) => {
-    assert.match(err.message, /some-other-stale-slug/, 'must name the declared (stale) value');
-    assert.ok(err.message.includes(stamped), 'must name the stamped value too');
-    return true;
+  const stub = checkStub({
+    llmsFull: { status: 200, text: '**Format Code**: `some-other-stale-slug`', etag: null },
   });
+  const out = formats.check(stub);
+  assert.equal(out.agrees, false);
+  assert.ok(
+    out.warnings.some((w) => w.includes('some-other-stale-slug') && w.includes(stamped)),
+    `expected a warning naming both the declared and stamped values, got: ${JSON.stringify(out.warnings)}`
+  );
 });
 
 // --- Resolved slug disagreements -------------------------------------------
@@ -436,12 +429,24 @@ function buildResolvedManifest(declared, stamped, chosen, date) {
   ].join('\n');
 }
 
+// Includes a bare /ai/pokedex handler reporting agreement with the REAL
+// active regulation and `stampedCode` — these tests are exercising the
+// llms-full.txt-vs-stamp resolution mechanism, not the live-default
+// corroboration gate, so the gate stays quiet (agrees) throughout.
 function stubFor(declaredCode, stampedCode) {
+  const active = formats.activeRegulation();
   return {
     BASE: 'https://stub.test',
     get(url) {
       if (url === `${this.BASE}/llms-full.txt`) {
         return { status: 200, text: `**Format Code**: \`${declaredCode}\``, etag: null };
+      }
+      if (url === `${this.BASE}/ai/pokedex`) {
+        return {
+          status: 200,
+          text: `- **Format**: Pokemon Champions VGC 2026 Reg ${active}\n- **Format Code**: \`${stampedCode}\`\n`,
+          etag: null,
+        };
       }
       if (url === `${this.BASE}/ai/pokedex/${stampedCode}`) {
         return { status: 200, text: fxCurrent(), etag: 'W/"resolved-etag"' };
@@ -470,35 +475,46 @@ test('REGRESSION: check() passes and reports a hand-resolved disagreement record
   }
 });
 
-test('REGRESSION: check() still throws when llms-full.txt declares a value OTHER than the recorded resolution\'s declared side', () => {
+// CHANGED (was "check() still throws..."): the llms-full.txt comparison is
+// now informational-only (see the "check() reports (never throws) an
+// llms-full.txt disagreement" test above) — a mismatch against the recorded
+// resolution's declared side no longer throws either. It must still report
+// no resolvedDisagreement (this exact pair was never recorded as resolved)
+// and name both values in a warning, since silently dropping an unresolved
+// disagreement would read as agreement.
+test('check() reports an unresolved disagreement (no throw) when llms-full.txt declares a value OTHER than the recorded resolution\'s declared side', () => {
   const stamped = formats.defaultFormatCode();
   const recordedDeclared = 'battledataregmbs3';
   const actualDeclared = 'some-third-value-neither-side-recorded';
   const stub = stubFor(actualDeclared, stamped);
   const manifestPath = writeTempManifest(buildResolvedManifest(recordedDeclared, stamped, stamped, '2026-09-09'));
   try {
-    assert.throws(() => formats.check(stub, { manifestPath }), (err) => {
-      assert.match(err.message, new RegExp(actualDeclared.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-      assert.ok(err.message.includes(stamped));
-      return true;
-    });
+    const out = formats.check(stub, { manifestPath });
+    assert.equal(out.resolvedDisagreement, null, 'this exact (declared, stamped) pair was never recorded as resolved');
+    assert.ok(
+      out.warnings.some((w) => w.includes(actualDeclared) && w.includes(stamped)),
+      `expected a warning naming both values, got: ${JSON.stringify(out.warnings)}`
+    );
   } finally {
     fs.unlinkSync(manifestPath);
   }
 });
 
-test('REGRESSION: check() still throws when regulation.md is stamped with a value OTHER than the recorded resolution\'s stamped side (e.g. a rollover since the resolution was recorded)', () => {
+// CHANGED, same reasoning as above: a rollover since the resolution was
+// recorded (the stamped side has moved) no longer throws — reported instead.
+test('check() reports an unresolved disagreement (no throw) when regulation.md is stamped with a value OTHER than the recorded resolution\'s stamped side (e.g. a rollover since the resolution was recorded)', () => {
   const realStamped = formats.defaultFormatCode();
   const recordedStamped = 'gen9championsvgc-some-other-regulation-entirely';
   const declared = 'battledataregmbs3';
   const stub = stubFor(declared, realStamped);
   const manifestPath = writeTempManifest(buildResolvedManifest(declared, recordedStamped, recordedStamped, '2026-09-09'));
   try {
-    assert.throws(() => formats.check(stub, { manifestPath }), (err) => {
-      assert.match(err.message, /battledataregmbs3/);
-      assert.ok(err.message.includes(realStamped));
-      return true;
-    });
+    const out = formats.check(stub, { manifestPath });
+    assert.equal(out.resolvedDisagreement, null, 'the recorded resolution names a different stamped value than today\'s — it no longer applies');
+    assert.ok(
+      out.warnings.some((w) => w.includes('battledataregmbs3') && w.includes(realStamped)),
+      `expected a warning naming both values, got: ${JSON.stringify(out.warnings)}`
+    );
   } finally {
     fs.unlinkSync(manifestPath);
   }
@@ -522,19 +538,9 @@ test('REGRESSION: readManifestRow is unaffected by a Resolved slug disagreements
 // happily returned nulls everywhere — the mandated first-line gate reporting
 // a PASS off a failed fetch, exiting 0. Both must fail loudly instead.
 test('REGRESSION: check() fails loudly on a non-200 format fetch, not a null-filled false PASS', () => {
-  const stamped = formats.defaultFormatCode();
-  const stub = {
-    BASE: 'https://stub.test',
-    get(url) {
-      if (url === `${stub.BASE}/llms-full.txt`) {
-        return { status: 200, text: `**Format Code**: \`${stamped}\``, etag: null };
-      }
-      if (url === `${stub.BASE}/ai/pokedex/${stamped}`) {
-        return { status: 404, text: 'Not Found', etag: null };
-      }
-      throw new Error(`unexpected url in test stub: ${url}`);
-    },
-  };
+  const stub = checkStub({
+    codeIndex: { status: 404, text: 'Not Found', etag: null },
+  });
   assert.throws(() => formats.check(stub), /404/);
 });
 
@@ -593,19 +599,9 @@ function writeTempManifest(text) {
 }
 
 test('REGRESSION: check() reports etagStatus "unpinned" — distinguishable from "unchanged" — when never written', () => {
-  const stamped = formats.defaultFormatCode();
-  const stub = {
-    BASE: 'https://stub.test',
-    get(url) {
-      if (url === `${stub.BASE}/llms-full.txt`) {
-        return { status: 200, text: `**Format Code**: \`${stamped}\``, etag: null };
-      }
-      if (url === `${stub.BASE}/ai/pokedex/${stamped}`) {
-        return { status: 200, text: fxCurrent(), etag: 'W/"live-etag"' };
-      }
-      throw new Error(`unexpected url in test stub: ${url}`);
-    },
-  };
+  const stub = checkStub({
+    codeIndex: { status: 200, text: fxCurrent(), etag: 'W/"live-etag"' },
+  });
   const manifestPath = writeTempManifest(MANIFEST_TEMPLATE);
   try {
     const out = formats.check(stub, { manifestPath });
@@ -619,18 +615,9 @@ test('REGRESSION: check() reports etagStatus "unpinned" — distinguishable from
 
 test('check() reports etagStatus "unchanged" when the pinned ETag matches the live one', () => {
   const stamped = formats.defaultFormatCode();
-  const stub = {
-    BASE: 'https://stub.test',
-    get(url) {
-      if (url === `${stub.BASE}/llms-full.txt`) {
-        return { status: 200, text: `**Format Code**: \`${stamped}\``, etag: null };
-      }
-      if (url === `${stub.BASE}/ai/pokedex/${stamped}`) {
-        return { status: 200, text: fxCurrent(), etag: 'W/"match-etag"' };
-      }
-      throw new Error(`unexpected url in test stub: ${url}`);
-    },
-  };
+  const stub = checkStub({
+    codeIndex: { status: 200, text: fxCurrent(), etag: 'W/"match-etag"' },
+  });
   const row = `| \`${stamped}\` | M-B | false | true | true | W/"match-etag" | 2026-09-01 |`;
   const { text } = formats.upsertManifestRow(MANIFEST_TEMPLATE, stamped, row);
   const manifestPath = writeTempManifest(text);
@@ -645,18 +632,9 @@ test('check() reports etagStatus "unchanged" when the pinned ETag matches the li
 
 test('REGRESSION: check() reports etagStatus "changed" when upstream has drifted from the pin', () => {
   const stamped = formats.defaultFormatCode();
-  const stub = {
-    BASE: 'https://stub.test',
-    get(url) {
-      if (url === `${stub.BASE}/llms-full.txt`) {
-        return { status: 200, text: `**Format Code**: \`${stamped}\``, etag: null };
-      }
-      if (url === `${stub.BASE}/ai/pokedex/${stamped}`) {
-        return { status: 200, text: fxCurrent(), etag: 'W/"new-etag"' };
-      }
-      throw new Error(`unexpected url in test stub: ${url}`);
-    },
-  };
+  const stub = checkStub({
+    codeIndex: { status: 200, text: fxCurrent(), etag: 'W/"new-etag"' },
+  });
   const row = `| \`${stamped}\` | M-B | false | true | true | W/"old-etag" | 2026-09-01 |`;
   const { text } = formats.upsertManifestRow(MANIFEST_TEMPLATE, stamped, row);
   const manifestPath = writeTempManifest(text);
@@ -684,8 +662,15 @@ test('regulationHasEnded: false while the stamped regulation is still running', 
   assert.equal(formats.regulationHasEnded('2026-09-09', '2026-09-08'), false);
 });
 
-test('regulationHasEnded: false on the end date itself — the cycle runs through it', () => {
-  assert.equal(formats.regulationHasEnded('2026-09-09', '2026-09-09'), false);
+// CHANGED (was "false on the end date itself"): the stamps record UTC DATES,
+// but the real cutover instant lands mid-day UTC (M-C "ends 2026-12-02" is
+// really 01:59 UTC on the 2nd) — so the regulation is essentially over for
+// its ENTIRE stamped end date, not just the day after it. `>` under-reported
+// the last day of every cycle as still-running; `>=` is correct. See
+// reference/regulation.md's stamp-block comment for the convention this
+// depends on.
+test('REGRESSION (>= semantics): regulationHasEnded is true ON the end date itself', () => {
+  assert.equal(formats.regulationHasEnded('2026-09-09', '2026-09-09'), true);
 });
 
 test('REGRESSION: regulationHasEnded is true once the end date has passed', () => {
@@ -755,4 +740,164 @@ test('describe() leaves stampExpired null while the regulation is still running'
     regulationEnd: '2026-09-09',
   });
   assert.equal(d.stampExpired, null);
+});
+
+// REGRESSION: `stampExpired` used to be reported but never gated `current` —
+// reproduced live: fxCurrent() (regulation M-C, matching the real active
+// regulation) with now=2026-12-10 and regulationEnd=2026-12-02 returned
+// BOTH current:true AND stampExpired:{daysAgo:9} in the same object. An
+// expired stamp can no longer be current, regardless of how well every other
+// signal (regulation token match, currency classification) agrees — those
+// signals are all downstream of the same stale regulation.md.
+test('REGRESSION: describe() sets current:false when the stamp has expired, even though the regulation token still matches', () => {
+  const d = formats.describe(fxCurrent(), null, {
+    now: new Date('2026-12-10T00:00:00Z'),
+    regulationEnd: '2026-12-02',
+  });
+  assert.ok(d.stampExpired, 'sanity: the stamp must actually be expired in this scenario');
+  assert.equal(d.stampExpired.daysAgo, 8);
+  assert.equal(d.currency, 'regulation', 'sanity: currency classification still says regulation-current');
+  assert.equal(d.current, false, 'an expired stamp must never read as current');
+});
+
+// --- corroborateRegulation: independent-source corroboration --------------
+// Every check above ultimately reads ONE file (reference/regulation.md), so
+// a stale stamp vouches for itself. corroborateRegulation is the pure
+// comparison against a SECOND, unrelated source (Pikalytics' own live
+// default format) — no I/O, so every branch is directly testable with
+// injected values. See formats.js's own comment block for the design.
+
+test('corroborateRegulation: agrees when the stamp matches the provider', () => {
+  const out = formats.corroborateRegulation('M-C', 'M-C');
+  assert.equal(out.status, 'agrees');
+  assert.match(out.message, /M-C/);
+});
+
+test('corroborateRegulation: disagrees when the stamp and provider name different regulations', () => {
+  const out = formats.corroborateRegulation('M-C', 'M-B');
+  assert.equal(out.status, 'disagrees');
+  assert.match(out.message, /M-C/);
+  assert.match(out.message, /M-B/);
+  assert.match(out.message, /stale/i);
+});
+
+test('corroborateRegulation: uncorroborated when the provider carries no regulation token (provider === null)', () => {
+  const out = formats.corroborateRegulation('M-C', null);
+  assert.equal(out.status, 'uncorroborated');
+  assert.match(out.message, /M-C/);
+  assert.match(out.message, /no.*regulation token|could not/i);
+  assert.doesNotMatch(out.message, /agrees/i, 'must never read as agreement');
+});
+
+test('corroborateRegulation: unverified when the provider could not be fetched at all (provider === undefined)', () => {
+  const out = formats.corroborateRegulation('M-C', undefined);
+  assert.equal(out.status, 'unverified');
+  assert.match(out.message, /M-C/);
+  assert.match(out.message, /could not verify|unverified/i);
+  assert.doesNotMatch(out.message, /agrees/i, 'must never read as agreement');
+});
+
+// THE INCIDENT, as a permanent regression test: on 2026-09-09, M-B rolled
+// over to M-C. reference/regulation.md still stamped M-B while Pikalytics'
+// own default format had already moved on — exactly what corroborateRegulation
+// exists to catch. regulationOf() is reused (not a new label regex) to derive
+// the provider's regulation from the real page-label shape, the same as
+// fetchLiveDefaultRegulation does live.
+test('REGRESSION (the 2026-09-09 M-B -> M-C rollover): a stamp still reading M-B against a provider declaring Reg M-C disagrees', () => {
+  const providerRegulation = formats.regulationOf('Pokemon Champions VGC 2026 Reg M-C', 'gen9championsvgc2026regmc');
+  assert.equal(providerRegulation, 'M-C', 'sanity: regulationOf must actually extract M-C from the live label shape');
+  const out = formats.corroborateRegulation('M-B', providerRegulation);
+  assert.equal(out.status, 'disagrees');
+  assert.match(out.message, /M-B/);
+  assert.match(out.message, /M-C/);
+});
+
+// --- check(): the corroboration gate wired into the CLI --------------------
+// Shared stub builder for check()'s three network calls
+// (llms-full.txt / bare /ai/pokedex / /ai/pokedex/<stamped>). Defaults to
+// full agreement (matching the real stamped slug/regulation) so a test that
+// only cares about ONE of the three calls doesn't have to restate the other
+// two just to avoid the stub's "unexpected url" throw.
+function checkStub(overrides = {}) {
+  const stamped = formats.defaultFormatCode();
+  const active = formats.activeRegulation();
+  const base = 'https://stub.test';
+  const responses = Object.assign(
+    {
+      llmsFull: { status: 200, text: `**Format Code**: \`${stamped}\``, etag: null },
+      bareIndex: {
+        status: 200,
+        text: `- **Format**: Pokemon Champions VGC 2026 Reg ${active}\n- **Format Code**: \`${stamped}\`\n`,
+        etag: null,
+      },
+      codeIndex: { status: 200, text: fxCurrent(), etag: 'W/"stub-etag"' },
+    },
+    overrides
+  );
+  return {
+    BASE: base,
+    get(url) {
+      if (url === `${base}/llms-full.txt`) return responses.llmsFull;
+      if (url === `${base}/ai/pokedex`) return responses.bareIndex;
+      if (url === `${base}/ai/pokedex/${stamped}`) return responses.codeIndex;
+      throw new Error(`unexpected url in test stub: ${url}`);
+    },
+  };
+}
+
+test('check(): regulation mismatch against the live default endpoint throws (the corroboration gate)', () => {
+  const active = formats.activeRegulation();
+  // A regulation guaranteed different from whatever is really active today,
+  // so this stays meaningful across a real rollover.
+  const mismatchedRegulation = active === 'M-B' ? 'M-C' : 'M-B';
+  const stub = checkStub({
+    bareIndex: {
+      status: 200,
+      text: `- **Format**: Pokemon Champions VGC 2026 Reg ${mismatchedRegulation}\n- **Format Code**: \`some-live-default-code\`\n`,
+      etag: null,
+    },
+  });
+  assert.throws(() => formats.check(stub), (err) => {
+    assert.match(err.message, /Regulation mismatch/);
+    assert.match(err.message, new RegExp(active));
+    assert.match(err.message, new RegExp(mismatchedRegulation));
+    return true;
+  });
+});
+
+test('check(): same regulation but a different live-default format code warns (season bump) without throwing', () => {
+  const stamped = formats.defaultFormatCode();
+  const active = formats.activeRegulation();
+  const bumpedCode = `${stamped}-s99`;
+  const stub = checkStub({
+    bareIndex: {
+      status: 200,
+      text: `- **Format**: Pokemon Champions VGC 2026 Reg ${active}\n- **Format Code**: \`${bumpedCode}\`\n`,
+      etag: null,
+    },
+  });
+  const out = formats.check(stub);
+  assert.equal(out.corroboration.status, 'agrees');
+  assert.ok(
+    out.warnings.some((w) => w.includes(bumpedCode) && w.includes(stamped) && /season bump|slug/i.test(w)),
+    `expected a season-bump warning naming both codes, got: ${JSON.stringify(out.warnings)}`
+  );
+});
+
+test('check(): an unreachable live default endpoint reports unverified without throwing', () => {
+  const stub = checkStub({
+    bareIndex: { status: 500, text: 'Internal Server Error', etag: null },
+  });
+  const out = formats.check(stub);
+  assert.equal(out.corroboration.status, 'unverified');
+  assert.ok(out.warnings.some((w) => /could not fetch|unverified/i.test(w)));
+});
+
+test('check(): a live default with no regulation token reports uncorroborated without throwing', () => {
+  const stub = checkStub({
+    bareIndex: { status: 200, text: '- **Format**: Pokemon Champions VGC 2026 Tournament\n- **Format Code**: `championstournaments`\n', etag: null },
+  });
+  const out = formats.check(stub);
+  assert.equal(out.corroboration.status, 'uncorroborated');
+  assert.ok(out.warnings.some((w) => /uncorroborated|could not/i.test(w)));
 });

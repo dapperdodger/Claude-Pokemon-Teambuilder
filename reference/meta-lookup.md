@@ -195,16 +195,34 @@ $ node tools/meta/cli.js teams --top 2
 (live output, this session, 2026-09-10 — straddle fires because M-C started
 yesterday and the ~14-day window reaches back into M-B)
 
-**`check`** — the only command that cross-verifies the format code against
-what Pikalytics itself currently declares as default (via `/llms-full.txt`'s
-`**Format Code**`), rather than trusting the local stamp. Throws a hard error
-on disagreement instead of silently preferring either source. It also reads
-`tools/meta/META_MANIFEST.md` back and compares the pinned ETag against the
-live one, returning `pinnedEtag` and `etagStatus` (`"unpinned"` — this format
-has never been written with `formats --write`; `"unchanged"`; or `"changed"`
-— upstream has moved since the pin). See
+**`check`** — the only command that cross-verifies `reference/regulation.md`'s
+stamped regulation against a SECOND, independent source rather than trusting
+the local stamp alone: Pikalytics' own **live default format** (the bare
+`/ai/pokedex` index, no code — it self-declares whatever the site currently
+treats as current). A regulation **mismatch throws** a hard error. A **same
+regulation but different format code** (e.g. a season bump —
+`battledataregmbs3` → `...s4` is not a regulation change) is reported as a
+warning telling you to update the `**Pikalytics slug:**` stamp, not a throw.
+If the live default can't be reached, or is reachable but carries no
+regulation token at all (e.g. Pikalytics switched its default to a
+tournament/preview format), that is reported too — as `unverified` or
+`uncorroborated` respectively — **never presented as agreement**. See
+`corroborateRegulation` in `tools/meta/formats.js` for the full four-outcome
+design and `reference/pitfalls.md`/`docs/case-studies.md` for the 2026-09-09
+M-B → M-C incident this closes: the stamp went stale while every
+*self*-referential check kept reporting healthy, because nothing compared it
+against anything outside this repo.
+
+`llms-full.txt`'s own **"Current Default Format"** line (Pikalytics'
+changelog prose about itself, not its behaviour, and known to lag a real
+rollover) is now **informational only** — reported in `warnings`, never a
+throw. `check` still also reads `tools/meta/META_MANIFEST.md` back and
+compares the pinned ETag against the live one, returning `pinnedEtag` and
+`etagStatus` (`"unpinned"` — this format has never been written with
+`formats --write`; `"unchanged"`; or `"changed"` — upstream has moved since
+the pin). See
 ["What `check` verifies"](#what-check-verifies-that-the-other-commands-dont)
-below for why this matters and what it does *not* cover.
+below for the full picture of what each layer catches.
 
 ## Currency: three ways a format can be current (or not)
 
@@ -369,41 +387,50 @@ Full pitfall write-up, covering both tools and both failure directions:
 
 A stale slug is this repo's oldest trap: a previous regulation's Pikalytics
 URL keeps serving complete, correctly-formatted, wrong data forever, and
-nothing about the response looks wrong. Three independent signals cover it,
-and it is worth knowing which covers what — the danger is narrower than it
-first appears, and concentrated in one specific case.
+nothing about the response looks wrong. It is worth knowing which signal
+covers what — the danger is narrower than it first appears, and concentrated
+in one specific case.
 
 `reference/regulation.md` carries **two independent stamps** — `**Regulation:**`
 and `**Pikalytics slug:**` — and the fetched page declares its own regulation
-in its label. That gives three sources that must agree:
+in its label. Those three sources catch most disagreements with no network
+call beyond the one every command already makes:
 
 | What went wrong at the rollover | Caught by | How |
 |---|---|---|
-| Slug stale, `**Regulation:**` updated | **every command** | The fetched page's label says the old regulation, the active stamp says the new one → `current: false` plus a warning. No network call needed. |
+| Slug stale, `**Regulation:**` updated | **every command** | The fetched page's label says the old regulation, the active stamp says the new one → `current: false` plus a warning. No extra network call needed. |
 | Slug updated, `**Regulation:**` stale | **every command** | The mirror of the above, same mechanism. |
-| **Nobody edited `regulation.md` at all** | **every command**, via the end date | Both stamps agree with each other and both are wrong, so no comparison between them can help. The **calendar** catches it: if `**Regulation ends:**` has passed, `describe()` sets `stampExpired` and every command warns. |
-| Pikalytics changed its own default format code | **`check` only** | Requires asking `/llms-full.txt` what the site currently declares — the one check that costs a network round trip. |
+| **Nobody edited `regulation.md` at all** | **every command**, via the end date | Both stamps agree with each other and both are wrong, so no comparison between them can help. The **calendar** catches it: if `**Regulation ends:**` has passed, `describe()` sets `stampExpired` — which now also forces `current: false` — and every command warns. |
+| **Someone hand-edits `regulation.md` itself with a wrong value** (the actual 2026-09-09 M-B → M-C incident: the stamp was simply never updated at rollover) | **`check` only**, via independent corroboration | Every check above compares parts of `regulation.md` against OTHER parts of `regulation.md` — a human error there vouches for itself. `check` is the only command that asks something outside this repo: Pikalytics' own **live default format** (bare `/ai/pokedex`, no code). A regulation mismatch there **throws**; an unreachable or tokenless response is reported as `unverified`/`uncorroborated`, never silently treated as agreement. |
+| Pikalytics changed its own default format code but kept the same regulation (a season bump) | **`check` only** | The live default's format code is compared against the stamped slug; a mismatch with a MATCHING regulation is a warning to update the slug stamp, not a throw. |
 
-The third row is the one that used to be uncovered. The end date was already
-stamped in `regulation.md`; the tool simply never read it. It is a warning,
-never an error — deliberately reading a finished cycle is legitimate, and the
-`vgc-regulation-transition` skill's early-phase guidance explicitly calls for
-it. The warning states how many days ago the stamp expired and says outright
-that nothing else can detect the case, because the stamps agree with one
-another.
+The third row is the one the end-date calendar check closed. The end date was
+already stamped in `regulation.md`; the tool simply never read it — and
+having read it, never let it override an otherwise-agreeing `current`. It
+remains a warning, never an error — deliberately reading a finished cycle is
+legitimate, and the `vgc-regulation-transition` skill's early-phase guidance
+explicitly calls for it — but `current` can no longer be `true` at the same
+time.
 
-What remains uncovered without `check`: only the fourth row — Pikalytics
-retiring or renaming a format code while your stamps stay internally
-consistent and in-date. That is why `check` still runs first.
+The fourth and fifth rows are what `check`'s independent corroboration
+closes: nothing else in this tool asks anything outside `reference/regulation.md`
+itself, so a hand-edit error (wrong regulation, wrong end date, or simply
+never edited at rollover) previously vouched for itself no matter how many
+internal cross-stamp comparisons ran. That is why `check` still runs first —
+it is the only command that can catch a human getting the stamp wrong.
 
 ## What `check` verifies that the other commands don't
 
 `mon`, `usage`, and `formats` all resolve the default format code from
 `reference/regulation.md`'s stamped `**Pikalytics slug:**` and trust it.
-Only `check` calls out to Pikalytics' own `/llms-full.txt` and compares its
-declared default `**Format Code**` against that same stamp, throwing a hard
-error on disagreement rather than silently preferring either source
-(`formats.js`'s `check()`).
+Only `check` fetches Pikalytics' own **live default format** (the bare
+`/ai/pokedex` index, no code) and compares its regulation against
+`reference/regulation.md`'s stamped one — throwing a hard error on a genuine
+regulation mismatch, warning (not throwing) on a same-regulation code
+difference, and reporting rather than silencing an unreachable or tokenless
+result (`formats.js`'s `corroborateRegulation`, wired into `check()`).
+`llms-full.txt`'s own declared default is compared too, but only
+informationally now — see the `check` description above.
 
 `check` is also the only command that reads `tools/meta/META_MANIFEST.md`
 back rather than only writing it. It compares the live ETag of the default
@@ -413,14 +440,23 @@ same code, returning:
 ```bash
 $ node tools/meta/cli.js check
 {
-  "slug": "battledataregmbs3", "agrees": true,
-  "etag": "W/\"459e-RBQlRZysoWXer8KGrQ0pAg\"",
-  "pinnedEtag": null, "etagStatus": "unpinned",
+  "slug": "gen9championsvgc2026regmc", "agrees": false,
+  "resolvedDisagreement": { "declared": "battledataregmbs3", "stamped": "gen9championsvgc2026regmc", "chosen": "gen9championsvgc2026regmc", "date": "2026-09-09", ... },
+  "corroboration": { "status": "agrees", "message": "reference/regulation.md's stamped regulation (M-C) agrees with Pikalytics' own live default format (M-C)." },
+  "warnings": [ "llms-full.txt declares \"battledataregmbs3\" vs. the stamped \"gen9championsvgc2026regmc\" — a disagreement already resolved by hand on 2026-09-09 (see META_MANIFEST.md's \"Resolved slug disagreements\")." ],
+  "etag": "W/\"4898-4eEUmA75tKJRorrcMWxl8g\"",
+  "pinnedEtag": "W/\"485d-0LZpiz1c9MFNg38QLLM8bQ\"", "etagStatus": "changed",
   ...
 }
 ```
-(live output, this session — `unpinned` because `formats --write` had never
-been run for this code)
+(live output, this session, 2026-09-14 — `corroboration.status: "agrees"`
+because Pikalytics' live default and the stamp both currently say M-C, so the
+hard gate is quiet. `agrees: false` and the `resolvedDisagreement` are the
+pre-existing, still-informational llms-full.txt comparison — it still lags
+the M-C rollover and still resolves via the recorded row, but can no longer
+throw. `etagStatus: "changed"` here just means nobody has re-run
+`formats --write` since upstream's page last changed — unrelated to
+regulation corroboration)
 
 `etagStatus` is one of `"unpinned"` (this format code has never been written
 to the manifest — distinct from "checked and unchanged", since there is
@@ -448,6 +484,7 @@ exactly this reason.
 
 | Date | Change | Source |
 |---|---|---|
+| 2026-09-14 | Closed the design flaw the 2026-09-09 M-B → M-C rollover exposed: every currency/regulation check (`current`, `stampExpired`, the old `check` slug-agreement gate) ultimately compared parts of `reference/regulation.md` against OTHER parts of the same file, so a stale hand-edited stamp vouched for itself and every tool reported healthy. Added `formats.corroborateRegulation` (pure, four outcomes: agrees/disagrees/uncorroborated/unverified) and `fetchLiveDefaultRegulation`, which compares the stamp against Pikalytics' own **live default format** (bare `/ai/pokedex`, no code) — a second, independent source. `check`'s gate is now this comparison: a regulation mismatch **throws**; a same-regulation different-code mismatch (season bump) **warns**, no throw; `llms-full.txt`'s declared default is demoted from a throwing gate to **informational** (`warnings`), since it is Pikalytics' own changelog prose about itself and known to lag a real rollover. `stampExpired` now also **forces `current: false`** — it used to be reported but never gate `current`, so an expired stamp could still read as current. `regulationHasEnded` and the phase hook's ENDED branch changed from `>` to `>=` against `Regulation ends`, because the stamps record UTC dates and the real cutover instant falls within the stamped end date, not the day after it — documented in `reference/regulation.md`'s stamp-block comment and the `vgc-regulation-transition` skill. The corroboration check also runs at session start via `.claude/hooks/vendor-staleness.js` (chosen over `regulation-phase.js` because its tests already exercise exported functions with an injected fetcher rather than spawning the real hook process, so adding a live network call there could not accidentally make the existing phase-hook test suite hit the network); it stays silent on agreement, matching how the hook already treats an up-to-date vendor. | `tools/meta/formats.js`, `.claude/hooks/{vendor-staleness.js,regulation-phase.js}`, `tools/meta/META_MANIFEST.md`, this file; test cases in `tools/meta/tests/formats.test.js` and `.claude/hooks/tests/{vendor-staleness,regulation-phase}.test.js`; live `node tools/meta/cli.js check` / `node .claude/hooks/vendor-staleness.js` / `node .claude/hooks/regulation-phase.js` this session |
 | 2026-09-08 | Design correction: `current` was a straight regulation-token comparison, which put a "previous regulation is NOT the current one" warning on `championstournaments` — the tool's best usage source, wrongly flagged, because it has no regulation token (it's a rolling ~2-week window over current play, current by construction, not something with a token to compare). Replaced with a three-way `currency` taxonomy (`regulation`/`rolling`/`unknown`) classified by a curated list (`ROLLING_WINDOW_FORMATS` in `formats.js`) rather than inferred from a missing token — `championspreview` also has no token but Pikalytics flags it as not-current pre-launch data, so a heuristic would have misclassified it as rolling. Added rollover-straddle detection: a rolling window can span a regulation change (confirmed live 2026-09-08: M-B ends 2026-09-09, tomorrow, and the ~2-week tournament window will then contain both M-B and M-C data), which is a third state — genuinely current AND genuinely mixed — distinct from both "fine" and "stale", with its own warning naming the mixed regulation and roughly when the window clears. `unknown`-currency formats keep a warning too, reworded to state genuinely unknown provenance rather than falsely claiming "a previous regulation." Verified live: `node tools/meta/cli.js usage --format championstournaments` now reports `currency: "rolling", current: true, warnings: []`; `battledataregmbs3` (regulation-tagged, matches active) and `gen9championsvgc2026regmabo3` (genuinely off-regulation) are unchanged | `tools/meta/{formats.js,meta.js,cli.js,META_MANIFEST.md}` and test cases in `tools/meta/tests/{formats.test.js,meta.test.js,cli.test.js}`; live `node tools/meta/cli.js usage --format championstournaments` this session |
 | 2026-09-08 | FIX 8 regression: format-code comparison is now case-insensitive. The index page echoes the requested code as-is; the per-Pokemon page normalizes to lowercase. Both now accept case-variant codes while still detecting genuinely different codes (redirects, aliases). Updated documentation to clarify that the page-format match check has strong force on the per-Pokemon page (independent normalization) and weaker force on the index page (echoes). | `tools/meta/{meta.js,formats.js}` and test cases in `tools/meta/tests/{meta.test.js,formats.test.js}` |
 | 2026-09-08 | Created file, documenting `tools/meta`'s command surface, the per-upstream metrics table, the per-population/no-blending rule, ETag-vs-Data-Date freshness, the Mega naming convention, and the `check`-only regulation-verification gap | `tools/meta/{cli.js,formats.js,meta.js,megas.js,fetch.js,validate.js,META_MANIFEST.md}`; `tools/meta/tests/fixtures/{ranked-raichu.md,ranked-raichu-mega-y.md,tournaments-garchomp.md,tournaments-index.md,filler-index.md}`; live `node tools/meta/cli.js` runs this session (`formats`, `usage`, `mon "Garchomp" --format championstournaments`, `mon "Staraptor-Mega"`, `check`) |

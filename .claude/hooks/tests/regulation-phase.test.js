@@ -80,6 +80,30 @@ test('ENDED: past the end date, demands the transition workflow first', () => {
   assert.match(msg, /before giving any team or moveset advice/);
 });
 
+// REGRESSION (>= semantics): the stamps record UTC DATES, but the real
+// cutover instant lands just after midnight UTC on the stamped end date, so
+// the regulation is essentially over for its ENTIRE end date — including day
+// zero. `untilEnd === 0` used to read as ROLLOVER IMMINENT ("ends in 0
+// day(s)"); it must now read ENDED, worded as "ended today", not
+// "ENDED 0 day(s) ago".
+test('ENDED: on the end date itself reads as "ended today", not "0 day(s) ago"', () => {
+  const msg = runIn({ regulation: regFile({ startOffset: -90, endOffset: 0 }) });
+  assert.match(msg, /REGULATION ENDED/);
+  assert.match(msg, /ended today/);
+  assert.doesNotMatch(msg, /0 day\(s\) ago/);
+  assert.match(msg, /before giving any team or moveset advice/);
+});
+
+// The day before the end date must still be a plain "ends in 1 day(s)"
+// ROLLOVER IMMINENT warning, not ENDED — pins the boundary the >= change
+// moved.
+test('ROLLOVER IMMINENT: the day before the end date is still imminent, not ended', () => {
+  const msg = runIn({ regulation: regFile({ startOffset: -90, endOffset: 1 }) });
+  assert.match(msg, /ROLLOVER IMMINENT/);
+  assert.match(msg, /ends in 1 day\(s\)/);
+  assert.doesNotMatch(msg, /REGULATION ENDED/);
+});
+
 // --- staleness --------------------------------------------------------------
 
 test('a verification older than 14 days is reported', () => {

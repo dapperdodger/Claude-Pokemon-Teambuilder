@@ -63,6 +63,15 @@ format-invariant material into it — the Stat Points system, platform context
 and roster-vs-legality discipline live in `reference/champions-format.md` and
 do not change at a rollover.
 
+**`Regulation starts`/`Regulation ends` record the UTC DATE of the official
+start/end instant, not a North-American calendar date.** The real cutover is
+a specific PDT/PST instant that does not land on a UTC midnight — record
+whichever UTC date it falls on. `formats.regulationHasEnded` and the phase
+hook both compare against `Regulation ends` with `>=`, treating the
+regulation as over for its entire stamped end date; get the UTC date wrong
+and that comparison is off by a day in either direction. See
+`reference/regulation.md`'s own stamp-block comment for a worked example.
+
 **4. Record unverified new mechanics.** A regulation usually introduces a
 mechanic before its exact ruleset is public. Put it in `regulation.md`'s
 **Unverified mechanics** table with the specific open question and what it

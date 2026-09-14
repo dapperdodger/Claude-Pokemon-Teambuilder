@@ -41,22 +41,39 @@ hand-written section below should know that boundary exists and rely on it.
 
 ## Why observed behaviour beats documentation, when the two disagree
 
-`check`'s slug-agreement gate compares two things Pikalytics publishes about
-itself: `llms-full.txt`'s stated **"Current Default Format"**, and the format
-code its own `/ai/pokedex/<code>` endpoint actually answers to. Both are
-"upstream," but they are not the same upstream — one is prose describing the
-site, the other is the site. When they disagree, the fix is the same
-precedence rule this whole repo runs on (live web search > this repo's files
-> recall) applied one layer deeper: prefer what upstream **does** over what
-upstream **says about itself**, because the thing consumed for real data is
-the endpoint's actual behaviour, never its own changelog prose.
+`check`'s hard gate is now `reference/regulation.md`'s stamped regulation
+against the regulation Pikalytics' own **live default format** currently
+answers to — the bare `/ai/pokedex` index, no code, which self-declares
+whatever the site currently treats as default. That is the site's actual
+*behaviour*. `llms-full.txt`'s stated **"Current Default Format"** is
+different: it is prose *describing* the site, written by Pikalytics about
+itself, and it is known to lag a real rollover (see the recorded
+disagreement below, where it kept declaring the M-B slug days into M-C). So
+`llms-full.txt` is demoted to **informational** — reported in `check`'s
+`warnings`, never a throw. The fix is the same precedence rule this whole
+repo runs on (live web search > this repo's files > recall) applied one layer
+deeper: prefer what upstream **does** over what upstream **says about
+itself**, and prefer that even over the repo's own hand-maintained stamp when
+the two disagree.
 
-A disagreement resolved this way is recorded below rather than fixed in code,
-because it is not a bug in this tool — it is a fact about Pikalytics on the
-date recorded, and it is expected to stop being true whenever Pikalytics
+This distinction (two-source corroboration, gate vs. informational) is a
+second, related fix beyond the slug-agreement mechanism this section
+originally documented: the "Resolved slug disagreements" table below records
+a stamped-slug-vs-`llms-full.txt` pair, and still works exactly as before
+for that informational comparison. It does not, and cannot, resolve a
+disagreement against the live default endpoint — that gate has no
+resolution mechanism by design (see the corroboration principle in
+`tools/meta/formats.js`'s `corroborateRegulation` comment): a genuine
+regulation mismatch there means the stamp itself needs fixing, not a
+recorded exception.
+
+A disagreement resolved via this table is recorded below rather than fixed in
+code, because it is not a bug in this tool — it is a fact about Pikalytics on
+the date recorded, and it is expected to stop being true whenever Pikalytics
 corrects its own documentation. When that happens, `llms-full.txt`'s declared
 value will no longer match the row below, `readResolvedDisagreement` will no
-longer find a match, and `check` will quietly return to failing until someone
+longer find a match, and `check` will report an unresolved disagreement again
+(informationally — it still never throws for this comparison) until someone
 either re-verifies the (now different) disagreement or confirms upstream has
 actually converged — never to permanently trusting the stamp because it used
 to be right.
@@ -64,18 +81,24 @@ to be right.
 ## Resolved slug disagreements
 
 Unlike the Formats table above, **this section is hand-written and hand-read**
-— it is the record `check` consults before failing on a slug disagreement.
-`check` fails on any `llms-full.txt`-vs-`regulation.md` disagreement UNLESS
-the exact pair below matches, so a row here can only ever silence one
-specific, already-verified pair — never disagreements in general. Add a row
-only after fetching the disputed endpoint live yourself and confirming which
-side is actually correct; never add one from `llms-full.txt`'s own prose,
-since that is precisely the side this section exists to override.
+— it is the record `check` consults when reporting a `llms-full.txt`-vs-
+`regulation.md` disagreement (informational only — see "Why observed
+behaviour beats documentation" above; this can no longer make `check`
+throw). Without a matching row, that disagreement is reported as unresolved
+on every run; a row here lets `check` instead report it as an
+already-verified, hand-resolved pair (still reported, never silently
+dropped). A row here can only ever apply to one specific pair — never
+disagreements in general. Add a row only after fetching the disputed endpoint
+live yourself and confirming which side is actually correct; never add one
+from `llms-full.txt`'s own prose, since that is precisely the side this
+section exists to override.
 
 If either column ever stops matching what `check` observes — `llms-full.txt`
 starts declaring some third value, or `reference/regulation.md`'s stamp moves
-to a new regulation — this row no longer applies and `check` fails again,
-exactly as if it had never been recorded.
+to a new regulation — this row no longer applies and `check` goes back to
+reporting the disagreement as unresolved, exactly as if it had never been
+recorded (still never a throw — only the separate live-default-endpoint gate
+can throw).
 
 | llms-full.txt declared | regulation.md stamped | Chosen | Date | Evidence |
 |---|---|---|---|---|

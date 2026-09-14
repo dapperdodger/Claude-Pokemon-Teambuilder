@@ -65,12 +65,22 @@ function activeRegulationEnd() {
 // A missing or unparseable stamp returns false: absence of a date is not
 // evidence a regulation ended, and claiming otherwise would cry wolf on every
 // command in a repo whose stamp got dropped.
+//
+// >= , not >: the stamps record UTC DATES, but the real cutover happens at a
+// specific PDT/PST instant that lands mid-morning UTC the next calendar day
+// on the way in, and just after midnight UTC on the way out — e.g. M-C
+// "starts 2026-09-09" but actually begins 02:00 UTC on the 9th, and "ends
+// 2026-12-02" but actually ends 01:59 UTC on the 2nd. So the regulation is
+// essentially over for its entire stamped end DATE, not just the day after
+// it. See reference/regulation.md's stamp-block comment and the
+// vgc-regulation-transition skill for the convention this depends on: every
+// future stamp must record the UTC date of the official start/end instant.
 function regulationHasEnded(endISO, now) {
   if (!endISO) return false;
   const end = new Date(`${endISO}T00:00:00Z`);
   const today = now instanceof Date ? now : new Date(`${now}T00:00:00Z`);
   if (Number.isNaN(end.getTime()) || Number.isNaN(today.getTime())) return false;
-  return today > end;
+  return today >= end;
 }
 
 function daysBetween(fromISO, now) {
@@ -225,7 +235,9 @@ function describe(indexText, expectedCode, opts = {}) {
   validate.assertNotFiller(rows, info.code);
   const regulation = regulationOf(info.label, info.code);
   const active = activeRegulation();
-  const { currency, current } = classifyCurrency(info.code, regulation, active);
+  const classified = classifyCurrency(info.code, regulation, active);
+  const currency = classified.currency;
+  let current = classified.current;
 
   // A rolling window is current by construction, but it can still straddle a
   // regulation rollover: for roughly ROLLING_WINDOW_DAYS after a new
@@ -236,9 +248,16 @@ function describe(indexText, expectedCode, opts = {}) {
 
   // Independent of currency and of the stamps agreeing with each other: if the
   // stamped cycle's end date has passed, regulation.md itself is stale and the
-  // slug may be fetching a finished regulation. A warning, never an error —
-  // reading a finished cycle deliberately is legitimate, and the transition
-  // skill explicitly calls for it.
+  // slug may be fetching a finished regulation. Reported always (never
+  // silent), and it also GATES `current`: an expired stamp cannot be current
+  // even when every other signal (regulation token, rolling-window status)
+  // says otherwise, because those signals are all downstream of the same
+  // stale regulation.md that stopped being edited. This is what closes the
+  // hole where nobody touches regulation.md at a rollover — every stamp then
+  // agrees with every other stamp, `current` used to read true, and
+  // `stampExpired` sat right next to it unread. Reading a finished cycle on
+  // purpose (the transition skill does) remains legitimate; it just cannot
+  // also claim to be current.
   const regulationEnd = opts.regulationEnd !== undefined ? opts.regulationEnd : activeRegulationEnd();
   const nowForExpiry = opts.now || new Date();
   const stampExpired = regulationHasEnded(regulationEnd, nowForExpiry)
@@ -248,6 +267,7 @@ function describe(indexText, expectedCode, opts = {}) {
       daysAgo: daysBetween(regulationEnd, nowForExpiry),
     }
     : null;
+  if (stampExpired) current = false;
 
   return {
     code: info.code,
@@ -271,6 +291,93 @@ function declaredDefault(fetchmod) {
   const m = r.text.match(/\*\*Format Code\*\*:\s*`([^`]+)`/);
   if (!m) throw new Error('llms-full.txt no longer declares a **Format Code**');
   return m[1];
+}
+
+// --- Independent regulation corroboration ----------------------------------
+// Every currency check above (regulationOf/classifyCurrency/stampExpired)
+// ultimately traces back to ONE source: reference/regulation.md, hand-edited
+// by a person. A stale stamp therefore vouches for itself — every comparison
+// agrees with every other comparison because they all read the same file.
+// The only way to catch that is to require a SECOND, unrelated source to
+// agree: Pikalytics' own live default format (the bare /ai/pokedex index,
+// no code — it self-declares whatever the site currently treats as
+// current). Each side can be wrong alone (a human can misdate an end
+// stamp; Pikalytics can lag its own rollover — see the "Resolved slug
+// disagreements" table in META_MANIFEST.md for a real instance) but they are
+// wrong for unrelated reasons, so requiring agreement between them is much
+// harder to fool than trusting either in isolation.
+//
+// The live default endpoint's regulation is fetched by fetchLiveDefaultRegulation
+// (below, I/O) and compared here by corroborateRegulation (pure — no I/O, so
+// every branch is directly unit-testable with injected values). Per the
+// task's design: report, never auto-correct. Rewriting regulation.md from
+// whatever Pikalytics currently says would just reintroduce the same
+// trust-one-source trap from the other direction.
+
+// `provider` is the regulation the second source resolved to:
+//   - a regulation string ("M-C")  -> compare against `stamped`
+//   - null    -> the provider was reachable but its default format carries no
+//                regulation token at all (e.g. Pikalytics switched its
+//                default to a tournament or preview format) — this is NOT
+//                agreement, it means the stamp could not be corroborated
+//                either way
+//   - undefined -> the provider could not be reached at all (network
+//                   failure, timeout, unparseable response) — never treat
+//                   this as agreement; silence here would read as "current"
+function corroborateRegulation(stamped, provider) {
+  if (provider === undefined) {
+    return {
+      status: 'unverified',
+      message:
+        `Could not verify reference/regulation.md's stamped regulation (${stamped}) against ` +
+        `Pikalytics' own live default format — the live check failed (network error or timeout). ` +
+        `Treat the stamp as UNVERIFIED, not confirmed current.`,
+    };
+  }
+  if (provider === null) {
+    return {
+      status: 'uncorroborated',
+      message:
+        `Pikalytics' current default format (https://www.pikalytics.com/ai/pokedex) carries no ` +
+        `regulation token, so reference/regulation.md's stamp (${stamped}) could NOT be corroborated ` +
+        `against it. This is not agreement — Pikalytics may have switched its default to a ` +
+        `tournament or preview format. Verify by hand.`,
+    };
+  }
+  if (provider === stamped) {
+    return {
+      status: 'agrees',
+      message:
+        `reference/regulation.md's stamped regulation (${stamped}) agrees with Pikalytics' own ` +
+        `live default format (${provider}).`,
+    };
+  }
+  return {
+    status: 'disagrees',
+    message:
+      `reference/regulation.md is stamped "${stamped}", but Pikalytics' own live default format ` +
+      `(https://www.pikalytics.com/ai/pokedex) currently declares "${provider}". One of these is ` +
+      `stale — this stamp must be checked by hand before trusting either.`,
+  };
+}
+
+// I/O half of the corroboration: fetches the bare /ai/pokedex index (no
+// format code — this is what makes it a source independent of the stamped
+// slug) via the same injectable fetchmod every other network call in this
+// file uses, and derives its regulation with the SAME regulationOf() and
+// parse.parseFormatInfo() every other caller uses — no new label regex.
+// Throws on any failure; callers decide how to fold that into "unverified"
+// (see corroborateRegulation's `provider === undefined` branch).
+function fetchLiveDefaultRegulation(fetchmod) {
+  const r = fetchmod.get(`${fetchmod.BASE}/ai/pokedex`);
+  if (r.status !== 200) {
+    throw new Error(`HTTP ${r.status} fetching ${fetchmod.BASE}/ai/pokedex`);
+  }
+  const info = parse.parseFormatInfo(r.text);
+  if (!info.label) {
+    throw new Error(`no **Format** label found at ${fetchmod.BASE}/ai/pokedex`);
+  }
+  return { label: info.label, code: info.code, regulation: regulationOf(info.label, info.code) };
 }
 
 function stampedSlug() {
@@ -401,25 +508,66 @@ function readResolvedDisagreement(src, declared, stamped) {
   return null;
 }
 
-// Disagreement between what Pikalytics itself declares as current and what
-// reference/regulation.md has stamped is a hard error, never a silent
-// fallback: silently preferring either source reintroduces the exact trap
-// this repo has been burned by (a previous regulation's slug keeps returning
-// complete, correctly-formatted, entirely wrong data forever). The one
-// exception is a disagreement that has already been resolved BY HAND, with
-// evidence recorded in META_MANIFEST.md for that exact pair — see
-// readResolvedDisagreement above. That still gets reported on every run
-// (never silently), just not treated as a fresh, unverified failure.
+// The real gate is now behavioural: reference/regulation.md's stamped
+// regulation vs. the regulation Pikalytics' own LIVE DEFAULT endpoint
+// (bare /ai/pokedex, no code) currently answers to — see corroborateRegulation
+// above for why this, not llms-full.txt, is the hard gate. A regulation
+// mismatch is a hard error: silently preferring either source reintroduces
+// the exact trap this repo has been burned by (a previous regulation's slug
+// keeps returning complete, correctly-formatted, entirely wrong data
+// forever). Never auto-corrected — report only, per the corroboration design.
 //
-// The manifest's whole stated purpose (META_MANIFEST.md's own header) is
-// answering "has upstream changed since we last cited it?" — which was
-// previously unanswerable, because nothing ever read the file back. `check`
-// is where that read belongs: it already fetches the live index page and
-// its ETag for the slug-agreement check, so comparing that ETag against the
-// pinned one costs nothing extra.
+// llms-full.txt is demoted to informational: it is Pikalytics' own changelog
+// PROSE describing itself, not its actual behaviour, and it is known to lag a
+// real rollover (see META_MANIFEST.md's "Resolved slug disagreements" row,
+// where it kept declaring the M-B slug days into M-C). It can no longer
+// throw; a disagreement there is reported in `warnings`, with the existing
+// resolvedDisagreement annotation preserved so a hand-verified pair still
+// surfaces as resolved rather than a fresh, unverified failure.
+//
+// A same-regulation but different-CODE mismatch between the live default and
+// the stamped slug (a season bump — "battledataregmbs3" -> "...s4" — is not a
+// regulation change) is a warning telling the user to update the slug stamp,
+// never a throw.
 function check(fetchmod, opts = {}) {
-  const declared = declaredDefault(fetchmod);
   const stamped = stampedSlug();
+  const active = activeRegulation();
+  const warnings = [];
+
+  let liveDefault = null;
+  let providerRegulation;
+  try {
+    liveDefault = fetchLiveDefaultRegulation(fetchmod);
+    providerRegulation = liveDefault.regulation;
+  } catch (err) {
+    providerRegulation = undefined;
+    warnings.push(
+      `Could not fetch Pikalytics' live default format (${fetchmod.BASE}/ai/pokedex) for regulation ` +
+      `corroboration: ${err.message}`
+    );
+  }
+
+  const corroboration = corroborateRegulation(active, providerRegulation);
+  if (corroboration.status === 'disagrees') {
+    throw new Error(
+      `Regulation mismatch: reference/regulation.md is stamped "${active}", but Pikalytics' own live ` +
+      `default format (${fetchmod.BASE}/ai/pokedex) currently declares "${providerRegulation}". ` +
+      `${corroboration.message}`
+    );
+  }
+  if (corroboration.status === 'uncorroborated') {
+    warnings.push(corroboration.message);
+  }
+  if (
+    corroboration.status === 'agrees' && liveDefault && liveDefault.code && stamped &&
+    liveDefault.code.toLowerCase() !== stamped.toLowerCase()
+  ) {
+    warnings.push(
+      `Same regulation (${active}) but Pikalytics' live default format code is "${liveDefault.code}" ` +
+      `while reference/regulation.md stamps "${stamped}" — likely a season bump, not a regulation ` +
+      `change. Update the **Pikalytics slug:** stamp in reference/regulation.md.`
+    );
+  }
 
   const mp = opts.manifestPath || manifestPath();
   let manifestSrc = '';
@@ -429,18 +577,26 @@ function check(fetchmod, opts = {}) {
     manifestSrc = '';
   }
 
+  // Informational only from here — see the function comment above. Never
+  // throws; a disagreement (resolved or not) is reported in `warnings`.
+  let declared = null;
   let resolvedDisagreement = null;
-  if (declared !== stamped) {
-    resolvedDisagreement = readResolvedDisagreement(manifestSrc, declared, stamped);
-    if (!resolvedDisagreement) {
-      throw new Error(
-        `Slug disagreement: llms-full.txt declares "${declared}", reference/regulation.md ` +
-        `stamps "${stamped}". One is stale. Resolve it by hand — silently preferring either ` +
-        `reintroduces the wrong-regulation-data trap. If this exact pair has already been ` +
-        `verified and resolved, record it in tools/meta/META_MANIFEST.md's "Resolved slug ` +
-        `disagreements" table so \`check\` recognises it.`
+  try {
+    declared = declaredDefault(fetchmod);
+    if (declared !== stamped) {
+      resolvedDisagreement = readResolvedDisagreement(manifestSrc, declared, stamped);
+      warnings.push(
+        resolvedDisagreement
+          ? `llms-full.txt declares "${declared}" vs. the stamped "${stamped}" — a disagreement ` +
+            `already resolved by hand on ${resolvedDisagreement.date} (see META_MANIFEST.md's ` +
+            `"Resolved slug disagreements").`
+          : `llms-full.txt declares "${declared}", reference/regulation.md stamps "${stamped}" — ` +
+            `informational only (llms-full.txt is known to lag; the live default-endpoint gate above ` +
+            `is authoritative). If verified, record a resolution in tools/meta/META_MANIFEST.md.`
       );
     }
+  } catch (err) {
+    warnings.push(`Could not read llms-full.txt for the informational slug comparison: ${err.message}`);
   }
 
   const idx = fetchmod.get(`${fetchmod.BASE}/ai/pokedex/${stamped}`);
@@ -461,8 +617,10 @@ function check(fetchmod, opts = {}) {
 
   return {
     slug: stamped,
-    agrees: declared === stamped,
+    agrees: declared !== null ? declared === stamped : null,
     resolvedDisagreement,
+    corroboration,
+    warnings,
     etag: idx.etag,
     pinnedEtag,
     etagStatus,
@@ -551,4 +709,5 @@ module.exports = {
   regulationOf, detectCapabilities, describe,
   defaultFormatCode, report, check, upsertManifestRow, readManifestRow, readResolvedDisagreement,
   classifyCurrency, windowStraddlesRollover, rollingStraddle, ROLLING_WINDOW_FORMATS, ROLLING_WINDOW_DAYS,
+  corroborateRegulation, fetchLiveDefaultRegulation,
 };

@@ -120,6 +120,59 @@ test('the learnset vendor entry is scoped to its file path, not master HEAD', ()
   assert.notEqual(learnsetVendor.api, 'https://api.github.com/repos/smogon/pokemon-showdown/commits/master');
 });
 
+// --- checkRegulationCorroboration: the M-B -> M-C incident's fix, wired
+// into this hook. `fetchProvider` is injected so every branch is testable
+// without a network call — matching checkVendor's own `fetchSha` pattern
+// above. ---
+
+test('checkRegulationCorroboration: silent (null) on agreement, matching how this hook treats a current vendor', async () => {
+  const result = await hook.checkRegulationCorroboration('M-C', async () => 'M-C');
+  assert.equal(result, null);
+});
+
+test('checkRegulationCorroboration: reports on disagreement — the 2026-09-09 M-B -> M-C rollover, permanently', async () => {
+  const result = await hook.checkRegulationCorroboration('M-B', async () => 'M-C');
+  assert.match(result, /M-B/);
+  assert.match(result, /M-C/);
+});
+
+test('checkRegulationCorroboration: reports (never silent) when the provider fetch fails', async () => {
+  const result = await hook.checkRegulationCorroboration('M-C', async () => { throw new Error('network down'); });
+  // fetchProviderRegulation itself never throws (every failure collapses to
+  // undefined) — but this test also pins that a THROWING injected fetcher
+  // must not escape uncaught and silently drop the check, matching every
+  // other failure path in this file ("every failure path reports rather
+  // than exiting quietly").
+  assert.ok(result, 'a failed fetch must report something, never resolve to silence');
+  assert.match(result, /M-C/);
+  assert.match(result, /could not verify|unverified/i);
+});
+
+test('checkRegulationCorroboration: reports uncorroborated when the provider has no regulation token', async () => {
+  const result = await hook.checkRegulationCorroboration('M-C', async () => null);
+  assert.match(result, /M-C/);
+  assert.match(result, /uncorroborated|could not/i);
+});
+
+test('checkRegulationCorroboration: does nothing (null) with no active regulation to compare against', async () => {
+  const result = await hook.checkRegulationCorroboration(null, async () => 'M-C');
+  assert.equal(result, null);
+});
+
+test('checkRegulationCorroboration: respects META_OFFLINE, never invoking the fetcher', async () => {
+  const before = process.env.META_OFFLINE;
+  process.env.META_OFFLINE = '1';
+  try {
+    let called = false;
+    const result = await hook.checkRegulationCorroboration('M-C', async () => { called = true; return 'M-B'; });
+    assert.equal(result, null);
+    assert.equal(called, false, 'the fetcher must not run at all in offline mode');
+  } finally {
+    if (before === undefined) delete process.env.META_OFFLINE;
+    else process.env.META_OFFLINE = before;
+  }
+});
+
 test('an unexpected throw in one vendor check does not suppress the other vendor\'s report', async () => {
   const dir = makeTmpDir();
   try {

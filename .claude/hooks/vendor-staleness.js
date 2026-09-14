@@ -18,6 +18,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const https = require('node:https');
+const metaParse = require('../../tools/meta/parse');
+const metaFormats = require('../../tools/meta/formats');
 
 function emit(body) {
   process.stdout.write(JSON.stringify({
@@ -217,16 +219,105 @@ function readFormatKnowledgeStatus(active) {
   }
 }
 
+// --- Regulation corroboration ----------------------------------------------
+// Everything else in this file (and in tools/meta/formats.js's currency
+// checks) ultimately traces back to ONE hand-edited file, reference/
+// regulation.md — so a stale stamp there vouches for itself: every
+// comparison against it agrees, because they're all reading the same source.
+// This is the second, INDEPENDENT source the M-B -> M-C rollover incident
+// (2026-09-09) exposed the lack of: Pikalytics' own live default format
+// (the bare /ai/pokedex index, no code — it self-declares whatever the site
+// currently treats as current). Reused here rather than reimplemented:
+// metaFormats.regulationOf() (same label-parsing regex every other caller
+// uses) and metaFormats.corroborateRegulation() (the pure, four-outcome
+// comparison — agrees/disagrees/uncorroborated/unverified — already unit
+// tested in tools/meta/tests/formats.test.js). This hook only supplies the
+// live fetch and decides whether the result is worth printing.
+const PIKALYTICS_BASE = 'https://www.pikalytics.com';
+const REGULATION_CHECK_TIMEOUT_MS = 5000;
+
+// A short-timeout, promise-based GET, matching fetchUpstreamSha's own style
+// above — this hook must never hang session start on a slow or hanging
+// upstream.
+function fetchText(url, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, { headers: { 'User-Agent': 'claude-pokemon-teambuilder' }, timeout: timeoutMs }, (res) => {
+      if (res.statusCode !== 200) {
+        res.resume();
+        reject(new Error(`HTTP ${res.statusCode}`));
+        return;
+      }
+      let data = '';
+      res.on('data', (c) => { data += c; });
+      res.on('end', () => resolve(data));
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+  });
+}
+
+// Resolves to the provider's regulation ("M-C"), `null` (fetched fine, no
+// regulation token — e.g. Pikalytics switched its default to a tournament or
+// preview format), or `undefined` (could not be fetched at all: network
+// error, timeout, or an unparseable body). Never throws — every failure
+// collapses to `undefined`, which corroborateRegulation reports as
+// 'unverified' rather than silently reading as agreement.
+async function fetchProviderRegulation(timeoutMs = REGULATION_CHECK_TIMEOUT_MS) {
+  try {
+    const text = await fetchText(`${PIKALYTICS_BASE}/ai/pokedex`, timeoutMs);
+    const info = metaParse.parseFormatInfo(text);
+    if (!info.label) return undefined;
+    return metaFormats.regulationOf(info.label, info.code);
+  } catch {
+    return undefined;
+  }
+}
+
+// Runs the corroboration and returns a report string, or `null` when there is
+// nothing to say. Agreement stays quiet on purpose — matching how the rest of
+// this hook treats an up-to-date vendor (checkVendor returns `null`, not a
+// "still current" message) — so a session start with nothing wrong stays
+// silent instead of training a reader to skim past a wall of green text.
+// `fetchProvider` is injectable so tests exercise every branch (agrees,
+// disagrees, uncorroborated, unverified) without a network call.
+//
+// Respects META_OFFLINE the same way tools/meta's own test suite does (see
+// tools/meta/tests/{cli,fetch}.test.js's `ONLINE` guard), so a caller that
+// sets it never triggers a live fetch here either — this function simply has
+// nothing to report in that mode, the same as a network failure.
+async function checkRegulationCorroboration(active, fetchProvider = fetchProviderRegulation) {
+  if (process.env.META_OFFLINE === '1') return null;
+  if (!active) return null;
+  let provider;
+  try {
+    provider = await fetchProvider();
+  } catch {
+    // fetchProviderRegulation itself never throws (see its own comment), but
+    // an injected fetcher (tests, or a future caller) might — collapse to
+    // the same `undefined` -> 'unverified' path rather than letting this
+    // reject and silently drop the whole check, same rule as every other
+    // failure path in this file.
+    provider = undefined;
+  }
+  const result = metaFormats.corroborateRegulation(active, provider);
+  return result.status === 'agrees' ? null : result.message;
+}
+
 async function main() {
   const active = activeRegulation();
   const results = await Promise.all(VENDORS.map((v) => checkVendor(v, active)));
   const fk = readFormatKnowledgeStatus(active);
   if (fk.stale) results.push(fk.reason);
+  const regulationNote = await checkRegulationCorroboration(active);
+  if (regulationNote) results.push(regulationNote);
   const body = results.filter(Boolean).join('\n\n---\n\n');
   if (body) emit(body);
 }
 
-module.exports = { parsePin, parseActiveRegulation, driftNote, checkVendor, VENDORS, formatKnowledgeStatus };
+module.exports = {
+  parsePin, parseActiveRegulation, driftNote, checkVendor, VENDORS, formatKnowledgeStatus,
+  fetchProviderRegulation, checkRegulationCorroboration,
+};
 
 if (require.main === module) {
   main().catch(() => {}).finally(() => process.exit(0));

@@ -102,10 +102,22 @@ function main() {
   const untilEnd = daysBetween(today, ends);
   const sinceVerified = daysBetween(verified, today);
 
+  // <= 0, not < 0: the stamps record UTC DATES, but the real cutover instant
+  // lands just after midnight UTC on the stamped end date (M-C "ends
+  // 2026-12-02" is really 01:59 UTC on the 2nd) — so the regulation is
+  // essentially over for its entire stamped end date, including day zero.
+  // `untilEnd === 0` (today IS the end date) used to fall through to
+  // ROLLOVER IMMINENT and print "ends in 0 day(s)", which is not what "ends
+  // today" means. See reference/regulation.md's stamp-block comment for the
+  // UTC-date convention this depends on.
   let phase;
-  if (untilEnd < 0) {
+  if (untilEnd <= 0) {
     phase = 'ENDED';
-    lines.push(`REGULATION ${id} ENDED ${-untilEnd} day(s) ago (${ends}).`);
+    if (untilEnd === 0) {
+      lines.push(`REGULATION ${id} ended today (${ends}).`);
+    } else {
+      lines.push(`REGULATION ${id} ENDED ${-untilEnd} day(s) ago (${ends}).`);
+    }
     lines.push('Run the vgc-regulation-transition skill before giving any team or moveset advice — the roster, legal mechanics and vendored data are all potentially wrong until it has run.');
   } else if (untilEnd <= ROLLOVER_WARNING_DAYS) {
     phase = 'ROLLOVER IMMINENT';

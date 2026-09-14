@@ -9,7 +9,22 @@
      "gen9championsvgc2026regmc" — three different naming shapes across three
      regulations), and a previous regulation's slug keeps serving complete,
      correctly-labelled data forever. Re-check it live and update it here at
-     every rollover, and whenever the season number increments. -->
+     every rollover, and whenever the season number increments.
+
+     DATE CONVENTION — `Regulation starts`/`Regulation ends` record the UTC
+     DATE of the official start/end instant, not a local-timezone date. The
+     real cutover happens at a specific PDT/PST instant that does not line up
+     with a UTC midnight: M-C's start ("Tuesday 8 September 2026, 7:00pm
+     PDT") lands at 02:00 UTC on the 9th, and its end ("Tuesday 1 December
+     2026, 5:59pm PST") lands at 01:59 UTC on the 2nd — both stamped as the
+     UTC date the instant falls on (2026-09-09 / 2026-12-02), not the North
+     American calendar date the announcement uses. `formats.regulationHasEnded`
+     and the phase hook's ENDED branch both compare using >= against
+     `Regulation ends`, deliberately: the regulation is treated as over for
+     its ENTIRE stamped end date, not just the day after it, because that
+     date is already (UTC) past the actual cutover instant. Every future
+     stamp MUST follow this same UTC-date convention or that >= comparison
+     will be off by a day. -->
 
 **Regulation: M-C**
 **Regulation starts: 2026-09-09**
