@@ -65,6 +65,10 @@ Pokémon, however strong, and building a slot to answer a threat that keeps
 beating you is a legitimate response, not a concession. The distinction is
 entirely about the count — **once is not a pattern; repeated is.**
 
+That dedicated answer is chosen through `vgc-threat-evaluation`'s "What beats
+X" path, on a decision card (`reference/decision-card.md`) — the threat having
+a name does not make its most-used answer the right one.
+
 **5. Offer to log the iteration.**
 
 `teams/` is read-only unless the user explicitly says to write. Finding a

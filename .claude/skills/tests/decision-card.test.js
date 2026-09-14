@@ -87,3 +87,21 @@ test('vgc-threat-evaluation carries the card skeleton verbatim', () => {
 test('vgc-threat-evaluation has a What beats X path that uses find --resists', () => {
   assertInOrder(THREAT, ['## What beats X', 'find --resists', '<!-- card-skeleton:start -->', '## Common mistakes']);
 });
+
+for (const rel of [
+  '.claude/skills/vgc-team-audit/SKILL.md',
+  '.claude/skills/vgc-post-game/SKILL.md',
+  '.claude/skills/vgc-meta-lookup/SKILL.md',
+]) {
+  test(`${rel} points to reference/decision-card.md`, () => {
+    assert.ok(read(rel).includes('reference/decision-card.md'), `${rel} lost its pointer to the decision card`);
+  });
+}
+
+test('vgc-team-audit checks pick quality before the counterweights', () => {
+  assertInOrder('.claude/skills/vgc-team-audit/SKILL.md', [
+    '- [ ] 6a. Pick quality',
+    '**6a. Pick quality.**',
+    '**6b. Apply the counterweights',
+  ]);
+});

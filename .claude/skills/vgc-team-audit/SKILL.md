@@ -25,6 +25,7 @@ user decide what to change; if they want changes made, that's
 - [ ] 4. Offensive coverage
 - [ ] 5. Speed and speed control
 - [ ] 6. Threat matchups
+- [ ] 6a. Pick quality
 - [ ] 6b. Counterweights
 - [ ] 7. Report
 ```
@@ -121,6 +122,21 @@ matchup; which four cover the win conditions while keeping speed control; and
 what the opponent's likely lead is. Name the four *and* the two you're sitting,
 with the reason for each.
 
+**6a. Pick quality.** Two questions the type chart and the threat list cannot
+answer, both from `reference/team-evaluation.md`:
+
+- **Is there a better legal Pokémon for this pick's role?** (rubric question
+  4). Name the role, turn it into a `node tools/dex/cli.js find` query, and
+  check the strongest result against the pick with questions 1-3. Report "X is
+  outclassed by Y for this role" only with Y's `find` query and its Q1-Q3
+  answers shown, in the shape of a decision card
+  (`reference/decision-card.md`).
+- **Does the team use its centrepiece?** If the team was built around a
+  specific Pokémon, name what each partner does for that Pokémon's strengths.
+  A centrepiece whose strengths nothing on the team uses is a finding.
+
+These are findings, not rebuilds — the scope fence below still holds.
+
 **6b. Apply the counterweights before writing the report.** This skill
 computes type multipliers precisely, and precision is not the same as
 importance. From `reference/team-evaluation.md`:
@@ -152,6 +168,8 @@ Ground". Say plainly what you could not verify.
 - Treating a listed move as coverage without checking it's actually run
 - Reporting every 2x multiplier as a finding without asking whether anything
   in the current meta actually exploits it
+- Passing a team whose picks all check out individually, without asking
+  whether a better legal option existed for each role
 
 ## References
 - `reference/vgc-format.md` — clauses, Team Preview, OTS scope, Bo1 vs Bo3
@@ -163,3 +181,4 @@ Ground". Say plainly what you could not verify.
   counterweights that keep them from over-fixating
 - `reference/speed-control.md` — the seven forms and the backup-setter
   audit question
+- `reference/decision-card.md` — the shape an "outclassed by" finding takes

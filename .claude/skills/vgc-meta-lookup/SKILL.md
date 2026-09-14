@@ -225,6 +225,12 @@ that reason is the actual answer ("this format carries no win rate", "not
 reported for this entry") and must be said out loud, not silently dropped or
 misread as zero.
 
+**A usage list is a threat list and a source of suggestions, never a
+shortlist.** A Pokémon being common is a reason to put it on a decision card
+(`reference/decision-card.md`), not a reason to pick it — the card's rubric
+decides. And if `meta mon` reports an ability the species cannot legally have,
+the parsed data is broken: say so and do not cite the split.
+
 Saved files under `teams/` are historical records, never a meta source.
 
 ## References
