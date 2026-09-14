@@ -51,6 +51,9 @@ a coverage move, or a bad answer despite good typing if it isn't running the
 relevant move. Non-Mega Pokémon have 2-3 legal abilities — check the real
 preset for the set in question, not the dex default.
 
+If `meta mon` reports an ability the species cannot have, the parsed data is
+broken — say so and do not cite that split.
+
 ## Verify the number, don't hand-calculate
 
 ```bash
@@ -72,6 +75,55 @@ so 150% and 300% are the same outcome for it; the real question is whether
 its action goes off. Don't lead with a damage comparison for a support
 Pokémon on either side of the matchup.
 
+## What beats X
+
+"What beats X", "what answers X", and "what do I bring into X" are candidate
+questions, not type-chart questions. Popular answers are welcome as options;
+none of them skips the checks.
+
+**1. Pull X's real set.** `node tools/meta/cli.js mon "<X>"` for its moves and
+item, and `node tools/dex/cli.js mon "<X>"` for typing and Speed. Note
+anything that changes the matchup: priority, a berry that halves a
+super-effective hit, setup.
+
+**2. Generate options from the tools, not from recall.**
+
+```bash
+node tools/dex/cli.js find --resists <X's STAB type> --resists <X's other STAB type>
+node tools/dex/cli.js find --resists <X's STAB type> --learns "<a move that hits X hard>"
+```
+
+Add meta suggestions as extra rows; they get the same checks.
+
+**3. Put every option on a decision card**, with usage ranks from
+`node tools/meta/cli.js rank "<Option A>" "<Option B>" ...`:
+
+<!-- card-skeleton:start -->
+**Decision card** — required before any species, move, or threat-answer choice
+goes to the user. Full guidance: `reference/decision-card.md`.
+
+1. **Decision** — what is being chosen.
+2. **Role** — the job (`reference/roles.md`). On a centrepiece build, also what
+   it does for the centrepiece's strengths, not only which weakness it covers.
+3. **Gap is real** — current meta evidence the job matters
+   (`reference/team-evaluation.md`, Meta awareness), or "no current threat found".
+4. **Options from** — the exact `dex find` command (always, for species and
+   threat answers) plus any meta source used. For moves: learnset + role template.
+5. **Options table** — per option: usage rank (`meta rank`); source (find / meta /
+   user); Q1 real matchups, with a calc wherever a counter is claimed; Q2 stats,
+   moves, ability, tool-verified; Q3 role fit; Q4 is there a better legal option
+   for this role. Moves also: base power and category.
+6. **Recommendation** — the reason cites fields 2-5. Usage rank and co-occurrence
+   are context, never the reason. If every option is top-10 usage, say so.
+7. **Not verified** — anything claimed without a tool call this session.
+<!-- card-skeleton:end -->
+
+**4. Back Q1 with calcs both ways**, passing X's real item and any weather:
+does the option survive X's best hit into it, and does the option's attack
+threaten X through that item? A resisted STAB is not an answer until the calc
+says the option lives, and a super-effective hit is not an answer until the
+calc says it lands through the berry.
+
 ## Common mistakes
 - Answering a type matchup from recall because it "feels obvious" — that
   feeling is the failure mode; every logged instance felt obvious
@@ -79,9 +131,14 @@ Pokémon on either side of the matchup.
 - Citing a Mega's pre-Mega ability from a usage-percentage split
 - Treating co-occurrence stats as proof a coverage move is being run
 - Skipping the weather flag when the *opponent* sets the weather
+- Answering "what beats X" from the type chart or from what is popular, with no
+  `find` run and no calc in both directions
+- Ignoring X's item — a super-effective-reducing berry turns a clean KO into a
+  survived hit
 
 ## References
 - `reference/methodology.md` — the reasoning process, live-lookup detail
 - `reference/pitfalls.md` — the trap checklist
 - `reference/mechanics.md` — priority, speed modifiers, item mechanics
 - `docs/case-studies.md` — the incidents these rules came from
+- `reference/decision-card.md` — the card every "what beats X" option goes on

@@ -77,3 +77,13 @@ test('vgc-team-refining checks role fit before meta relevance', () => {
   assertInOrder(REFINING, ['1b. **Role fit.**', '1c. **Meta relevance is context.**']);
   assertInOrder('reference/team-refining.md', ['### 1b. Role fit', '### 1c. Meta relevance is context']);
 });
+
+const THREAT = '.claude/skills/vgc-threat-evaluation/SKILL.md';
+
+test('vgc-threat-evaluation carries the card skeleton verbatim', () => {
+  assert.equal(skeleton(THREAT), skeleton(REFERENCE));
+});
+
+test('vgc-threat-evaluation has a What beats X path that uses find --resists', () => {
+  assertInOrder(THREAT, ['## What beats X', 'find --resists', '<!-- card-skeleton:start -->', '## Common mistakes']);
+});
