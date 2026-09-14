@@ -254,6 +254,43 @@ only happens after a user catches a mistake:
   pin is regulation-variant, so see the staleness pitfall in
   `reference/pitfalls.md`.
 
+- **A Mega Froslass build that verified every fact and evaluated no pick
+  (2026-09-14).** Asked to build around Mega Froslass for the M-C ladder as a
+  Good Stuff team, the session ended with Froslass plus Sneasler, Incineroar,
+  Rillaboom, Kingambit and Basculegion — ranked #2, #3, #1, #5 and #6 by that
+  session's own live `meta usage` pull. Every type matchup, learnset, item and
+  Mega ability was a real tool call. What got skipped was everything that
+  leaves no trace:
+  - `reference/roles.md`, `speed-control.md`, `team-evaluation.md` and
+    `pitfalls.md` were never opened, though the skill names each at a step.
+  - `dex find` ran once, then the most-used result was recommended; every later
+    slot's candidates came from `meta mon` teammate lists, and co-occurrence
+    was cited as "proven synergy".
+  - "(Recommended)" went to the highest-usage option all six times, and rubric
+    question 4 was never asked.
+  - Partners only covered Froslass's type weaknesses; none used its Snow /
+    Aurora Veil / Blizzard kit.
+  - Slots were spent on Ground and Rock weaknesses without checking the meta
+    exploited them.
+  - "A Fighting-type answers Kingambit" had no calc, and Kingambit's common
+    Chople Berry was noticed and set aside.
+  - Two mechanics were stated from recall and were wrong: Intimidate
+    "softening" a Defiant Kingambit (the user caught it) and Grassy Terrain
+    "cutting all Ground damage by a third" (`reference/mechanics.md` says it
+    halves only Earthquake, Bulldoze and Magnitude, and heals the opponent).
+  - Implausible `meta mon` ability splits were explained away until the user
+    flagged Farigiraf.
+
+  Caught when the user asked for a review of how the team was built. When the
+  fix was first framed as "never source candidates from meta data", the user
+  corrected it: meta Pokémon are probably good, but they go through the same
+  evaluation. **What changed:** the rule "usage can suggest a pick; it never
+  justifies one"; a decision card for every species, move and threat answer
+  (`reference/decision-card.md`), copied into three skills and pinned by
+  `.claude/skills/tests/decision-card.test.js`; `meta rank` and
+  `dex find --resists`; and `docs/regression-scenarios.md`
+  (`docs/superpowers/specs/2026-09-14-binding-evaluation-design.md`).
+
 ## Data-source misses
 
 Moved out of `reference/pitfalls.md`'s "Data source pitfalls" section, which

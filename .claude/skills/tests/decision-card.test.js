@@ -105,3 +105,15 @@ test('vgc-team-audit checks pick quality before the counterweights', () => {
     '**6b. Apply the counterweights',
   ]);
 });
+
+test('CLAUDE.md states the shared rule and routes to the card', () => {
+  const text = read('CLAUDE.md');
+  assert.ok(text.includes('**Usage can suggest a pick; it never justifies one.**'));
+  assert.ok(text.includes('reference/decision-card.md'));
+  assert.ok(text.includes('node tools/meta/cli.js rank'));
+  assert.ok(text.includes('find --resists'));
+});
+
+test('the case study the skills cite exists under that exact title', () => {
+  assert.ok(read('docs/case-studies.md').includes('A Mega Froslass build that verified every fact and evaluated no pick'));
+});

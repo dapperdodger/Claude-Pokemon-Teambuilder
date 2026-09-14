@@ -28,6 +28,8 @@ right now" — that's the `vgc-meta-lookup` skill's job, using this tool.
 node tools/meta/cli.js formats [--write]      list formats, capabilities, regulation
 node tools/meta/cli.js mon <Species> [--format <code>]   per-Pokemon data
 node tools/meta/cli.js usage [--format <code>]           ranked list
+node tools/meta/cli.js rank <Species> [<Species> ...] [--format <code>]
+                                               where each option ranks — one fetch
 node tools/meta/cli.js cores [--top N] [--format <code>]  Common Team Cores (2/3/4-mon groupings)
 node tools/meta/cli.js teams [--top N] [--only topteams|team-usage] [--format <code>]
                                                topteams + team-usage, one call
@@ -106,6 +108,26 @@ $ node tools/meta/cli.js mon "Garchomp" --format championstournaments
 }
 ```
 (live output, this session, matching `tools/meta/tests/fixtures/tournaments-garchomp.md`)
+
+**`rank <Species> [<Species> ...] [--format <code>]`** — fills a decision
+card's usage column (`reference/decision-card.md`) in one fetch. Per name:
+`query`, `dexName`, `usageSpecies`, `isMega`, `rank`, `usage`, `winRate`,
+`record`, `reason`.
+
+- Accepts `"Mega Froslass"` (dex naming, as `dex find` prints it) or
+  `"Froslass-Mega"` (Pikalytics naming), converted through `megas.js`.
+- A Mega reports its **base species' row** with a `note`, because Pikalytics
+  logs Mega battles under the base — the rank is not the Mega's own.
+- Every name is validated against the dex first: a misspelling is a row
+  `error`, never a silent `rank: null`. A real species not in the table is
+  `rank: null` with `reason: "outside the top 50 of this format"`.
+- `anchoring.allWithinThreshold` is `true` when every resolved name ranks in
+  the top 10; its `message` is the sentence the card must carry. A note, not a
+  failure — meta picks are allowed.
+
+```bash
+node tools/meta/cli.js rank "Mega Froslass" "Sneasler" "Tauros-Paldea-Combat"
+```
 
 ## Team-level surfaces: `cores` and `teams`
 
@@ -484,6 +506,7 @@ exactly this reason.
 
 | Date | Change | Source |
 |---|---|---|
+| 2026-09-14 | Documented the new `rank` command: one-fetch usage ranks for a decision card, dual naming convention, Mega base-row note, dex validation so a typo errors instead of reading as "outside the top 50", and the top-10 anchoring note. | `tools/meta/{rank.js,cli.js}`, `tools/meta/tests/rank.test.js`; `docs/superpowers/specs/2026-09-14-binding-evaluation-design.md` |
 | 2026-09-14 | Closed the design flaw the 2026-09-09 M-B → M-C rollover exposed: every currency/regulation check (`current`, `stampExpired`, the old `check` slug-agreement gate) ultimately compared parts of `reference/regulation.md` against OTHER parts of the same file, so a stale hand-edited stamp vouched for itself and every tool reported healthy. Added `formats.corroborateRegulation` (pure, four outcomes: agrees/disagrees/uncorroborated/unverified) and `fetchLiveDefaultRegulation`, which compares the stamp against Pikalytics' own **live default format** (bare `/ai/pokedex`, no code) — a second, independent source. `check`'s gate is now this comparison: a regulation mismatch **throws**; a same-regulation different-code mismatch (season bump) **warns**, no throw; `llms-full.txt`'s declared default is demoted from a throwing gate to **informational** (`warnings`), since it is Pikalytics' own changelog prose about itself and known to lag a real rollover. `stampExpired` now also **forces `current: false`** — it used to be reported but never gate `current`, so an expired stamp could still read as current. `regulationHasEnded` and the phase hook's ENDED branch changed from `>` to `>=` against `Regulation ends`, because the stamps record UTC dates and the real cutover instant falls within the stamped end date, not the day after it — documented in `reference/regulation.md`'s stamp-block comment and the `vgc-regulation-transition` skill. The corroboration check also runs at session start via `.claude/hooks/vendor-staleness.js` (chosen over `regulation-phase.js` because its tests already exercise exported functions with an injected fetcher rather than spawning the real hook process, so adding a live network call there could not accidentally make the existing phase-hook test suite hit the network); it stays silent on agreement, matching how the hook already treats an up-to-date vendor. | `tools/meta/formats.js`, `.claude/hooks/{vendor-staleness.js,regulation-phase.js}`, `tools/meta/META_MANIFEST.md`, this file; test cases in `tools/meta/tests/formats.test.js` and `.claude/hooks/tests/{vendor-staleness,regulation-phase}.test.js`; live `node tools/meta/cli.js check` / `node .claude/hooks/vendor-staleness.js` / `node .claude/hooks/regulation-phase.js` this session |
 | 2026-09-08 | Design correction: `current` was a straight regulation-token comparison, which put a "previous regulation is NOT the current one" warning on `championstournaments` — the tool's best usage source, wrongly flagged, because it has no regulation token (it's a rolling ~2-week window over current play, current by construction, not something with a token to compare). Replaced with a three-way `currency` taxonomy (`regulation`/`rolling`/`unknown`) classified by a curated list (`ROLLING_WINDOW_FORMATS` in `formats.js`) rather than inferred from a missing token — `championspreview` also has no token but Pikalytics flags it as not-current pre-launch data, so a heuristic would have misclassified it as rolling. Added rollover-straddle detection: a rolling window can span a regulation change (confirmed live 2026-09-08: M-B ends 2026-09-09, tomorrow, and the ~2-week tournament window will then contain both M-B and M-C data), which is a third state — genuinely current AND genuinely mixed — distinct from both "fine" and "stale", with its own warning naming the mixed regulation and roughly when the window clears. `unknown`-currency formats keep a warning too, reworded to state genuinely unknown provenance rather than falsely claiming "a previous regulation." Verified live: `node tools/meta/cli.js usage --format championstournaments` now reports `currency: "rolling", current: true, warnings: []`; `battledataregmbs3` (regulation-tagged, matches active) and `gen9championsvgc2026regmabo3` (genuinely off-regulation) are unchanged | `tools/meta/{formats.js,meta.js,cli.js,META_MANIFEST.md}` and test cases in `tools/meta/tests/{formats.test.js,meta.test.js,cli.test.js}`; live `node tools/meta/cli.js usage --format championstournaments` this session |
 | 2026-09-08 | FIX 8 regression: format-code comparison is now case-insensitive. The index page echoes the requested code as-is; the per-Pokemon page normalizes to lowercase. Both now accept case-variant codes while still detecting genuinely different codes (redirects, aliases). Updated documentation to clarify that the page-format match check has strong force on the per-Pokemon page (independent normalization) and weaker force on the index page (echoes). | `tools/meta/{meta.js,formats.js}` and test cases in `tools/meta/tests/{meta.test.js,formats.test.js}` |

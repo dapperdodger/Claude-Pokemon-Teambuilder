@@ -50,6 +50,10 @@ them is the wrong answer. Full detail and sourcing in
   the role is named is a spread solved for the wrong job.
 - **Verifiable is not the same as good.** Every fact about a pick can check out
   while the pick is still wrong for the slot. See `reference/team-evaluation.md`.
+- **Usage can suggest a pick; it never justifies one.** Every species, move,
+  or threat answer — however popular — gets a decision card
+  (`reference/decision-card.md`) shown in chat before the choice goes to the
+  user.
 
 ## Never state these from recall — run the command
 
@@ -68,6 +72,8 @@ them is the wrong answer. Full detail and sourcing in
 | A Pokémon's real moves/items/abilities distribution | `node tools/meta/cli.js mon "<Species>"` |
 | Which Pokémon show up *together* (cores) / real tournament teams and archetypes | `node tools/meta/cli.js cores` / `node tools/meta/cli.js teams` — surface any `teams` straddle warning to the user |
 | Candidates for a roster gap | `node tools/dex/cli.js find --type <T> --learns "<Move>" --min-spe <N>` |
+| Where each option ranks in usage (a decision card's usage column) | `node tools/meta/cli.js rank "<Species>" ["<Species>" ...]` |
+| Which Pokémon take a type well — options for "what beats X" | `node tools/dex/cli.js find --resists <Type> [--resists <Type>]` |
 | How fast is the field / how common is Fake Out | `node tools/meta/cli.js speed-tiers`, `node tools/meta/cli.js distribution --move "<Move>"` |
 
 Every claim in that table has been stated wrong from recall in this repo
@@ -209,6 +215,7 @@ Scope: legality only. The data carries no level-up/TM/egg distinction.
 | Speed control — forms, trade-offs, fallbacks | `reference/speed-control.md` |
 | Role templates, movesets, items by role | `reference/roles.md` |
 | Is this Pokémon good / is this team good | `reference/team-evaluation.md` |
+| Choosing any species, move, or threat answer — the decision card | `reference/decision-card.md` |
 | Speed tiers, Fake Out / Trick Room / Prankster distributions | `reference/format-knowledge.md` (generated) |
 | Just played games — "why did I lose" | `vgc-post-game` skill |
 | Why a rule exists — the incident behind it | `docs/case-studies.md` |

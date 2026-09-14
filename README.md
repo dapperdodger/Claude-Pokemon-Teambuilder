@@ -46,6 +46,7 @@ node tools/dex/cli.js learnset "Mega Altaria" --move "Calm Mind"  # move legalit
 node tools/dex/cli.js team teams/my-team.md     # validate a team file
 node tools/dex/cli.js team --all                # validate every saved team
 node tools/dex/cli.js find --type Flying --learns "Tailwind" --min-spe 100  # candidates for a roster gap
+node tools/dex/cli.js find --resists Dark --resists Steel --learns "Close Combat"  # options for "what beats X"
 ```
 
 `team` checks the things that are mechanically decidable and had been prose
@@ -85,6 +86,7 @@ fetching a page. Prints JSON, same shape as `tools/dex`.
 ```bash
 node tools/meta/cli.js check                          # slug agreement + ETag drift — run this first
 node tools/meta/cli.js usage --format championstournaments
+node tools/meta/cli.js rank "Mega Froslass" "Sneasler"    # usage rank per option, for a decision card
 node tools/meta/cli.js mon "Garchomp" --format championstournaments
 node tools/meta/cli.js mon "Staraptor-Mega"            # resolves to base + real Mega item share
 node tools/meta/cli.js formats --write                 # capabilities + manifest row
@@ -128,6 +130,7 @@ command surface and why `check` has to run first.
 | [`reference/speed-control.md`](reference/speed-control.md) | The forms of speed control, how they compose or conflict, and the backup-when-the-setter-is-removed question. |
 | [`reference/roles.md`](reference/roles.md) | Role-before-moveset-before-spread, the two moveset templates, the base-power floor, and items by role. |
 | [`reference/team-evaluation.md`](reference/team-evaluation.md) | The "is this Pokémon good" rubric and the team-wide design-constraints checklist plus its counterweights. |
+| [`reference/decision-card.md`](reference/decision-card.md) | The rule "usage can suggest a pick; it never justifies one", and the seven-field card every species, move and threat-answer choice goes on before the user picks. |
 | [`reference/format-knowledge.md`](reference/format-knowledge.md) (generated) | Speed tiers and key-move/ability distributions computed from the vendored dex and live usage — regenerate with `node tools/meta/cli.js speed-tiers --write`, never hand-edit. |
 
 The 18×18 type chart markdown was **removed** — `tools/dex/cli.js type`
@@ -151,6 +154,12 @@ one hop out to reference files — never a chain through several of them.
 | [`vgc-meta-lookup`](.claude/skills/vgc-meta-lookup/SKILL.md) | "What's the meta" with no specific Pokémon or team named yet — including what to do early in a regulation when there is no data. |
 | [`vgc-regulation-transition`](.claude/skills/vgc-regulation-transition/SKILL.md) | A regulation ended or is about to. The rollover runbook. |
 | [`vgc-post-game`](.claude/skills/vgc-post-game/SKILL.md) | "I lost with this", "I keep losing to X" — triages a played game into bad luck, a misplay, or a genuinely missing tool before touching the team. |
+
+`.claude/skills/tests/` holds Node tests that fail if the decision-card
+skeleton drifts between `reference/decision-card.md` and the skills that copy
+it, if a skill loses its pointer to the card, or if the shared rule is deleted
+from `CLAUDE.md`. They catch rules being removed, not rules being ignored —
+`docs/regression-scenarios.md` covers that. Run with `npm test`.
 
 ## Hooks
 

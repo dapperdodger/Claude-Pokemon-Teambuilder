@@ -88,6 +88,18 @@ table; these are no longer documentation problems, they are tool calls.
   strong and get used a lot. Verify the actual synergy mechanism (redirection,
   speed control, type coverage, etc.) rather than citing co-occurrence rate
   as if it were evidence of a working game plan.
+- **A usage-suggested candidate still needs the whole evaluation.** Every fact
+  about a pick can be tool-verified while the pick itself was never evaluated:
+  a slot filled off a teammate list, with no `dex find` run and no rubric
+  question 4, looks identical to a real decision. Meta picks are fine — put
+  them on a decision card (`reference/decision-card.md`) beside the `find`
+  results. → `docs/case-studies.md`
+- **An ability percentage for an ability the species cannot have means the
+  parsed data is broken.** On 2026-09-14 `meta mon` returned Trace /
+  Hospitality / Mold Breaker splits for Farigiraf, which can run none of them,
+  and the same names appeared in other species' tails. Don't explain an
+  implausible split away — cross-check `dex mon` and a live source, say the
+  data is broken, and don't cite it.
 - **A WebSearch summary that mentions Pikalytics is not the same as fetching
   Pikalytics' team-level pages.** Build any threat list from
   `/topteams` + `/team-usage` + `/pokedex`'s "Common Team Cores", not from
@@ -452,3 +464,4 @@ checking whether a new mistake repeats an old one.
 | 2026-09-08 | Reverted the item-visibility "resolution" from earlier the same day. The 2026-09-08 row above promoted "held items are visible on ladder" from unresolved to **[consensus]** on one third-party guide plus search summaries quoting that same guide — repetition counted as independent agreement. That guide also discusses open team lists on the same page, so its item line may describe tournaments, which would make this the third instance of the same scope drop. User (who plays the ladder) reports items are not visible; Serebii's Ranked Battle pages say nothing about Team Preview contents; no official source exists either way. Back to **[unresolved]** in `vgc-format.md`, with a standing rule not to assert it in either direction | User correction; re-checked champdex.com/guides/team-preview, serebii.net/pokemonchampions/rankedbattle.shtml and /preview/, plus searches that returned only the same single source |
 | 2026-09-08 | Added the paired `tools/damage-calc`/`tools/meta` Mega entity-convention trap (opposite required names, each tool fails confidently on the other's form) and the alphabetical-empty-dataset trap, plus a Quick-checklist line for the Mega case — both surfaced while building and documenting `tools/meta` | `tools/meta/megas.js`, `tools/meta/validate.js`; `tools/meta/tests/fixtures/ranked-raichu-mega-y.md` and `filler-index.md`; live `node tools/meta/cli.js mon "Staraptor-Mega"` this session (94.5% real megaShare) |
 | 2026-09-08 | Whole-branch review of `tools/meta` found the Mega-stub trap above had only one line of defense (name matching in `megas.js`, and case-sensitive at that) — a case variant or an unrecognised form still slipped a fetch through to the real stub page. Added a second, structural line: `validate.assertNotStub` rejects any fetched page whose headline metrics AND item list are all sentinels at once, regardless of why the name lookup didn't redirect it. Also closed a related hole in the same review: `check`/`report` never checked HTTP status, so a 404 parsed into a confident all-null PASS at exit 0 — the mandated first-line gate reporting success off a failed fetch | `tools/meta/{formats.js,meta.js,megas.js,validate.js}` and their test files, task 10 fix-wave this session |
+| 2026-09-14 | Added two Data source pitfalls: a usage-suggested candidate still needs the whole evaluation (a Mega Froslass build verified every fact and evaluated no pick, ending with five of the top six usage picks), and an ability split impossible for the species means the parsed data is broken (Farigiraf showing Trace/Hospitality). | `docs/case-studies.md`; `docs/superpowers/specs/2026-09-14-binding-evaluation-design.md`; live `node tools/meta/cli.js mon "Farigiraf"` 2026-09-14 |
