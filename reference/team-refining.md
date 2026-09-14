@@ -148,8 +148,11 @@ result (saved teams are historical/personal records, not a meta source —
 don't treat a save request here differently from any other team save).
 
 Per Pokémon, the report includes:
-- Moves table: each move with a verdict (legal + common / legal but rare —
-  with alternative / illegal) and source.
+- Moves table: each move with its legality verdict (legal / illegal), its
+  role-fit verdict from 1b (fits / mismatch — with the reason), how often it
+  is run on real sets (context only), and source. An alternative appears only
+  for a move flagged in 1b, and every alternative or replacement goes on a
+  decision card (`reference/decision-card.md`).
 - Threat list used, with source and date (auto-derived vs. user-named).
 - Recommended SP spread with the speed/offense/bulk breakpoint reasoning
   behind each allocation.
@@ -162,4 +165,4 @@ Per Pokémon, the report includes:
 | 2026-07-17 | Initial version | `docs/superpowers/specs/2026-07-17-team-refining-mode-design.md` |
 | 2026-09-07 | Replaced dangling `CLAUDE.md rules 3/6/7/10` references with named pointers to the relevant files and skills | docs/specs/2026-09-07-workflow-audit.md |
 | 2026-09-09 | Added a role-fit check (step 1b) between move verification and threat sourcing: the mode verified each move for legality and meta-usage but never asked whether the moveset fit the role the Pokémon plays. Checks the moveset against `reference/roles.md`'s two templates, the ≥80 BP (preferably ≥90) base-power floor via `node tools/dex/cli.js move`, and flags Protect alongside a Choice item as a wasted slot. Report only, no auto-swap — same discipline as move verification. Added one line to Scope making explicit that "is this move right for this role" is in scope while "is this the right Pokémon for this role" is `vgc-team-building`'s question, so the scope fence holds. | `.superpowers/sdd/2026-09-08-teambuilding-philosophy/task-12-brief.md` |
-| 2026-09-14 | Role fit now precedes meta relevance. Split step 1 into 1 (legality) and a new 1c (meta relevance as context): a rarely-run move that fits its role is no longer a finding, because ranking moves by usage copied usage sets instead of judging them. Defined a mismatch in 1b (template break without a reason, below the floor with no non-damage job, wrong category). Flagged and replacement moves go on a decision card. Added the ability sanity rule. Scope line reworded to match. | `docs/superpowers/specs/2026-09-14-binding-evaluation-design.md`; `reference/decision-card.md` |
+| 2026-09-14 | Role fit now precedes meta relevance. Split step 1 into 1 (legality) and a new 1c (meta relevance as context): a rarely-run move that fits its role is no longer a finding, because ranking moves by usage copied usage sets instead of judging them. Defined a mismatch in 1b (template break without a reason, below the floor with no non-damage job, wrong category). Flagged and replacement moves go on a decision card. Added the ability sanity rule. Scope line and the Output format move-table verdicts reworded to match. | `docs/superpowers/specs/2026-09-14-binding-evaluation-design.md`; `reference/decision-card.md` |
