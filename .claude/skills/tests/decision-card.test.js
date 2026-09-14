@@ -44,3 +44,25 @@ test('reference/decision-card.md carries the card skeleton with all seven fields
 test('reference/decision-card.md states the shared rule', () => {
   assert.ok(read(REFERENCE).includes('**Usage can suggest a pick; it never justifies one.**'));
 });
+
+const BUILDING = '.claude/skills/vgc-team-building/SKILL.md';
+
+test('vgc-team-building carries the card skeleton verbatim', () => {
+  assert.equal(skeleton(BUILDING), skeleton(REFERENCE));
+});
+
+test('vgc-team-building describes the centrepiece before the meta pull', () => {
+  assertInOrder(BUILDING, [
+    '**Centrepiece first, before any meta data.**',
+    '**2. Regulation check, fresh this session, then a live meta scan.**',
+  ]);
+});
+
+test('vgc-team-building step 7 carries the Q4 and centrepiece gates', () => {
+  assertInOrder(BUILDING, [
+    '**7. Team-level gates',
+    '**Q4 gate:**',
+    '**Centrepiece gate:**',
+    '**8. Solve the numbers for SP',
+  ]);
+});

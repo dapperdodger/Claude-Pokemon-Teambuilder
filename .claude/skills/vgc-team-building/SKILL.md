@@ -43,6 +43,22 @@ and each implies a different first question — read `reference/archetypes.md`'s
   does it struggle?
 - **An existing team** — why does it work, and which parts are load-bearing?
 
+**Centrepiece first, before any meta data.** When the starting point is a
+specific Pokémon or core, write this down in chat before step 2 pulls any
+usage data. It is card field 2 for every later slot:
+
+- **Strengths to amplify** — its ability, signature moves, stats, and anything
+  its kit sets up (a weather, screens, a Speed tier). From
+  `node tools/dex/cli.js mon "<Species>"` — the Mega forme if it holds a stone.
+- **Weaknesses to cover** — the full profile from
+  `node tools/dex/cli.js type --vs-mon "<Species>"`, plus its playstyle
+  weakness (fast and frail, slow and bulky) per `reference/archetypes.md`'s
+  "Megas as a centrepiece" section.
+- **Speed needs** — its base Speed, to place against the field at step 3.
+
+Partners are picked to do something for the first list, not only to patch the
+second.
+
 Get this right before the first exchange. Asking "what does this piece
 struggle against" of someone who came in with a strategy, or "what does this
 strategy require" of someone who came in with a favourite, wastes the
@@ -61,6 +77,11 @@ rank alone. A flat top-20 list has missed whole archetypes (Sun, rain)
 before; `cores`/`teams` are what catch them. If `teams`' output carries a
 straddle warning (its default format straddles a regulation rollover),
 pass that warning on to the user, not just the teams it returned.
+
+**What the meta pull is for.** It produces the threat list and a pool of
+suggested candidates — never a shortlist on its own. A meta-suggested Pokémon
+goes onto a decision card beside the `dex find` results and is judged by the
+same rubric.
 
 **3. Speed-control plan, before the archetype is locked in.** Read
 `reference/speed-control.md`. Speed control is ranked ahead of the archetype
@@ -154,10 +175,42 @@ Then verify every name `find` returns before presenting it:
   legal Pokémon exists for that exact job. Run it against every candidate,
   not just the one that ends up picked.
 
-**Present 3-5 real candidates with their trade-offs and let the user
-choose.** Researching one option and presenting it as the answer is the
-documented failure here, whether the slot came from a strategy gap or from
-building around a favourite.
+**Put the slot on a decision card, then let the user choose.** Show the card
+in chat before the pick question: 3-5 options, mixing `dex find` results with
+any meta suggestions. `find` runs for every species card, even when the meta
+already suggests a strong option. Get every option's usage rank in one call:
+
+```bash
+node tools/meta/cli.js rank "<Species A>" "<Species B>" "<Species C>"
+```
+
+A "(Recommended)" label must rest on fields 2-5, never on usage rank or a
+teammate rate.
+
+<!-- card-skeleton:start -->
+**Decision card** — required before any species, move, or threat-answer choice
+goes to the user. Full guidance: `reference/decision-card.md`.
+
+1. **Decision** — what is being chosen.
+2. **Role** — the job (`reference/roles.md`). On a centrepiece build, also what
+   it does for the centrepiece's strengths, not only which weakness it covers.
+3. **Gap is real** — current meta evidence the job matters
+   (`reference/team-evaluation.md`, Meta awareness), or "no current threat found".
+4. **Options from** — the exact `dex find` command (always, for species and
+   threat answers) plus any meta source used. For moves: learnset + role template.
+5. **Options table** — per option: usage rank (`meta rank`); source (find / meta /
+   user); Q1 real matchups, with a calc wherever a counter is claimed; Q2 stats,
+   moves, ability, tool-verified; Q3 role fit; Q4 is there a better legal option
+   for this role. Moves also: base power and category.
+6. **Recommendation** — the reason cites fields 2-5. Usage rank and co-occurrence
+   are context, never the reason. If every option is top-10 usage, say so.
+7. **Not verified** — anything claimed without a tool call this session.
+<!-- card-skeleton:end -->
+
+Researching one option and presenting it as the answer is the documented
+failure here — and so is presenting 3-5 options that all came off one
+teammate list with no `find` run (`docs/case-studies.md`, "A Mega Froslass
+build that verified every fact and evaluated no pick").
 
 **6. Moveset from the role template.** The role determines the template — see
 `reference/roles.md`'s "The two templates" section. A deviation is fine with a
@@ -174,6 +227,11 @@ Two checkable gates on top of the template:
   step 5: `node tools/dex/cli.js learnset "<Species>" --move "<Move>"`. Step 5
   checked the move that defined the pick; this step checks the rest of the
   set before it's finalised.
+
+**Every move goes on a decision card.** Options are the learnable moves that
+fit the slot's role template; a moveset from `meta mon` is a suggestion to put
+on the card, not a set to copy. A move's usage column is its share on real
+sets (`meta mon`'s `moves` list).
 
 Coverage does not need to be super-effective everywhere — a strong attacker's
 neutral hit still removes things — but check what it needs to answer against
@@ -192,6 +250,16 @@ don't compensate for bad stats; and half of a big number can still knock a
 Pokémon out. Run the checklist, then ask whether each flagged item is a real
 problem against what the team will actually face — don't stop at the
 checklist itself.
+
+Two more gates, both stated in chat before step 8:
+
+- **Q4 gate:** every species on the six went through
+  `reference/team-evaluation.md`'s question 4 on its decision card. A pick
+  with no card, or a card with Q4 blank, is reopened.
+- **Centrepiece gate:** when the build started from a specific Pokémon, say
+  what the team does with the strengths written down at step 1 — which
+  partner uses or enables each one. "Nothing uses them" is a finding to raise
+  with the user, not a pass.
 
 **8. Solve the numbers for SP, don't hand-calculate.**
 - `tools/damage-calc/cli.js` for rolls and speed breakpoints
@@ -242,6 +310,10 @@ or ported to a new regulation — new file `<original-basename>-v2.md` with a
 - Presenting a candidate list generated from recall instead of `dex find`
 - Choosing a moveset before the role is named
 - Treating `team-evaluation.md`'s checklist as a score rather than a prompt
+- Filling slots from `meta mon` teammate lists with no card and no `find` run —
+  every fact checks out while no pick was evaluated
+- Picking partners only to cover the centrepiece's weaknesses, never to use
+  its strengths
 
 ## References
 - `reference/archetypes.md` — the three starting points and the four
@@ -261,3 +333,5 @@ or ported to a new regulation — new file `<original-basename>-v2.md` with a
 - `reference/regulation.md` — regulation authority
 - `reference/damage-calc.md` — CLI usage and caveats
 - `docs/case-studies.md` — the incidents these rules came from
+- `reference/decision-card.md` — the card every species and move pick goes on;
+  read at steps 5 and 6
