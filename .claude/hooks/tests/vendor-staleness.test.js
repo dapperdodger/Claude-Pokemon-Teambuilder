@@ -183,6 +183,52 @@ test('checkRegulationCorroboration: reports a skip message under META_OFFLINE, n
   }
 });
 
+// Structural "never rejects" guarantee. main() starts this promise BEFORE the
+// vendor checks and only awaits it afterwards, so a rejection in that gap is
+// an unhandled rejection — which on Node 22 kills the process and prints
+// nothing, and the hook's `2>/dev/null || true` wrapper turns that crash into
+// SILENCE: the exact failure this corroboration exists to prevent. Every
+// statement except the corroborateRegulation() call was already inside a
+// try/catch, so safety rested on that one pure function never gaining a
+// throwing statement. This pins the guarantee to the function itself instead.
+test('checkRegulationCorroboration: never rejects, even if the comparison itself throws — reports unverified instead', async () => {
+  const formats = require('../../../tools/meta/formats');
+  const original = formats.corroborateRegulation;
+  formats.corroborateRegulation = () => { throw new Error('simulated comparison bug'); };
+  try {
+    const result = await hook.checkRegulationCorroboration('M-C', async () => 'M-C');
+    assert.equal(typeof result, 'string', 'must report something — silence reads as "current"');
+    assert.match(result, /M-C/);
+    assert.match(result, /could not verify/i);
+    assert.match(result, /UNVERIFIED/);
+    assert.doesNotMatch(result, /agrees/i, 'an internal failure must never read as agreement');
+  } finally {
+    formats.corroborateRegulation = original;
+  }
+});
+
+// The same guarantee's quieter half: a result that is malformed without
+// throwing. Before the guard, a non-agreement status carrying no message
+// returned `undefined` — silent, with no exception anywhere to catch.
+test('checkRegulationCorroboration: a malformed comparison result reports unverified rather than resolving to silence', async () => {
+  const formats = require('../../../tools/meta/formats');
+  const original = formats.corroborateRegulation;
+  try {
+    for (const [label, bad] of [
+      ['no result at all', undefined],
+      ['result with no status', { message: 'x' }],
+      ['non-agreement status with no message', { status: 'disagrees' }],
+    ]) {
+      formats.corroborateRegulation = () => bad;
+      const result = await hook.checkRegulationCorroboration('M-C', async () => 'M-B');
+      assert.equal(typeof result, 'string', `${label}: must report, never resolve to silence`);
+      assert.match(result, /UNVERIFIED/, label);
+    }
+  } finally {
+    formats.corroborateRegulation = original;
+  }
+});
+
 test('an unexpected throw in one vendor check does not suppress the other vendor\'s report', async () => {
   const dir = makeTmpDir();
   try {

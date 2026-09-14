@@ -310,8 +310,33 @@ async function checkRegulationCorroboration(active, fetchProvider = fetchProvide
     // failure path in this file.
     provider = undefined;
   }
-  const result = metaFormats.corroborateRegulation(active, provider);
-  return result.status === 'agrees' ? null : result.message;
+  // NEVER REJECTS, by construction. main() starts this promise before the
+  // vendor checks and awaits it afterwards, so a rejection in that gap is an
+  // unhandled rejection: on Node 22 that kills the process printing nothing,
+  // and the hook's `2>/dev/null || true` wrapper turns the crash into silence —
+  // the exact failure this corroboration exists to prevent. The comparison is
+  // pure today and cannot throw, but that is a property of another file that
+  // nobody will remember to preserve. So the guarantee lives here instead: an
+  // internal failure, or a malformed result that would otherwise return
+  // `undefined` (silent without ever throwing), reports UNVERIFIED.
+  try {
+    const result = metaFormats.corroborateRegulation(active, provider);
+    if (!result || typeof result.status !== 'string') {
+      throw new Error('corroborateRegulation returned no status');
+    }
+    if (result.status === 'agrees') return null;
+    if (typeof result.message !== 'string' || !result.message) {
+      throw new Error(`corroborateRegulation returned status "${result.status}" with no message`);
+    }
+    return result.message;
+  } catch (err) {
+    const reason = err && err.message ? err.message : String(err);
+    return (
+      `Could not verify reference/regulation.md's stamped regulation (${active}) against ` +
+      `Pikalytics' own live default format — the corroboration check itself failed (${reason}). ` +
+      'Treat the stamp as UNVERIFIED, not confirmed current.'
+    );
+  }
 }
 
 async function main() {
