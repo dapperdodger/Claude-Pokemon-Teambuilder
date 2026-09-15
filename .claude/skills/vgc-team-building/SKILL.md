@@ -21,12 +21,12 @@ This is a design sequence, not just a verification pass — it starts from
 Copy this checklist and work it in order:
 
 ```
-- [ ]  1. Starting point — strategy, specific Pokémon/core, or existing team
+- [ ]  1. Starting point — strategy, specific Pokémon/core, or existing team (centrepiece written down before any meta data)
 - [ ]  2. Regulation check + live meta scan
 - [ ]  3. Speed-control plan
 - [ ]  4. Archetype, and what that archetype requires
-- [ ]  5. Per slot: declare the role, then 3-5 verified candidates, user picks
-- [ ]  6. Moveset from the role template
+- [ ]  5. Per slot: declare the role, then 3-5 options on a decision card, user picks
+- [ ]  6. Moveset from the role template, a decision card per move
 - [ ]  7. Team-level gates: coverage, item spread, offense/support distribution
 - [ ]  8. SP spreads — solve for the minimum
 - [ ]  9. Pitfalls gate + validator

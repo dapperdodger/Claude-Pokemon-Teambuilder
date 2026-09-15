@@ -157,6 +157,40 @@ test('find: an unknown resists type throws rather than matching nothing', () => 
   assert.throws(() => dex.find({ resists: ['Fairyy'] }), /Unknown type/);
 });
 
+test('find: a resists filter always carries the type-chart-only caveat', () => {
+  const r = dex.find({ resists: ['Ground'] });
+  assert.ok(
+    r.caveats.some((c) => /type chart only/i.test(c)),
+    'a resists filter must warn that ability- and item-based answers are not considered'
+  );
+});
+
+test('find: a types filter alone does not carry the resists caveat', () => {
+  const r = dex.find({ types: ['Fire'] });
+  assert.ok(
+    !r.caveats.some((c) => /type chart only/i.test(c)),
+    'a plain types filter must not carry the resists-only caveat'
+  );
+});
+
+test('find: resists combines with types as an AND', () => {
+  const r = dex.find({ resists: ['Ground'], types: ['Flying'] });
+  assert.ok(r.count > 0, 'expected at least one Flying species resisting Ground');
+  for (const m of r.results) {
+    assert.ok(m.types.includes('Flying'), `${m.name} is not Flying`);
+    assert.ok(dex.typeEffectiveness('Ground', m.types).multiplier <= 0.5, `${m.name} vs Ground`);
+  }
+});
+
+test('find: resists combines with min stat as an AND', () => {
+  const r = dex.find({ resists: ['Dark'], min: { spe: 100 } });
+  assert.ok(r.count > 0, 'expected at least one fast Dark-resister');
+  for (const m of r.results) {
+    assert.ok(dex.typeEffectiveness('Dark', m.types).multiplier <= 0.5, `${m.name} vs Dark`);
+    assert.ok(m.baseStats.spe >= 100, `${m.name} has base Speed ${m.baseStats.spe}, below the 100 floor`);
+  }
+});
+
 const { execFileSync } = require('node:child_process');
 const path = require('node:path');
 const CLI = path.join(__dirname, '..', 'cli.js');

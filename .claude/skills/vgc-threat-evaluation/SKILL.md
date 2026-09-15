@@ -84,7 +84,8 @@ none of them skips the checks.
 **1. Pull X's real set.** `node tools/meta/cli.js mon "<X>"` for its moves and
 item, and `node tools/dex/cli.js mon "<X>"` for typing and Speed. Note
 anything that changes the matchup: priority, a berry that halves a
-super-effective hit, setup.
+super-effective hit, setup. For a Mega threat the two tools want opposite
+names — `meta mon "X-Mega"`, `dex mon "Mega X"` (see CLAUDE.md's naming note).
 
 **2. Generate options from the tools, not from recall.**
 
@@ -92,6 +93,10 @@ super-effective hit, setup.
 node tools/dex/cli.js find --resists <X's STAB type> --resists <X's other STAB type>
 node tools/dex/cli.js find --resists <X's STAB type> --learns "<a move that hits X hard>"
 ```
+
+`--resists` reads the type chart only — a Pokémon that is immune or resistant
+through its ability or held item will not appear, so look for those answers
+separately and add them as rows.
 
 Add meta suggestions as extra rows; they get the same checks.
 

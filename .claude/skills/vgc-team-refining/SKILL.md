@@ -45,6 +45,8 @@ A narrower job than `vgc-team-building`. The user provides a mostly-complete six
     Its options are learnable moves that fit the role; its usage column is each
     move's share on real sets.
 
+Card for each flagged or replacement move (fields 1-7 belong to the card, not to this process):
+
 <!-- card-skeleton:start -->
 **Decision card** — required before any species, move, or threat-answer choice
 goes to the user. Full guidance: `reference/decision-card.md`.

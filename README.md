@@ -74,7 +74,7 @@ be ten separate calls), and `optimize-bulk-cli.js` for the minimum HP/Def/SpD
 that survives a named attack. Needs Node.js.
 
 ```bash
-npm test   # 356 tests across the tools and the hooks
+npm test   # tests across the tools, the hooks, and the skill text
 ```
 
 ### `tools/meta/` — live usage and win-rate lookups

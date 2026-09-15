@@ -75,7 +75,8 @@ was picked, is not a card.
 4. **Options from.** Paste the exact command. For species and threat answers
    `node tools/dex/cli.js find ...` always runs, even when a meta suggestion
    already looks strong; `--resists`, `--learns`, `--type` and stat bounds
-   turn the role into a query. Meta suggestions (`meta mon` teammates,
+   turn the role into a query (`--resists` is type-chart only: add ability- or
+   item-based answers by hand). Meta suggestions (`meta mon` teammates,
    `meta usage`, `meta teams`) are welcome as extra rows — name the command
    they came from. For a move: the learnable moves that fit the role template
    (`dex learnset`).
@@ -83,7 +84,8 @@ was picked, is not a card.
    - **Usage** — species: `node tools/meta/cli.js rank "<A>" "<B>" ...` in one
      call; a Mega reports its base species' row. Move: its share on real sets
      from `meta mon`'s `moves` list.
-   - **Source** — `find`, `meta`, `user`, or `find + meta`.
+   - **Source** — `find`, `meta`, `user`, or `find + meta`; for a move,
+     `learnset` (or `learnset + meta`).
    - **Q1 real matchups** — against named threats from field 3. Any claim that
      it beats or survives something carries a `tools/damage-calc/cli.js` roll,
      with the opponent's real item and weather passed.
@@ -124,7 +126,7 @@ commands listed on 2026-09-14)*
 |---|---|---|---|---|---|---|---|
 | Throat Chop | 13.755% | meta | 80 / Physical | Second Dark attack; blocks sound moves for two turns | legal | Deviation from Defensive template — needs a reason | Overlaps Darkest Lariat's type |
 | Darkest Lariat | 15.438% | meta | 85 / Physical | Second Dark attack; ignores the target's stat boosts | legal | Deviation from Defensive template — needs a reason | Overlaps Throat Chop's type |
-| Will-O-Wisp | 2.351% | learnset | — / Status | Burn halves a physical attacker's damage for the rest of the game | legal | Fits slot 4 (Support) | — |
+| Will-O-Wisp | 2.351% | learnset | — / Status | Burn halves a physical attacker's damage while it stays burned | legal | Fits slot 4 (Support) | No — Helping Hand, the other Support option, only pays off on turns the partner attacks |
 | Helping Hand | 1.017% | learnset | — / Status | Boosts the partner's attack that turn | legal | Fits slot 4 (Support) | Only pays off on turns the partner attacks; does nothing on its own, unlike Will-O-Wisp |
 
 6. **Recommendation** — Will-O-Wisp: it fills the template's Support slot

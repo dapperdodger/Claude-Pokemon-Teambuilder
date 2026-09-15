@@ -73,7 +73,7 @@ them is the wrong answer. Full detail and sourcing in
 | Which Pokémon show up *together* (cores) / real tournament teams and archetypes | `node tools/meta/cli.js cores` / `node tools/meta/cli.js teams` — surface any `teams` straddle warning to the user |
 | Candidates for a roster gap | `node tools/dex/cli.js find --type <T> --learns "<Move>" --min-spe <N>` |
 | Where each option ranks in usage (a decision card's usage column) | `node tools/meta/cli.js rank "<Species>" ["<Species>" ...]` |
-| Which Pokémon take a type well — options for "what beats X" | `node tools/dex/cli.js find --resists <Type> [--resists <Type>]` |
+| Which Pokémon take a type well — options for "what beats X" (type chart only; ability-based answers won't appear) | `node tools/dex/cli.js find --resists <Type> [--resists <Type>]` |
 | How fast is the field / how common is Fake Out | `node tools/meta/cli.js speed-tiers`, `node tools/meta/cli.js distribution --move "<Move>"` |
 
 Every claim in that table has been stated wrong from recall in this repo

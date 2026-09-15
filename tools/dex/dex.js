@@ -365,6 +365,12 @@ const ABILITY_FILTER_CAVEAT =
   'sits in an unstored slot will NOT appear here. This filter therefore produces false negatives by ' +
   'construction. For what is actually being run, use tools/meta (per-Pokemon ability distribution).';
 
+const RESISTS_FILTER_CAVEAT =
+  'The --resists filter reads the type chart only. Abilities and held items that block or reduce a type ' +
+  'are not considered, and the vendored roster stores one ability per species — so a Pokémon that ' +
+  'shrugs off the type through its ability or item will NOT appear here. Look for those answers ' +
+  'separately and add them as options.';
+
 function longStats(bs) {
   const out = {};
   for (const [long, short] of Object.entries(STAT_KEYS)) out[long] = bs[short];
@@ -419,6 +425,7 @@ function find(filters) {
   }
 
   if (wantAbility) caveats.push(ABILITY_FILTER_CAVEAT);
+  if (wantResists.length) caveats.push(RESISTS_FILTER_CAVEAT);
 
   const results = [];
   const notInLearnsetTable = [];
