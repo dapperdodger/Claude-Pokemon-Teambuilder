@@ -14339,6 +14339,7 @@ var CHAMPIONS_LEARNSETS = {
 			irondefense: ["9M"],
 			knockoff: ["9M"],
 			leafblade: ["9M"],
+			meteorassault: ["9M"],
 			nightslash: ["9M"],
 			poisonjab: ["9M"],
 			protect: ["9M"],

@@ -1,5 +1,5 @@
 // Verbatim extract of the `Side` function from
-// https://github.com/nerd-of-now/NCP-VGC-Damage-Calculator/blob/0e766b01c951d4de05c4af2a3566a0d5c7c8372d/script_res/ap_calc.js
+// https://github.com/nerd-of-now/NCP-VGC-Damage-Calculator/blob/1369b359b85f0a6343df006acde92cc4a7d07805/script_res/ap_calc.js
 // (source lines 2164-2198 at that commit). Extracted (not rewritten) because
 // the rest of ap_calc.js has top-level DOM/jQuery side effects that throw
 // outside a browser; this one function has none.

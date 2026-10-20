@@ -5,7 +5,7 @@ License: MIT (see upstream LICENSE)
 
 ## Pin
 
-Commit: `812501ede865eea397cd6e9a6f040d73ff57cc84` (last commit to touch `data/mods/champions/learnsets.ts`, 2026-09-09)
+Commit: `d3de52a17868aa22e6f5af251a68b86f573b75b1` (last commit to touch `data/mods/champions/learnsets.ts`, 2026-09-10)
 Regulation: `M-C`
 
 Both fields are load-bearing. The commit answers "is this behind upstream";
@@ -67,3 +67,4 @@ Re-vendoring at a regulation rollover is a required step, not a judgement call.
 | 2026-09-07 | Initial vendor at 6b4bc34e, regulation M-B | https://github.com/smogon/pokemon-showdown |
 | 2026-09-07 | Re-pinned Commit to `cc17bb7854931ce858ebb1836b9a4ea9418aa258` — the last commit that actually touched `data/mods/champions/learnsets.ts` (2026-07-09) — and scoped `.claude/hooks/vendor-staleness.js`'s upstream check to that path instead of master HEAD, since master HEAD drifts on unrelated commits and made "behind upstream" permanent noise. Content unchanged: no commit between cc17bb78 and the previous 6b4bc34e pin touched this path, so the vendored bytes are identical. | https://github.com/smogon/pokemon-showdown |
 | 2026-09-09 | Re-vendored for M-B → M-C rollover. Re-pinned Commit to `812501ede865eea397cd6e9a6f040d73ff57cc84` (last commit touching this path) and Regulation to `M-C`. File grew from 15128 to 16803 lines, adding move pools for M-C's 24 new species (Rillaboom, Baxcalibur, Salamence, Golisopod, Cinderace, Inteleon among them) and the new Megas. Line-1 transform re-applied. | https://github.com/smogon/pokemon-showdown |
+| 2026-10-20 | Intra-regulation re-vendor (still M-C). Re-pinned Commit to `d3de52a17868aa22e6f5af251a68b86f573b75b1` ("Fix Champions Learnsets", #12305). Net change is one line: Sirfetch'd gains Meteor Assault. Line-1 transform re-applied. | https://github.com/smogon/pokemon-showdown |

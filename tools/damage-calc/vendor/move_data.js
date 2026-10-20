@@ -446,7 +446,7 @@ var MOVES_RBY = {
         costHP: [1, 4, 'roundDown']
     },
     'Pound': {
-        bp: 35,
+        bp: 40,
         type: 'Normal',
         category: 'Physical',
         makesContact: true,
@@ -4894,6 +4894,7 @@ var MOVES_SS = $.extend(true, {}, MOVES_SM, {
         bp: 80,
         type: 'Psychic',
         category: 'Special',
+        isSound: true,
         hasSecondaryEffect: true,
     },
     'Fiery Wrath': {
@@ -5755,7 +5756,6 @@ var MOVES_CHAMPIONS_NATDEX = $.extend(true, {}, MOVES_ZA_NATDEX, {
     'Anchor Shot': { bp: 90 },
     'Revelation Dance': { bp: 100 },
     'Dragon Hammer': { bp: 100 },
-    'Snipe Shot': { bp: 85 },
     'Bolt Beak': { bp: 80 },
     'Fishious Rend': { bp: 80 },
     'Astral Barrage': { bp: 110 },
@@ -5833,7 +5833,7 @@ var MOVES_CHAMPIONS = {};
     //Moves available starting Regulation M-B
     'Barb Barrage', 'Make It Rain', 'No Retreat', 'Rage Fist', 'Spirit Break', 'Topsy-Turvy',
     //Moves available starting Regulation M-C
-    'Slash', 'Octazooka', 'Milk Drink', 'Shift Gear', 'Zing Zap', 'Snipe Shot', 'Jaw Lock', 'Octolock', 'Court Change', 'Drum Beating', 'Pyro Ball',
+    'Slash', 'Milk Drink', 'Shift Gear', 'Zing Zap', 'Snipe Shot', 'Jaw Lock', 'Octolock', 'Court Change', 'Drum Beating', 'Pyro Ball', 'Overdrive',
     'Meteor Assault', 'Glaive Rush', 'Revival Blessing', 'Double Shock',
 ].forEach(e => MOVES_CHAMPIONS[e] = MOVES_CHAMPIONS_NATDEX[e]);
 //Spit Up is commented out because it hasn't been implemented
